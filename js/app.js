@@ -1,0 +1,947 @@
+// App: state, screens and event handling.
+'use strict';
+const YEAR = new Date().getFullYear();
+const KEY = 'heirloom-health-v2';
+
+/* ---------- Helpers ---------- */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+const $ = s => document.querySelector(s);
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 2800); }
+function clip(s, n) { s = String(s); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+function fmtDate(iso) { try { return new Date(iso + 'T12:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); } catch { return iso; } }
+function today() { return new Date().toISOString().slice(0, 10); }
+const tr = (obj, lang) => obj[lang] || obj.en;
+
+/* ---------- Example family and state ---------- */
+function exampleState() {
+  const P = (id, o) => newPerson({ id, ...o });
+  const people = [
+    P('self', { name: 'Ananya', sex: 'F', born: '2010', living: 'yes' }),
+    P('ravi', { name: 'Ravi', sex: 'M', born: '1975', living: 'yes', interviewed: '2026-10-12', transcripts: { father_cond: 'My father had sugar from about 50. He had a heart attack at 54, and he passed away at 61.' } }),
+    P('lakshmi', { name: 'Lakshmi', sex: 'F', born: '1978', living: 'yes', interviewed: '2026-10-11', transcripts: { mother_cond: 'మా అమ్మకి 47 ఏళ్ళప్పుడు రొమ్ము క్యాన్సర్ వచ్చింది. తర్వాత థైరాయిడ్ కూడా వచ్చింది, అరవై లో. షుగర్ లేదు.' } }),
+    P('venkata', { name: 'Venkata Rao', sex: 'M', born: '1945', living: 'no', deathAge: '61', cause: 'Heart attack' }),
+    P('saraswathi', { name: 'Saraswathi', sex: 'F', born: '1950', living: 'yes', interviewed: '2026-10-12' }),
+    P('krishna', { name: 'Krishna Murthy', sex: 'M', born: '1948', living: 'no', deathAge: '72', cause: 'Stroke' }),
+    P('padma', { name: 'Padma', sex: 'F', born: '1953', living: 'yes', interviewed: '2026-10-18' }),
+    P('kamala', { name: 'Kamala', sex: 'F', born: '1931', living: 'no', deathAge: '58', cause: 'Breast cancer' }),
+    P('srinivas', { name: 'Srinivas', sex: 'M', born: '1972', living: 'yes' }),
+    P('anitha', { name: 'Anitha', sex: 'F', born: '1975', living: 'yes' }),
+    P('kiran', { name: 'Kiran', sex: 'M', born: '2004', living: 'yes' }),
+    P('kavitha', { name: 'Kavitha', sex: 'F', born: '1981', living: 'yes' }),
+    P('mahesh', { name: 'Mahesh', sex: 'M', born: '1979', living: 'yes' }),
+    P('arjun', { name: 'Arjun', sex: 'M', born: '2013', living: 'yes' }),
+  ];
+  const par = (parent, child, bio = true) => ({ kind: 'parent', parent, child, bio });
+  const pt = (a, b) => ({ kind: 'partner', a, b });
+  const rels = [
+    pt('ravi', 'lakshmi'), par('ravi', 'self'), par('lakshmi', 'self'), par('ravi', 'arjun'), par('lakshmi', 'arjun'),
+    pt('venkata', 'saraswathi'), par('venkata', 'ravi'), par('saraswathi', 'ravi'), par('venkata', 'srinivas'), par('saraswathi', 'srinivas'),
+    pt('krishna', 'padma'), par('krishna', 'lakshmi'), par('padma', 'lakshmi'), par('krishna', 'kavitha'), par('padma', 'kavitha'),
+    par('kamala', 'padma'),
+    pt('srinivas', 'anitha'), par('srinivas', 'kiran'), par('anitha', 'kiran'),
+    pt('mahesh', 'kavitha'),
+  ];
+  const R = (pid, cond, type, age, by, said = '') => ({ id: uid('r'), pid, cond, type, age: String(age || ''), said, by, at: '2026-10-12' });
+  const reports = [
+    R('lakshmi', 'thyroid', '', 38, 'lakshmi'), R('lakshmi', 'chol', '', 44, 'lakshmi'),
+    R('ravi', 'bp', '', 41, 'ravi', 'BP'), R('ravi', 'diabetes', '', 46, 'ravi', 'sugar'),
+    R('venkata', 'heart', '', 54, 'ravi', 'heart attack'), R('venkata', 'heart', '', 51, 'saraswathi', 'గుండెపోటు'),
+    R('venkata', 'diabetes', '', 50, 'ravi', 'sugar'), R('venkata', 'diabetes', '', 45, 'srinivas', 'షుగర్'),
+    R('saraswathi', 'diabetes', '', 55, 'saraswathi', 'షుగర్'), R('saraswathi', 'bp', '', 52, 'saraswathi', 'బీపీ'),
+    R('krishna', 'stroke', '', 70, 'lakshmi', 'పక్షవాతం'), R('krishna', 'bp', '', 50, 'lakshmi'), R('krishna', 'cancer', 'colorectal', 66, 'padma', 'పెద్దప్రేగు క్యాన్సర్'),
+    R('padma', 'cancer', 'breast', 47, 'padma', 'రొమ్ము క్యాన్సర్'), R('padma', 'thyroid', '', 60, 'padma'),
+    R('kamala', 'cancer', 'breast', 55, 'padma', 'రొమ్ము క్యాన్సర్'),
+    R('srinivas', 'heart', '', 49, 'ravi', 'heart attack'), R('srinivas', 'diabetes', '', 44, 'ravi', 'sugar'),
+    R('kiran', 'asthma', '', '', 'self'), R('mahesh', 'heart', '', 50, 'self'), R('arjun', 'asthma', '', 6, 'self'),
+  ];
+  return { v: 2, example: true, people, rels, reports, sel: SELF, hl: 'any', tab: 'tree', iv: { who: 'lakshmi', step: 0, lang: 'te', roman: true } };
+}
+function blankState(me = {}) {
+  const S0 = { v: 2, example: false, people: [newPerson({ ...me, id: SELF, living: 'yes' })], rels: [], reports: [], sel: SELF, hl: 'any', tab: 'tree', iv: { who: '', step: 0, lang: 'te', roman: true } };
+  const keep = S; S = S0; touchFamily();
+  const [dad, mom] = ensureParents(SELF);
+  addRelative('father', dad); addRelative('mother', dad); addRelative('father', mom); addRelative('mother', mom);
+  S0.iv.who = mom; S = keep;
+  return S0;
+}
+// Data saved by the first version (fixed roles) is converted into the family graph.
+function migrateV1(v) {
+  if (v.example) return null;
+  const roleId = r => r === 'self' ? SELF : r;
+  const people = v.people.map(p => newPerson({ ...p, id: roleId(p.id), conds: undefined, role: undefined }));
+  const rels = [], reports = [];
+  const has = id => people.some(p => p.id === id);
+  const par = (a, b) => has(a) && has(b) && rels.push({ kind: 'parent', parent: a, child: b, bio: true });
+  const pt = (a, b) => has(a) && has(b) && rels.push({ kind: 'partner', a, b });
+  pt('father', 'mother'); pt('pgf', 'pgm'); pt('mgf', 'mgm');
+  par('father', SELF); par('mother', SELF); par('pgf', 'father'); par('pgm', 'father'); par('mgf', 'mother'); par('mgm', 'mother');
+  for (const p of v.people) {
+    if (p.role === 'sibling') { par('father', p.id); par('mother', p.id); }
+    if (p.role === 'paunt') { par('pgf', p.id); par('pgm', p.id); }
+    if (p.role === 'maunt') { par('mgf', p.id); par('mgm', p.id); }
+    for (const [cond, val] of Object.entries(p.conds || {})) if (COND[cond]) reports.push({ id: uid('r'), pid: roleId(p.id), cond, type: '', age: val.age || '', said: '', by: SELF, at: today() });
+  }
+  return { v: 2, example: false, people, rels, reports, sel: SELF, hl: 'any', tab: 'tree', iv: { who: 'mother', step: 0, lang: v.iv?.lang || 'te', roman: true } };
+}
+// Each signed-in profile has its own storage slot (see auth.js).
+let ACCT = null, S = null;
+let AUTH = { mode: 'signin', pick: null, forgot: false };
+function loadFor(acct) {
+  try { const v = JSON.parse(localStorage.getItem(dataKey(acct.id))); if (v?.v === 2 && Array.isArray(v.people)) return v; } catch {}
+  return null;
+}
+// A family saved before profiles existed, offered to the first profile created.
+function legacyData() {
+  try { const v = JSON.parse(localStorage.getItem(KEY)); if (v?.v === 2 && !v.example && Array.isArray(v.people)) return v; } catch {}
+  try { const v1 = JSON.parse(localStorage.getItem('heirloom-health-v1')); if (v1 && Array.isArray(v1.people)) return migrateV1(v1); } catch {}
+  return null;
+}
+function save() { touchFamily(); if (S && ACCT) try { localStorage.setItem(dataKey(ACCT.id), JSON.stringify(S)); } catch {} }
+function enter(acct, state) {
+  ACCT = acct;
+  S = state || loadFor(acct) || (acct.guest ? exampleState() : blankState({ name: acct.name }));
+  S.example = !!acct.guest; S.pdfBusy = false; S.celebrate = null; S.tab ||= 'tree';
+  save(); render(); window.scrollTo({ top: 0 });
+  loadClips().then(render);
+}
+function signOut() {
+  if (REC) REC.mr.stop();
+  RECOG?.stop();
+  endSession(); S = null; ACCT = null; CLIPS = []; SUGG = { key: '', list: [] };
+  AUTH = { mode: listAccounts().length ? 'signin' : 'create', pick: listAccounts()[0]?.id || null, forgot: false };
+  render(); window.scrollTo({ top: 0 });
+}
+
+/* ---------- Art ---------- */
+function mascot(size = 64, happy = false) {
+  const eyes = happy
+    ? '<path d="M23 30q3-3.5 6 0M35 30q3-3.5 6 0" stroke="#1E1D33" stroke-width="2.6" fill="none" stroke-linecap="round"/>'
+    : '<circle cx="26" cy="30" r="2.8" fill="#1E1D33"/><circle cx="38" cy="30" r="2.8" fill="#1E1D33"/><circle cx="26.9" cy="29.1" r=".9" fill="#fff"/><circle cx="38.9" cy="29.1" r=".9" fill="#fff"/>';
+  return `<svg class="mascot" width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true">
+    <ellipse cx="32" cy="61" rx="15" ry="2.4" fill="#000" opacity=".08"/>
+    <path d="M28 44h8v13a2.5 2.5 0 0 1-2.5 2.5h-3A2.5 2.5 0 0 1 28 57z" fill="#9A6B44"/>
+    <path d="M32 50l-7-5M32 47l6-4" stroke="#9A6B44" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="18" cy="30" r="12" fill="#1F7447"/><circle cx="46" cy="30" r="12" fill="#1F7447"/>
+    <circle cx="32" cy="21" r="15" fill="#2E9E62"/><circle cx="32" cy="33" r="14" fill="#2E9E62"/>
+    <circle cx="21" cy="25" r="9" fill="#2E9E62"/><circle cx="43" cy="25" r="9" fill="#2E9E62"/>
+    <circle cx="25" cy="15" r="3" fill="#5CC08A" opacity=".8"/>
+    <circle cx="47" cy="13" r="5" fill="#F5A524"/><circle cx="47" cy="13" r="2" fill="#A8680A"/>
+    <circle cx="21.5" cy="35" r="2.6" fill="#E0546A" opacity=".55"/><circle cx="42.5" cy="35" r="2.6" fill="#E0546A" opacity=".55"/>
+    ${eyes}
+    <path d="M28.5 36.5q3.5 3.5 7 0" stroke="#1E1D33" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
+const ICON = {
+  tree: `<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><path d="M10 10h14M17 10v8M8 18h18M8 18v5M26 18v5" stroke="#08585F" stroke-width="2.6" fill="none" stroke-linecap="round"/><rect x="3" y="4" width="11" height="11" rx="3" fill="#0E7C86"/><circle cx="25.5" cy="9.5" r="6" fill="#F5A524"/><circle cx="8" cy="27" r="5.5" fill="#E0546A"/><rect x="20.5" y="21.5" width="11" height="11" rx="3" fill="#6457D9"/></svg>`,
+  interview: `<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><path d="M5 6h18a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H13l-6 5v-5H5a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3z" fill="#6457D9"/><path d="M28 12h1a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-1v4l-5-4h-7a3 3 0 0 1-3-3v-1" fill="#F5A524"/><circle cx="9" cy="13.5" r="1.8" fill="#fff"/><circle cx="14" cy="13.5" r="1.8" fill="#fff"/><circle cx="19" cy="13.5" r="1.8" fill="#fff"/></svg>`,
+  doctor: `<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="5" y="5" width="24" height="27" rx="4" fill="#E0546A"/><rect x="11" y="2" width="12" height="7" rx="2.5" fill="#A93448"/><rect x="9" y="11" width="16" height="17" rx="2" fill="#fff"/><path d="M17 14.5v10M12 19.5h10" stroke="#E0546A" stroke-width="3.4" stroke-linecap="round"/></svg>`,
+  risks: `<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><path d="M4.5 25a12.5 12.5 0 0 1 4.6-9.7" stroke="#2E9E62" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M12.8 13.3a12.5 12.5 0 0 1 8.4 0" stroke="#F5A524" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M24.9 15.3a12.5 12.5 0 0 1 4.6 9.7" stroke="#E0546A" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M17 25l6-8" stroke="#1E1D33" stroke-width="3" stroke-linecap="round"/><circle cx="17" cy="25" r="3" fill="#1E1D33"/></svg>`,
+  speaker: `<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>`,
+  mic: `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2" width="8" height="13" rx="4" fill="currentColor"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>`,
+  bulb: `<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" fill="var(--accent)"/><rect x="8.5" y="18.5" width="7" height="3" rx="1.5" fill="var(--accent-dk)"/></svg>`,
+  spark: `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.2 6.3L20.5 10l-6.3 2.2L12 18.5l-2.2-6.3L3.5 10l6.3-1.7z" fill="currentColor"/><circle cx="19" cy="19" r="2.2" fill="currentColor"/></svg>`,
+};
+
+/* ---------- Audio recordings (kept on this device in IndexedDB) ---------- */
+let CLIPS = [], REC = null;
+const IDB = {
+  db: null,
+  open() { return this.db ||= new Promise((res, rej) => { const r = indexedDB.open('heirloom-audio', 1); r.onupgradeneeded = () => r.result.createObjectStore('clips', { keyPath: 'id' }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); },
+  async run(mode, fn) { const db = await this.open(); return new Promise((res, rej) => { const t = db.transaction('clips', mode), req = fn(t.objectStore('clips')); t.oncomplete = () => res(req.result); t.onerror = () => rej(t.error); }); },
+  all() { return this.run('readonly', s => s.getAll()); },
+  put(c) { return this.run('readwrite', s => s.put(c)); },
+  del(id) { return this.run('readwrite', s => s.delete(id)); },
+};
+async function loadClips() { try { CLIPS = (await IDB.all()).filter(c => c.acct ? c.acct === ACCT?.id : ACCT && !ACCT.guest).map(c => ({ ...c, url: URL.createObjectURL(c.blob) })).sort((a, b) => a.created - b.created); } catch { CLIPS = []; } }
+async function addClip(pid, step, blob, secs) {
+  const rec = { id: 'clip-' + Date.now().toString(36), acct: ACCT?.id, pid, step, created: Date.now(), secs, blob, type: blob.type || 'audio/webm' };
+  try { await IDB.put(rec); CLIPS.push({ ...rec, url: URL.createObjectURL(blob) }); toast('Recording saved on this device'); }
+  catch { toast("Couldn't save the recording. This browser may be blocking storage."); }
+  render();
+}
+async function removeClip(id) {
+  try { await IDB.del(id); } catch {}
+  const c = CLIPS.find(c => c.id === id); if (c) URL.revokeObjectURL(c.url);
+  CLIPS = CLIPS.filter(c => c.id !== id); render();
+}
+const fmtSec = s => s == null ? '' : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+async function startRec(pid, step) {
+  try {
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) throw new Error('no mic');
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mr = new MediaRecorder(stream), chunks = [], start = Date.now();
+    mr.ondataavailable = e => e.data.size && chunks.push(e.data);
+    mr.onstop = () => { stream.getTracks().forEach(t => t.stop()); clearInterval(REC?.timer); REC = null; addClip(pid, step, new Blob(chunks, { type: mr.mimeType || 'audio/webm' }), Math.round((Date.now() - start) / 1000)); };
+    REC = { mr, pid, step, start, timer: setInterval(() => { const el = $('#rec-time'); if (el) el.textContent = fmtSec(Math.round((Date.now() - start) / 1000)); }, 500) };
+    mr.start(); render();
+  } catch { S.micBlocked = true; save(); render(); toast("The microphone isn't available here. Use your phone's recorder button instead."); }
+}
+function clipList(clips, showQ) {
+  if (!clips.length) return '';
+  return `<ul class="clips">${clips.map(c => `<li>
+    <div class="meta"><span>${showQ ? `Question ${c.step + 1} · ` : ''}${new Date(c.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}${c.secs ? ' · ' + fmtSec(c.secs) : ''}</span>
+      <button class="link danger" data-action="clip-del" data-clip="${c.id}">${S.confirmClip === c.id ? 'Tap again to delete' : 'Delete'}</button></div>
+    <audio controls preload="metadata" src="${c.url}"></audio></li>`).join('')}</ul>`;
+}
+
+/* ---------- Live captions and the answer finder ---------- */
+let RECOG = null, SUGG = { key: '', list: [], busy: false }, SAMPLE_OK = false;
+function startCaptions(pid, stepKey) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { S.capBlocked = true; render(); toast("Live captions aren't available in this browser. Type instead, or use your keyboard's microphone."); return; }
+  try {
+    const r = new SR();
+    r.lang = (LANGS.find(l => l.id === S.iv.lang) || LANGS[0]).speech; r.continuous = true; r.interimResults = false;
+    r.onresult = e => {
+      const p = byId(pid);
+      for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) p.transcripts[stepKey] = ((p.transcripts[stepKey] || '') + ' ' + e.results[i][0].transcript).trim();
+      save(); const ta = $('#iv-tr'); if (ta) ta.value = p.transcripts[stepKey];
+    };
+    r.onerror = () => { S.capBlocked = true; toast("Live captions aren't available here. Type instead, or use your keyboard's microphone."); };
+    r.onend = () => { RECOG = null; render(); };
+    r.start(); RECOG = r; render();
+  } catch { S.capBlocked = true; render(); }
+}
+function ivPeople(W, st) {
+  const mom = motherOf(W.id), dad = fatherOf(W.id);
+  const subject = st.who === 'mother' ? mom?.id : st.who === 'father' ? dad?.id : W.id;
+  return { subject, mother: mom?.id || null, father: dad?.id || null };
+}
+async function runFinder(useAI) {
+  const W = byId(S.iv.who), st = STEPS[S.iv.step], text = (W.transcripts[st.k] || '').trim();
+  if (!text) { toast('Type or dictate what they said first'); $('#iv-tr')?.focus(); return; }
+  const ctx = ivPeople(W, st), key = W.id + '|' + st.k;
+  if (!useAI) { SUGG = { key, list: findAnswers(text, ctx), busy: false, ai: false }; render(); return; }
+  SUGG = { key, list: [], busy: true, ai: true }; render();
+  try { SUGG = { key, list: await aiFindAnswers(text, ctx, ctx), busy: false, ai: true }; }
+  catch (e) { SUGG = { key, list: findAnswers(text, ctx), busy: false, ai: false }; toast(e?.code === 'not_granted' ? 'AI was not allowed, so the built-in dictionary was used.' : "AI isn't available right now, so the built-in dictionary was used."); }
+  render();
+}
+function suggestionHTML(s, i) {
+  const p = byId(s.pid);
+  const what = s.kind === 'death' ? `Passed away${s.age ? ' at ' + s.age : ''}` : `${factName(s.cond, s.type)}${s.age ? ' · age ' + s.age : ''}`;
+  const mapped = s.said ? `Heard “${esc(s.said)}”${s.kind === 'cond' ? ` → ${esc(COND[s.cond].en)}` : ''}` : '';
+  return `<li class="sugg${s.negated ? ' neg' : ''}">
+    <div class="sugg-main"><span class="eyebrow">${esc(nameOf(p))} · ${esc(relOf(p))}</span><b>${esc(what)}</b>
+      ${mapped ? `<span class="small heard">${mapped}</span>` : ''}
+      ${s.negated ? '<span class="small neg-note">They may have said no. Check before adding.</span>' : ''}
+      <span class="small muted quote">“${esc(clip(s.quote, 140))}”</span></div>
+    <div class="sugg-btns"><button class="btn sm primary" data-action="sugg-add" data-i="${i}">Add</button><button class="link" data-action="sugg-skip" data-i="${i}">Dismiss</button></div>
+  </li>`;
+}
+
+/* ---------- Shared form pieces ---------- */
+function langBlock(obj, lang, roman) {
+  if (lang === 'en') return `<span class="tr">${esc(obj.en)}</span>`;
+  return `<span class="tr lang-${lang}">${esc(obj[lang])}</span>${roman && obj[lang + '_r'] ? `<span class="rm">${esc(obj[lang + '_r'])}</span>` : ''}<span class="en">${esc(obj.en)}</span>`;
+}
+function reportList(reports, { editable, fact }) {
+  if (!reports.length) return '';
+  return `<ul class="srcs">${reports.map(r => `<li><span><b>${esc(reporterName(r.by))}</b>${r.age ? ` said ${esc(r.age)}` : ' said yes'}${r.said ? ` · “${esc(r.said)}”` : ''}</span>${editable ? `<button class="link danger" data-action="del-report" data-rid="${r.id}" aria-label="Remove ${esc(reporterName(r.by))}'s report">Remove</button>` : ''}</li>`).join('')}
+    ${fact?.disagree ? `<li class="warn">Ages differ (${fact.range}). The report uses ${fact.age}.</li>` : ''}</ul>`;
+}
+// Condition tiles. `by` is who is answering; merged=true (family tree editor) shows everyone's answers.
+function condTiles(p, { by, pre, lang = 'en', roman = false, merged = false }) {
+  const fs = facts(p.id);
+  return `<div class="conds">${CONDS.map(c => {
+    const all = S.reports.filter(r => r.pid === p.id && r.cond === c.id), mine = all.filter(r => r.by === by);
+    const on = merged ? all.length > 0 : mine.length > 0;
+    const others = all.filter(r => r.by !== by);
+    let extra = '';
+    if (on && c.id === 'cancer') extra = cancerExtra(p, { by, pre, lang, roman, merged });
+    else if (on) {
+      const f = fs.find(f => f.cond === c.id), r = mine[0];
+      extra = `<div class="extra"><label for="${pre}-${c.id}-age">${merged ? 'Your answer: age found' : 'Age found'}</label>
+        <input type="number" inputmode="numeric" min="0" max="120" id="${pre}-${c.id}-age" placeholder="${!r?.age && f?.age ? f.age : 'Age'}" data-pid="${p.id}" data-cond="${c.id}" data-type="" data-by="${by}" data-cf="age" value="${esc(r?.age || '')}">
+        ${reportList(merged ? all : others, { editable: merged, fact: f })}</div>`;
+    } else if (others.length) extra = `<p class="also">Also heard: ${others.map(r => `${esc(reporterName(r.by))}${r.age ? ' (' + esc(r.age) + ')' : ''}`).join(', ')}</p>`;
+    return `<div class="cond${on ? ' on' : ''}">
+      <input type="checkbox" class="sr" id="${pre}-${c.id}" data-pid="${p.id}" data-cond="${c.id}" data-by="${by}" data-cf="on" ${on ? 'checked' : ''}>
+      <label for="${pre}-${c.id}"><span class="tick"></span><span class="nm">${langBlock(c, lang, roman)}</span></label>${extra}
+    </div>`;
+  }).join('')}</div>`;
+}
+function cancerExtra(p, { by, pre, lang, roman, merged }) {
+  const all = S.reports.filter(r => r.pid === p.id && r.cond === 'cancer');
+  const pool = merged ? all : all.filter(r => r.by === by);
+  const chosen = new Set(pool.map(r => r.type).filter(Boolean));
+  const chips = CANCER_TYPES.map(t => `<button type="button" class="chip-t" data-action="ctype" data-pid="${p.id}" data-type="${t.id}" data-by="${by}" aria-pressed="${chosen.has(t.id)}">${lang === 'en' ? esc(t.en) : `<span class="lang-${lang}">${esc(t[lang])}</span>${roman && t[lang + '_r'] ? ` <i>${esc(t[lang + '_r'])}</i>` : ''}`}</button>`).join('');
+  const fs = facts(p.id).filter(f => f.cond === 'cancer');
+  const rows = fs.map(f => {
+    const mine = S.reports.find(r => r.pid === p.id && r.cond === 'cancer' && r.type === f.type && r.by === by);
+    const id = `${pre}-cancer-${f.type || 'unk'}-age`;
+    return `<div class="ca-row"><span class="ca-name">${esc(factName('cancer', f.type))}</span>
+      <input type="number" inputmode="numeric" id="${id}" aria-label="Age ${esc(factName('cancer', f.type))} was found" placeholder="${!mine?.age && f.age ? f.age : 'Age'}" data-pid="${p.id}" data-cond="cancer" data-type="${f.type}" data-by="${by}" data-cf="age" value="${esc(mine?.age || '')}">
+      ${reportList(merged ? f.reports : f.reports.filter(r => r.by !== by), { editable: merged, fact: f })}</div>`;
+  }).join('');
+  return `<div class="extra ca"><span class="ca-q">What kind?</span><div class="chips">${chips}</div>${rows}</div>`;
+}
+function vitalFields(p, pre) {
+  const seg = ['yes', 'no', 'unknown'].map(v => `<button type="button" class="pill-btn" data-pid="${p.id}" data-living="${v}" aria-pressed="${p.living === v}">${{ yes: 'Living', no: 'Passed away', unknown: "Don't know" }[v]}</button>`).join('');
+  return `<div style="display:grid;gap:14px">
+    <div style="display:grid;gap:6px"><span class="lbl">Living?</span><div class="seg" role="group" aria-label="Living status">${seg}</div></div>
+    <div class="grid2">
+      <label class="f">Born (year)<input type="number" inputmode="numeric" id="${pre}-born" data-pid="${p.id}" data-f="born" value="${esc(p.born)}" placeholder="e.g. 1952"></label>
+      ${p.living === 'no' ? `<label class="f">Age at death<input type="number" inputmode="numeric" id="${pre}-dage" data-pid="${p.id}" data-f="deathAge" value="${esc(p.deathAge)}"></label>` : ''}
+    </div>
+    ${p.living === 'no' ? `<label class="f">Cause of death<input type="text" id="${pre}-cause" data-pid="${p.id}" data-f="cause" value="${esc(p.cause)}" placeholder="e.g. heart attack"></label>` : ''}
+  </div>`;
+}
+function avatar(p) {
+  const fill = facts(p.id).length ? 'var(--accent)' : 'var(--panel)';
+  const shape = p.sex === 'M' ? `<rect x="8" y="8" width="24" height="24" rx="3" fill="${fill}" stroke="var(--sym)" stroke-width="2.5"/>` : p.sex === 'F' ? `<circle cx="20" cy="20" r="12" fill="${fill}" stroke="var(--sym)" stroke-width="2.5"/>` : `<path d="M20 5L35 20L20 35L5 20Z" fill="${fill}" stroke="var(--sym)" stroke-width="2.5" stroke-linejoin="round"/>`;
+  return `<div class="avatar"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">${shape}${p.living === 'no' ? '<line x1="5" y1="35" x2="35" y2="5" stroke="var(--sym)" stroke-width="2.5"/>' : ''}</svg></div>`;
+}
+function statTiles(items) {
+  return `<div class="stats">${items.map(([label, val, sub, color]) => `<div class="stat" style="--c:var(--${color})"><span>${label}</span><div>${val}${sub ? `<small> ${sub}</small>` : ''}</div></div>`).join('')}</div>`;
+}
+function keyHTML() {
+  const s = inner => `<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">${inner}</svg>`;
+  return `<div class="key" aria-label="Chart key">
+    <span>${s('<rect x="3" y="3" width="16" height="16" rx="2" fill="var(--panel)" stroke="var(--sym)" stroke-width="2.2"/>')}Male</span>
+    <span>${s('<circle cx="11" cy="11" r="8" fill="var(--panel)" stroke="var(--sym)" stroke-width="2.2"/>')}Female</span>
+    <span>${s('<circle cx="11" cy="11" r="8" fill="var(--accent)" stroke="var(--sym)" stroke-width="2.2"/>')}Has condition</span>
+    <span>${s('<circle cx="11" cy="11" r="7" fill="var(--panel)" stroke="var(--sym)" stroke-width="2.2"/><line x1="2" y1="20" x2="20" y2="2" stroke="var(--sym)" stroke-width="2.2"/>')}Deceased</span>
+    <span>${s('<circle cx="11" cy="11" r="8" fill="var(--panel)" stroke="var(--muted)" stroke-width="2" stroke-dasharray="3 3"/>')}Not blood related</span>
+    <span>${s('<path d="M3 3v16" stroke="var(--muted)" stroke-width="2" stroke-dasharray="3 3"/>')}Adopted</span>
+    <span>${s('<path d="M3 19L13 9" stroke="var(--primary)" stroke-width="3" stroke-linecap="round"/><path d="M15 7l-9 1.5 6.5 6.5z" fill="var(--primary)"/>')}You</span>
+    <span>${s('<circle cx="11" cy="11" r="9" fill="var(--leaf)"/><path d="M7 11l3 3 5-6" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/>')}Interviewed</span>
+    <span>* people disagree on the age</span>
+  </div>`;
+}
+function nextAskHTML(limit = 3, compact = false) {
+  const list = suggestInterviews(limit);
+  if (!list.length) return '';
+  return `<section class="card nextask" aria-label="Who to ask next">
+    <div class="row" style="justify-content:space-between"><h2>Who to ask next</h2><span class="small muted">Ranked by the gaps they can fill</span></div>
+    <ol class="asks">${list.map(({ I, items }, n) => `<li>
+      <span class="rank">${n + 1}</span>
+      <div class="ask-body"><b>${esc(nameOf(I))}</b> <span class="muted small">${esc(relOf(I))}${I.interviewed ? ' · interviewed before' : ''}</span>
+        <ul>${items.slice(0, compact ? 2 : 3).map(({ T, gaps }) => `<li>${T.id === I.id ? 'Their own health' : esc(nameOf(T)) + ` <span class="muted">(${esc(shortOf(T))})</span>`}: ${esc(gaps.slice(0, 2).join(', '))}</li>`).join('')}</ul></div>
+      <button class="btn sm" data-action="interview" data-pid="${I.id}">Interview</button></li>`).join('')}</ol>
+  </section>`;
+}
+
+/* ---------- Family tab ---------- */
+function renderTree() {
+  const present = CONDS.filter(c => S.reports.some(r => r.cond === c.id && byId(r.pid)));
+  if (S.hl !== 'any' && !present.some(c => c.id === S.hl)) S.hl = 'any';
+  const p = byId(S.sel) || byId(SELF);
+  const blood = bloodRelatives(), known = blood.filter(x => !isBlank(x)).length, me = byId(SELF), k = kin(p.id);
+  const gone = removalSet(p.id).size - 1;
+  const hasMom = !!motherOf(p.id, false), hasDad = !!fatherOf(p.id, false);
+  return `
+  <div style="display:grid;gap:6px"><h1>${me.name ? esc(me.name) + "'s family" : 'Your family'}</h1>
+    <p class="muted">Tap anyone on the tree to fill in what you know, or to add their relatives.</p></div>
+  ${statTiles([['Blood relatives', known, `/ ${blood.length}`, 'accent'], ['Interviews', S.people.filter(x => x.interviewed).length, '', 'primary'], ['Recordings', CLIPS.length, '', 'iris']])}
+  <div class="family">
+    <section class="card tree-card" aria-label="Pedigree chart">
+      <div class="hd">
+        <div class="row" style="justify-content:space-between"><h2>${S.people.length} people, ${new Set([...generations().values()]).size} generations</h2><span class="tag">${known} of ${blood.length} blood relatives filled in</span></div>
+        <div class="pills" role="group" aria-label="Shade the chart by condition">
+          <button class="pill-btn" data-hl="any" aria-pressed="${S.hl === 'any'}">Any condition</button>
+          ${present.map(c => `<button class="pill-btn" data-hl="${c.id}" aria-pressed="${S.hl === c.id}">${esc(c.en.replace(' ("fits")', ''))}</button>`).join('')}
+        </div>
+      </div>
+      <div class="tree-scroll" id="tree-svg">${treeSVG()}</div>
+      ${keyHTML()}
+    </section>
+    <aside class="card editor" aria-label="Edit relative">
+      <div class="who">${avatar(p)}<div><span class="eyebrow">${esc(relOf(p))}</span><h2>${esc(nameOf(p))}</h2>
+        <div class="row" style="gap:6px;margin-top:4px">${p.interviewed ? `<span class="tag">✓ Interviewed ${fmtDate(p.interviewed)}</span>` : ''}${p.id !== SELF ? (k.blood ? `<span class="tag soft">${['', 'First', 'Second', 'Third'][k.degree] || 'Distant'}-degree relative</span>` : '<span class="tag grey">Not blood related</span>') : ''}</div></div></div>
+      ${p.living !== 'no' && p.id !== SELF ? `<button class="btn primary wide" data-action="interview" data-pid="${p.id}">Interview ${esc(nameOf(p))}</button>` : ''}
+      <div class="grid2">
+        <label class="f">Name<input type="text" id="ed-name" data-pid="${p.id}" data-f="name" value="${esc(p.name)}" placeholder="${esc(shortOf(p))}"></label>
+        <label class="f">Sex<select id="ed-sex" data-pid="${p.id}" data-f="sex">
+          ${[['F', 'Female'], ['M', 'Male'], ['U', 'Not set']].map(([v, l]) => `<option value="${v}" ${p.sex === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      </div>
+      ${p.id === SELF ? `<label class="f">Born (year)<input type="number" inputmode="numeric" id="ed-born" data-pid="${p.id}" data-f="born" value="${esc(p.born)}"></label>` : vitalFields(p, 'ed')}
+      <div style="display:grid;gap:10px"><div><h3>Health conditions</h3><p class="small muted">Everything family members told you is combined here. Your own answer is saved as "You".</p></div>
+      ${condTiles(p, { by: SELF, pre: 'ed', merged: true })}</div>
+      <label class="f">Notes<textarea id="ed-notes" data-pid="${p.id}" data-f="notes" placeholder="Surgeries, medicines, where they grew up">${esc(p.notes)}</textarea></label>
+      ${p.parentNotes ? `<p class="small"><b>About their parents:</b> ${esc(p.parentNotes)}</p>` : ''}
+      ${p.sibNotes ? `<p class="small"><b>About their siblings:</b> ${esc(p.sibNotes)}</p>` : ''}
+      ${CLIPS.some(c => c.pid === p.id) ? `<div style="display:grid;gap:8px"><h3>Interview recordings</h3>${clipList(CLIPS.filter(c => c.pid === p.id), true)}</div>` : ''}
+      <div style="display:grid;gap:10px"><h3>Add ${p.id === SELF ? 'your' : esc(nameOf(p)) + "'s"} relatives</h3>
+        <div class="row">
+          ${hasMom ? '' : `<button class="btn sm" data-action="add" data-kind="mother" data-pid="${p.id}">+ Mother</button>`}
+          ${hasDad ? '' : `<button class="btn sm" data-action="add" data-kind="father" data-pid="${p.id}">+ Father</button>`}
+          <button class="btn sm" data-action="add" data-kind="sibling" data-pid="${p.id}">+ Brother or sister</button>
+          <button class="btn sm" data-action="add" data-kind="halfsib-mother" data-pid="${p.id}">+ Half-sibling, same mom</button>
+          <button class="btn sm" data-action="add" data-kind="halfsib-father" data-pid="${p.id}">+ Half-sibling, same dad</button>
+          <button class="btn sm" data-action="add" data-kind="partner" data-pid="${p.id}">+ Partner or spouse</button>
+          <button class="btn sm" data-action="add" data-kind="child" data-pid="${p.id}">+ Child</button>
+          <button class="btn sm" data-action="add" data-kind="adopted" data-pid="${p.id}">+ Adopted child</button>
+        </div></div>
+      ${p.id === SELF ? '' : `<button class="btn danger ${S.confirmRemove === p.id ? 'armed' : ''}" data-action="remove" data-pid="${p.id}">${S.confirmRemove === p.id ? `Tap again to remove${gone ? ` (and ${gone} ${gone === 1 ? 'person' : 'people'} only connected through them)` : ''}` : 'Remove from tree'}</button>`}
+    </aside>
+  </div>
+  ${nextAskHTML()}
+  ${storeHTML()}`;
+}
+function storeHTML() {
+  return `<section class="card" aria-label="Your data" style="display:grid;gap:12px">
+    <div><h3>Back up your family</h3>
+    <p class="small muted">Everything stays on this device. Copy a backup code to keep it safe or move it to another phone. Recordings are not in the code.</p></div>
+    <div class="row">
+      <button class="btn sm" data-action="backup">Copy backup code</button>
+      <button class="btn sm" data-action="restore-open">Restore from code</button>
+      <button class="btn sm danger ${S.confirmWipe ? 'armed' : ''}" data-action="wipe">${S.confirmWipe ? 'Tap again to erase' : 'Erase and start over'}</button>
+    </div>
+    ${S.restoreOpen ? `<label class="f">Paste your backup code<textarea id="restore-text"></textarea></label><div class="row"><button class="btn primary" data-action="restore">Restore</button></div>` : ''}
+    <textarea id="copy-fallback" readonly hidden></textarea>
+  </section>`;
+}
+
+/* ---------- Interview tab ---------- */
+function followUps(W, target, st, lang, roman) {
+  if (!target) return '';
+  const cards = [];
+  const say = obj => `<p class="fu-say lang-${lang}" lang="${lang}">${esc(tr(obj, lang))}</p>${lang !== 'en' && roman && obj[lang + '_r'] ? `<p class="roman">${esc(obj[lang + '_r'])}</p>` : ''}${lang !== 'en' ? `<p class="gloss">In English: ${esc(obj.en)}</p>` : ''}`;
+  if (st.type === 'conds') {
+    const mine = S.reports.filter(r => r.pid === target.id && r.by === W.id);
+    if (mine.some(r => r.cond === 'cancer' && !r.type)) cards.push(`<div class="fu"><span class="eyebrow">Follow-up · cancer</span>${say(FOLLOW.cancer_type)}<p class="small muted">Tap the kind in the Cancer card above.</p></div>`);
+    const noAge = mine.filter(r => !r.age && !(r.cond === 'cancer' && !r.type));
+    if (noAge.length) cards.push(`<div class="fu"><span class="eyebrow">Follow-up · ages</span>${say(target.id === W.id ? FOLLOW.age_you : FOLLOW.age_them)}
+      <div class="fu-ages">${noAge.map(r => `<label class="f">${esc(factName(r.cond, r.type))}<input type="number" inputmode="numeric" id="fu-${r.id}" data-pid="${r.pid}" data-cond="${r.cond}" data-type="${r.type}" data-by="${r.by}" data-cf="age" placeholder="Age"></label>`).join('')}</div></div>`);
+  }
+  if (st.type === 'vital' && target.living === 'no') {
+    if (!target.deathAge || +target.deathAge < 60) {
+      if (!target.cause) cards.push(`<div class="fu"><span class="eyebrow">Follow-up · ${target.deathAge ? 'died young' : 'cause'}</span>${say(FOLLOW.death_cause)}<label class="f">How they passed away<input type="text" id="fu-cause" data-pid="${target.id}" data-f="cause" placeholder="e.g. heart attack, cancer, accident"></label></div>`);
+    }
+    if (!target.deathAge) cards.push(`<div class="fu"><span class="eyebrow">Follow-up · age</span>${say(FOLLOW.death_age)}<label class="f">Age at death<input type="number" inputmode="numeric" id="fu-dage" data-pid="${target.id}" data-f="deathAge"></label></div>`);
+  }
+  return cards.length ? `<div class="fus">${cards.join('')}</div>` : '';
+}
+function transcriptHTML(W, st) {
+  const key = W.id + '|' + st.k, text = W.transcripts[st.k] || '';
+  const sugg = SUGG.key === key ? SUGG : null;
+  const hasSR = !!(window.SpeechRecognition || window.webkitSpeechRecognition) && !S.capBlocked;
+  return `<div class="transcript">
+    <div><h3>What did they say?</h3><p class="small muted">Type it, or tap the box and use your keyboard's microphone to dictate in any language. Then let the app find the answers for you to confirm.</p></div>
+    <textarea id="iv-tr" data-pid="${W.id}" data-tr="${st.k}" placeholder="e.g. మా నాన్నకి 50 లో షుగర్ వచ్చింది">${esc(text)}</textarea>
+    <div class="row">
+      ${hasSR ? (RECOG ? `<button class="btn sm rec-live" data-action="cap-stop"><span class="rec-dot"></span>Stop captions</button>` : `<button class="btn sm" data-action="cap-start" data-pid="${W.id}">${ICON.mic}Live captions</button>`) : ''}
+      <button class="btn sm" data-action="find">Find answers</button>
+      ${SAMPLE_OK ? `<button class="btn sm iris" data-action="find-ai" ${sugg?.busy ? 'disabled' : ''}>${ICON.spark}${sugg?.busy ? 'Reading…' : 'Find with AI'}</button>` : ''}
+    </div>
+    ${sugg && !sugg.busy ? (sugg.list.length ? `<div style="display:grid;gap:8px"><p class="small"><b>${sugg.list.length} possible answer${sugg.list.length === 1 ? '' : 's'}</b> ${sugg.ai ? 'found by AI' : 'matched from the word list'}. Nothing is saved until you tap Add.</p><ul class="suggs">${sugg.list.map(suggestionHTML).join('')}</ul></div>` : '<p class="small muted">No answers found. Try adding the illness name or an age.</p>') : ''}
+  </div>`;
+}
+function recHTML(who, step) {
+  const mine = CLIPS.filter(c => c.pid === who.id && c.step === step);
+  const live = REC && REC.pid === who.id && REC.step === step;
+  return `<div class="rec">
+    <div><h3>Record their answer</h3>
+    <p class="small muted">Ask first: "Is it okay if I record this so I get it right?" Recordings stay on this device.</p></div>
+    <div class="rec-btns">
+      ${live ? `<button class="btn rec-live" data-action="rec-stop"><span class="rec-dot"></span>Stop <span id="rec-time" class="num">0:00</span></button>`
+        : S.micBlocked ? '' : `<button class="btn" data-action="rec-start" data-pid="${who.id}" ${REC ? 'disabled' : ''}>${ICON.mic}Record</button>`}
+      <label class="btn ${S.micBlocked ? '' : 'sm'}" for="rec-file">${S.micBlocked ? ICON.mic + "Use phone's recorder" : 'Add audio file'}</label>
+      <input type="file" id="rec-file" class="sr" accept="audio/*" capture data-pid="${who.id}">
+    </div>
+    ${clipList(mine, false)}
+  </div>`;
+}
+function renderInterview() {
+  const talkable = S.people.filter(p => p.id !== SELF && p.living !== 'no');
+  if (!talkable.length) return `<div class="lesson"><div class="card done">${mascot(96)}<h2>No one to interview yet</h2><p class="muted">Add relatives on the family tree and mark who is living.</p><button class="btn primary" data-action="goto-tree">Go to family tree</button></div></div>`;
+  if (!talkable.some(p => p.id === S.iv.who)) S.iv.who = talkable[0].id;
+  const W = byId(S.iv.who), lang = S.iv.lang, L = LANGS.find(l => l.id === lang) || LANGS[0];
+
+  if (S.celebrate === W.id) {
+    const n = S.reports.filter(r => r.by === W.id).length;
+    return `<div class="lesson"><div class="done">${mascot(120, true)}
+      <h2>Interview complete!</h2>
+      <p class="muted" style="max-width:40ch">You saved ${esc(nameOf(W))}'s memories. Most families never write this down.</p>
+      ${statTiles([['Questions', STEPS.length, '', 'accent'], ['Answers saved', n, '', 'primary'], ['Recordings', CLIPS.filter(c => c.pid === W.id).length, '', 'iris']])}
+      <div class="row" style="justify-content:center"><button class="btn" data-action="see-report">See doctor report</button><button class="btn primary" data-action="goto-tree">Continue</button></div>
+    </div>${nextAskHTML(2, true)}</div>`;
+  }
+
+  const step = Math.max(0, Math.min(STEPS.length - 1, S.iv.step)), st = STEPS[step], q = Q[st.k];
+  const ppl = ivPeople(W, st), target = st.who ? byId(ppl.subject) : null;
+  let ans = '';
+  const relName = t => `${esc(nameOf(t))} <span class="muted">· ${esc(relOf(t))}</span>`;
+  if (st.type === 'intro') ans = `<p class="muted">When they say yes, tap Continue.</p>`;
+  else if (st.type === 'born') ans = `<label class="f">Year ${esc(nameOf(W))} was born<input type="number" inputmode="numeric" id="iv-born" data-pid="${W.id}" data-f="born" value="${esc(W.born)}" placeholder="e.g. 1953"></label>`;
+  else if (st.type === 'notes') ans = `<label class="f">What they said<textarea id="iv-notes" data-pid="${W.id}" data-f="notes">${esc(W.notes)}</textarea></label>`;
+  else if (st.type === 'conds' || st.type === 'vital') {
+    if (target) ans = `<h3>Saving ${esc(nameOf(W))}'s answers about ${relName(target)}</h3>` + (st.type === 'conds' ? condTiles(target, { by: W.id, pre: 'iv-' + st.k, lang, roman: S.iv.roman }) : vitalFields(target, 'iv-' + st.k)) + followUps(W, target, st, lang, S.iv.roman);
+    else ans = `<p class="muted">${esc(nameOf(W))}'s ${st.who} isn't on the tree yet.</p><button class="btn primary" data-action="add-parent" data-kind="${st.who}" data-pid="${W.id}">Add ${esc(nameOf(W))}'s ${st.who} to the tree</button>`;
+  } else if (st.type === 'siblings') {
+    const sibs = siblingsOf(W.id).map(byId);
+    ans = `<label class="f">What they said<textarea id="iv-sib" data-pid="${W.id}" data-f="sibNotes">${esc(W.sibNotes)}</textarea></label>
+      <div style="display:grid;gap:10px"><h3>${esc(nameOf(W))}'s brothers and sisters on the tree</h3>
+        <div class="pills">${sibs.length ? sibs.map(s => `<button class="pill-btn" data-action="goto" data-pid="${s.id}">${esc(nameOf(s))}</button>`).join('') : '<span class="muted small">None yet.</span>'}</div>
+        <div class="row"><input type="text" id="iv-newsib" placeholder="Name" style="max-width:200px">
+        <select id="iv-newsex" style="max-width:140px"><option value="F">Sister</option><option value="M">Brother</option></select>
+        <button class="btn sm" data-action="iv-addsib" data-pid="${W.id}">Add to tree</button></div></div>`;
+  } else if (st.type === 'closing') ans = `<p class="muted">Say thank you, then tap Finish to save the interview.</p>`;
+
+  const sayRoman = lang !== 'en' && S.iv.roman && q[lang + '_r'];
+  const last = step === STEPS.length - 1;
+  const capture = st.type !== 'intro' && st.type !== 'closing';
+  return `<div class="lesson">
+    <div class="lesson-top"><div class="bar" role="progressbar" aria-valuemin="1" aria-valuemax="${STEPS.length}" aria-valuenow="${step + 1}" aria-label="Interview progress"><i style="width:${((step + 1) / STEPS.length) * 100}%"></i></div><span class="count">${step + 1}/${STEPS.length}</span></div>
+    <div class="setup">
+      <label class="f">Talking to<select id="iv-who" data-ivf="who">${talkable.map(p => `<option value="${p.id}" ${p.id === W.id ? 'selected' : ''}>${esc(nameOf(p))} · ${esc(relOf(p))}</option>`).join('')}</select></label>
+      <label class="f">Questions in<select id="iv-lang" data-ivf="lang">${LANGS.map(l => `<option value="${l.id}" ${l.id === lang ? 'selected' : ''}>${l.label}</option>`).join('')}</select></label>
+      ${L.roman ? `<label class="switch"><input type="checkbox" id="iv-roman" data-ivf="roman" ${S.iv.roman ? 'checked' : ''}> Show pronunciation</label>` : ''}
+    </div>
+    <p class="say-to">Say this to ${esc(nameOf(W))}</p>
+    <div class="speaker">
+      ${mascot(76)}
+      <div class="bubble">
+        <div class="row" style="flex-wrap:nowrap;align-items:flex-start;gap:12px">
+          <button class="btn iris audio-btn" data-action="speak" aria-label="Read the question aloud">${ICON.speaker}</button>
+          <p class="say lang-${lang}" lang="${lang}" style="min-width:0">${esc(tr(q, lang))}</p>
+        </div>
+        ${sayRoman ? `<p class="roman">${esc(q[lang + '_r'])}</p>` : ''}
+        ${lang !== 'en' ? `<p class="gloss">In English: ${esc(q.en)}</p>` : ''}
+      </div>
+    </div>
+    ${st.tip ? `<div class="tip">${ICON.bulb}<div><b>Tip</b><br>${esc(st.tip)}</div></div>` : ''}
+    <section class="card answer" aria-label="Answer">${ans}${capture ? recHTML(W, step) + transcriptHTML(W, st) : ''}</section>
+    <div class="lesson-foot">
+      ${step === 0 ? '<span></span>' : `<button class="btn" data-action="iv-prev">Back</button>`}
+      ${last ? `<button class="btn primary" data-action="iv-done">Finish</button>` : `<button class="btn primary" data-action="iv-next">Continue</button>`}
+    </div>
+    <p class="fine">These translations were drafted for this prototype. Ask a fluent family member to check them before your first interview.</p>
+  </div>`;
+}
+
+/* ---------- My risks tab ---------- */
+const RISK_LEVEL = { high: 'Higher than average', moderate: 'Moderate', average: 'About average' };
+function renderRisks() {
+  const me = byId(SELF), list = familyRisk(), blood = bloodRelatives();
+  const n = lv => list.filter(r => r.level === lv).length;
+  const notSeen = RISK_TOPICS.filter(t => (!t.sex || me.sex === 'U' || t.sex === me.sex) && !list.some(r => r.t.key === t.key));
+  const head = `<div style="display:grid;gap:6px"><h1>What you're most at risk for</h1>
+    <p class="muted">Ranked from what your blood relatives told you. Family history is one piece of the picture. Sleep, food, exercise and not smoking or vaping matter just as much.</p></div>`;
+  if (!blood.length) return head + `<section class="card done">${mascot(90)}<h2>No blood relatives on the tree yet</h2><p class="muted" style="max-width:46ch">Add parents, grandparents and siblings, then interview them. If you were adopted, your birth family's history is what counts here; a doctor or genetic counselor can help you find out more.</p><button class="btn primary" data-action="goto-tree">Go to family tree</button></section>`;
+  return head + statTiles([['Higher than average', n('high'), '', 'rose'], ['Moderate', n('moderate'), '', 'accent'], ['About average', n('average'), '', 'leaf']]) + `
+    ${list.length ? `<ol class="risks">${list.map((r, i) => `<li class="risk ${r.level}">
+      <span class="rank">${i + 1}</span>
+      <div class="risk-body">
+        <div class="risk-top"><h3>${esc(r.t.name)}</h3><span class="lvl">${RISK_LEVEL[r.level]}</span></div>
+        <div class="meter" aria-hidden="true"><i class="on"></i><i class="${r.level !== 'average' ? 'on' : ''}"></i><i class="${r.level === 'high' ? 'on' : ''}"></i></div>
+        <p>${esc(r.reasons.join(' '))}</p>
+        <details ${i < 3 ? 'open' : ''}><summary>${r.hits.length} ${r.hits.length === 1 ? 'relative' : 'relatives'}</summary><ul>${r.hits.map(x => `<li>${esc(who(x))}: ${x.age ? 'at ' + x.age : 'age unknown'}${r.early(x) ? ' <b class="early">young</b>' : ''}</li>`).join('')}</ul></details>
+        <div class="risk-tip">${ICON.bulb}<span><b>What helps:</b> ${esc(r.t.tip)}</span></div>
+      </div></li>`).join('')}</ol>` : `<section class="card"><p class="muted">No conditions recorded for your blood relatives yet. Interview someone to get started.</p></section>`}
+    ${notSeen.length ? `<section class="card" style="display:grid;gap:10px"><h2>Not seen in your family yet</h2>
+      <p class="small muted">No one has mentioned these. That can mean they don't run in your family, or that nobody has asked yet.</p>
+      <div class="pills">${notSeen.map(t => `<span class="pill-static">${esc(t.name)}</span>`).join('')}</div></section>` : ''}
+    <section class="card" style="display:grid;gap:10px"><h2>How this works</h2>
+      <p class="small">Each condition gets a level using the family history method from the CDC's Family Healthware tool. It looks at how closely related each person is, how young they were, and how many relatives on the same side had it. It is not a diagnosis or a percentage chance.</p>
+      <ol class="refs"><li>${esc(SOURCES.scheuner.full)} <a href="${SOURCES.scheuner.url}" target="_blank" rel="noopener">Link</a></li><li>${esc(SOURCES.healthware.full)} <a href="${SOURCES.healthware.url}" target="_blank" rel="noopener">Link</a></li></ol>
+      <div class="row"><button class="btn" data-action="goto-doctor">See what the screening guidelines say</button></div>
+    </section>`;
+}
+
+/* ---------- Sign-in page ---------- */
+function renderAuth() {
+  const accts = listAccounts();
+  if (!accts.length) AUTH.mode = 'create';
+  if (!AUTH.pick || !accts.some(a => a.id === AUTH.pick)) AUTH.pick = accts[0]?.id || null;
+  const pick = accts.find(a => a.id === AUTH.pick);
+  const legacy = !accts.length && legacyData();
+  const signin = AUTH.mode === 'signin';
+  return `<div class="auth"><div class="auth-card">
+    <div class="auth-head">${mascot(84)}<h1>heirloom<i>.</i></h1><p class="muted">Ask your elders now. Hand your doctor a family tree later.</p></div>
+    <div class="auth-tabs" role="tablist">
+      <button role="tab" type="button" data-action="auth-mode" data-mode="signin" aria-selected="${signin}" ${accts.length ? '' : 'disabled'}>Sign in</button>
+      <button role="tab" type="button" data-action="auth-mode" data-mode="create" aria-selected="${!signin}">Create profile</button>
+    </div>
+    <form id="auth-form" novalidate>
+      ${signin ? `
+        <span class="lbl">Who's using heirloom?</span>
+        <div class="profiles">${accts.map(a => `<button type="button" class="profile" data-action="auth-pick" data-id="${a.id}" aria-pressed="${a.id === AUTH.pick}"><span class="initial">${esc(a.name[0].toUpperCase())}</span><span>${esc(a.name)}</span>${a.pinHash ? '<span class="lock" aria-label="PIN protected">PIN</span>' : ''}</button>`).join('')}</div>
+        ${pick?.pinHash ? `<label class="f">PIN<input type="password" inputmode="numeric" id="auth-pin" autocomplete="current-password" maxlength="8"></label>` : ''}
+        <label class="check"><input type="checkbox" id="auth-remember"> Stay signed in on this device</label>
+        <button class="btn primary wide" type="submit">Sign in${pick ? ' as ' + esc(pick.name) : ''}</button>
+        ${pick?.pinHash ? `<button type="button" class="link" data-action="auth-forgot">Forgot your PIN?</button>` : ''}
+        ${AUTH.forgot && pick ? `<div class="forgot"><p class="small">The PIN can't be recovered. The only option is to delete ${esc(pick.name)}'s profile and family from this device, then start again or restore a backup code.</p><button type="button" class="btn sm danger armed" data-action="auth-delete">Delete ${esc(pick.name)}'s profile</button></div>` : ''}
+      ` : `
+        <label class="f">Your first name<input type="text" id="auth-name" autocomplete="given-name" maxlength="40"></label>
+        <div class="grid2">
+          <label class="f">Year you were born<input type="number" inputmode="numeric" id="auth-born" placeholder="e.g. 2010"></label>
+          <label class="f">Sex<select id="auth-sex"><option value="F">Female</option><option value="M">Male</option><option value="U">Prefer not to say</option></select></label>
+        </div>
+        <div class="grid2">
+          <label class="f">PIN (4 to 8 numbers)<input type="password" inputmode="numeric" id="auth-pin" autocomplete="new-password" maxlength="8"></label>
+          <label class="f">Type the PIN again<input type="password" inputmode="numeric" id="auth-pin2" autocomplete="new-password" maxlength="8"></label>
+        </div>
+        <p class="small muted">The PIN is optional. Use one if you share this phone or computer.</p>
+        ${legacy ? `<label class="check"><input type="checkbox" id="auth-legacy" checked> Keep the family already saved on this device</label>` : ''}
+        <label class="check"><input type="checkbox" id="auth-remember" checked> Stay signed in on this device</label>
+        <button class="btn primary wide" type="submit">Create profile</button>
+      `}
+      <p class="auth-err" id="auth-err" role="alert"></p>
+    </form>
+    <div class="or"><span>or</span></div>
+    <button class="btn wide" data-action="auth-guest">Explore the example family</button>
+    <p class="fine">Profiles and answers stay on this device; nothing is uploaded. The PIN keeps others on a shared device out of your family. It is not a cloud account, so clearing this browser's data erases it. Copy a backup code from the Family tree page to be safe.</p>
+  </div></div>`;
+}
+const authErr = msg => { const el = $('#auth-err'); if (el) el.textContent = msg; return false; };
+async function signUp() {
+  const name = $('#auth-name').value.trim(), pin = $('#auth-pin').value.trim(), pin2 = $('#auth-pin2').value.trim();
+  if (!name) return authErr('Type your first name.');
+  if (pin && !/^\d{4,8}$/.test(pin)) return authErr('A PIN is 4 to 8 numbers.');
+  if (pin !== pin2) return authErr("The two PINs don't match.");
+  if (listAccounts().some(a => a.name.toLowerCase() === name.toLowerCase())) return authErr('That name is already used on this device. Try adding your last initial.');
+  let acct;
+  try { acct = await createAccount({ name, pin }); } catch { return authErr("This browser can't create a secure PIN here. Try without a PIN, or use another browser."); }
+  if (!listAccounts().some(a => a.id === acct.id)) return authErr("This browser isn't letting heirloom save. Try a regular (not private) window.");
+  startSession(acct.id, $('#auth-remember').checked);
+  const me = { name, born: $('#auth-born').value.trim(), sex: $('#auth-sex').value };
+  let state = $('#auth-legacy')?.checked ? legacyData() : null;
+  if (state) { const self = state.people.find(p => p.id === SELF); Object.assign(self, { name: self.name || me.name, born: self.born || me.born, sex: self.sex !== 'U' ? self.sex : me.sex }); }
+  enter(acct, state || blankState(me));
+  toast(`Welcome, ${name}! Start by filling in what you already know.`);
+}
+async function signIn() {
+  const acct = listAccounts().find(a => a.id === AUTH.pick);
+  if (!acct) return authErr('Tap your name first.');
+  if (pinLocked()) return authErr('Too many wrong PINs. Wait 30 seconds, then try again.');
+  let ok = false;
+  try { ok = await checkPin(acct, $('#auth-pin')?.value.trim() || ''); } catch { return authErr("This browser can't check PINs here. Try another browser."); }
+  if (!ok) { notePinMiss(); $('#auth-pin').value = ''; return authErr("That PIN isn't right. Try again."); }
+  startSession(acct.id, $('#auth-remember').checked);
+  enter(acct);
+  toast(`Welcome back, ${acct.name}!`);
+}
+
+/* ---------- Doctor tab ---------- */
+const LEVEL = { act: ['!', 'Act on this'], discuss: ['?', 'Discuss'], note: ['i', 'Good to know'], missing: ['…', 'Missing info'] };
+function sourceOrder(cards) { const order = []; cards.forEach(c => c.sources.forEach(s => { if (!order.includes(s)) order.push(s); })); return order; }
+function sideLabel(p) { const s = kin(p.id).side; return s === 'paternal' ? "Father's side" : s === 'maternal' ? "Mother's side" : kin(p.id).blood ? 'Immediate family' : 'Not blood related'; }
+function renderDoctor() {
+  const me = byId(SELF), cards = guidelineCards(), refs = sourceOrder(cards);
+  const ref = s => `<a href="#ref-${s}" class="ref">[${refs.indexOf(s) + 1}]</a>`;
+  const others = S.people.filter(p => p.id !== SELF);
+  const rows = CONDS.map(c => {
+    const list = others.flatMap(p => facts(p.id).filter(f => f.cond === c.id).map(f => ({ p, f })));
+    if (!list.length) return '';
+    return `<tr class="grp"><td colspan="4">${esc(c.en)}</td></tr>` + list.map(({ p, f }) => `<tr${kin(p.id).blood ? '' : ' class="nb"'}><td>${esc(relOf(p))}<br><span class="small muted">${esc(nameOf(p))}</span></td><td>${c.id === 'cancer' ? esc(factName('cancer', f.type)) + '<br>' : ''}<span class="small muted">${sideLabel(p)}</span></td><td class="n">${esc(f.age || '?')}${f.disagree ? '<span class="dis" title="People disagree">*</span>' : ''}</td><td class="small">${f.reports.map(r => `${esc(reporterName(r.by))}${r.age ? ' ' + esc(r.age) : ''}${r.said ? ` (“${esc(r.said)}”)` : ''}`).join('<br>')}</td></tr>`).join('');
+  }).join('');
+  const dead = others.filter(p => p.living === 'no');
+  const interviewed = others.filter(p => p.interviewed);
+  return `
+    <div class="doc-head">
+      <div style="display:grid;gap:4px"><span class="eyebrow">Family health history</span><h1>${esc(nameOf(me))}${me.born ? `, born ${esc(me.born)}` : ''}</h1>
+        <p class="small muted">Prepared ${fmtDate(today())}. ${interviewed.length ? `Interviews: ${interviewed.map(p => `${esc(relOf(p).toLowerCase())} (${fmtDate(p.interviewed)})`).join(', ')}.` : 'No interviews finished yet.'}</p></div>
+      <div class="row"><button class="btn primary" data-action="pdf" ${S.pdfBusy ? 'disabled' : ''}>${S.pdfBusy ? 'Making PDF…' : 'Download PDF'}</button><button class="btn" data-action="copy-summary">Copy as text</button></div>
+    </div>
+    <section class="card" style="display:grid;gap:14px"><div><h2>What the guidelines say about your family</h2>
+      <p class="small muted">Each card is a published screening rule applied to your blood relatives. Tap "Why" to see which relatives triggered it.</p></div>
+      ${cards.length ? `<ul class="flags">${cards.map((c, i) => `<li class="${c.level}"><span class="ic">${LEVEL[c.level][0]}</span><div>
+        <span class="lv">${LEVEL[c.level][1]}</span><h3>${esc(c.title)}</h3><p>${esc(c.rec)} ${c.sources.map(ref).join(' ')}</p>
+        ${c.why.length ? `<details ${i < 2 ? 'open' : ''}><summary>Why</summary><ul>${c.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul></details>` : ''}</div></li>`).join('')}</ul>` : '<p class="muted">Nothing stands out yet. Keep interviewing.</p>'}
+      <p class="fine">These rules summarize published guidelines to start a conversation. They are not a diagnosis, and your doctor decides what they mean for you.</p>
+    </section>
+    <section class="card" style="display:grid;gap:10px"><h2>Conditions in the family</h2>
+      ${rows ? `<div class="tbl-wrap"><table><thead><tr><th>Relative</th><th>Kind · side</th><th>Age found</th><th>Reported by</th></tr></thead><tbody>${rows}</tbody></table></div><p class="fine">* family members gave different ages; the youngest is used. Grey rows are not blood relatives.</p>` : '<p class="muted">None recorded yet.</p>'}
+    </section>
+    ${dead.length ? `<section class="card" style="display:grid;gap:10px"><h2>Relatives who have died</h2><div class="tbl-wrap"><table><thead><tr><th>Relative</th><th>Age at death</th><th>Cause</th></tr></thead><tbody>
+      ${dead.map(p => `<tr><td>${esc(relOf(p))}<br><span class="small muted">${esc(nameOf(p))}</span></td><td class="n">${esc(p.deathAge || '?')}</td><td>${esc(p.cause || 'Unknown')}</td></tr>`).join('')}</tbody></table></div></section>` : ''}
+    <section class="card tree-card"><div class="hd"><h2>Pedigree</h2></div><div class="tree-scroll">${treeSVG({ interactive: false, hl: 'any' })}</div>${keyHTML()}</section>
+    ${refs.length ? `<section class="card" style="display:grid;gap:8px"><h2>Sources</h2><ol class="refs">${refs.map(s => `<li id="ref-${s}">${esc(SOURCES[s].full)} <a href="${SOURCES[s].url}" target="_blank" rel="noopener">Link</a></li>`).join('')}</ol></section>` : ''}`;
+}
+function summaryText() {
+  const me = byId(SELF), cards = guidelineCards(), others = S.people.filter(p => p.id !== SELF);
+  const L = ['FAMILY HEALTH HISTORY', `For: ${nameOf(me)}${me.born ? ' (born ' + me.born + ')' : ''}. Prepared ${fmtDate(today())}.`, '', 'WHAT THE GUIDELINES SAY'];
+  cards.forEach(c => { L.push(`[${LEVEL[c.level][1]}] ${c.title}`, `  ${c.rec}`); c.why.forEach(w => L.push(`  - ${w}`)); if (c.sources.length) L.push(`  Source: ${c.sources.map(s => SOURCES[s].short).join('; ')}`); });
+  const risks = familyRisk();
+  if (risks.length) { L.push('', 'FAMILY-HISTORY RISK LEVELS (Scheuner method, CDC Family Healthware)'); risks.forEach(r => L.push(`- ${r.t.name}: ${RISK_LEVEL[r.level]}. ${r.reasons.join(' ')}`)); }
+  L.push('', 'CONDITIONS IN THE FAMILY');
+  for (const p of others) for (const f of facts(p.id)) L.push(`- ${relOf(p)} (${nameOf(p)}): ${factName(f.cond, f.type)}, age ${f.age || 'unknown'}${f.disagree ? ` (reports range ${f.range})` : ''}${kin(p.id).blood ? '' : ' [not blood related]'}`);
+  const dead = others.filter(p => p.living === 'no');
+  if (dead.length) { L.push('', 'RELATIVES WHO HAVE DIED'); dead.forEach(p => L.push(`- ${relOf(p)} (${nameOf(p)}): age ${p.deathAge || 'unknown'}, ${p.cause || 'cause unknown'}`)); }
+  return L.join('\n');
+}
+
+/* ---------- PDF export ---------- */
+const LIGHT = { '--bg': '#F7F6FB', '--panel': '#FFFFFF', '--soft': '#F1F0F7', '--ink': '#33324A', '--strong': '#1E1D33', '--muted': '#6E6C86', '--line': '#E4E2EE', '--leaf': '#2E9E62', '--primary': '#0E7C86', '--primary-soft': '#DDF1F2', '--accent': '#F5A524', '--accent-dk': '#A8680A', '--sym': '#3A3950' };
+function pedigreePNG() {
+  const css = `.t-nm{font:700 13px Helvetica,Arial,sans-serif;fill:#1E1D33}.t-rl{font:11.5px Helvetica,Arial,sans-serif;fill:#6E6C86}.t-nb{font:italic 11px Helvetica,Arial,sans-serif;fill:#6E6C86}.t-dt{font:11px Helvetica,Arial,sans-serif;fill:#33324A}.t-cd{font:700 11px Helvetica,Arial,sans-serif;fill:#A8680A}.t-q{font:700 18px Helvetica,Arial,sans-serif;fill:#6E6C86}.ln{stroke:#6E6C86;stroke-width:2;fill:none;stroke-linecap:round}.adopt{stroke-dasharray:5 4}.sym{stroke:#3A3950;stroke-width:2.5}.faint{stroke:#6E6C86;stroke-dasharray:4 3}.chk{fill:#2E9E62}`;
+  const s = treeSVG({ interactive: false, hl: 'any' })
+    .replace(/var\((--[\w-]+)\)/g, (m, k) => LIGHT[k] || '#000')
+    .replace(/ style="max-width[^"]*"/, '')
+    .replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ')
+    .replace(/^(<svg[^>]*>)/, `$1<style>${css}</style>`);
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const k = 2, c = document.createElement('canvas'); c.width = img.width * k; c.height = img.height * k;
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+      res({ url: c.toDataURL('image/png'), w: img.width, h: img.height });
+    };
+    img.onerror = rej;
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
+  });
+}
+// The PDF's built-in Helvetica only covers Latin-1, so swap common punctuation and mark anything else.
+const lat = s => String(s).replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/…/g, '...').replace(/[^\x00-\xFF]/g, '?');
+async function makePDF() {
+  const { jsPDF } = window.jspdf || {};
+  if (!jsPDF) throw new Error('The PDF tool did not load. Check your connection and try again.');
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+  const M = 54, PW = 612, PH = 792, CW = PW - 2 * M, INK = [30, 29, 51], MUTED = [110, 108, 134], TEAL = [14, 124, 134];
+  let y = M;
+  const need = h => { if (y + h > PH - M - 20) { doc.addPage(); y = M; } };
+  const text = (s, { size = 10, bold = false, color = INK, x = M, w = CW, gap = 1.35 } = {}) => {
+    doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(size); doc.setTextColor(...color);
+    for (const line of doc.splitTextToSize(lat(s), w)) { need(size * gap); doc.text(line, x, y + size); y += size * gap; }
+  };
+  const heading = s => { y += 16; need(40); text(s, { size: 13, bold: true }); doc.setDrawColor(228, 226, 238); doc.setLineWidth(1.5); doc.line(M, y + 2, PW - M, y + 2); y += 10; };
+  const me = byId(SELF), others = S.people.filter(p => p.id !== SELF), interviewed = others.filter(p => p.interviewed);
+  const cards = guidelineCards(), refs = sourceOrder(cards);
+
+  doc.setFillColor(...TEAL); doc.rect(0, 0, PW, 8, 'F');
+  text('FAMILY HEALTH HISTORY', { size: 9, bold: true, color: TEAL });
+  text(`${nameOf(me)}${me.born ? ', born ' + me.born : ''}`, { size: 22, bold: true });
+  text(`Prepared ${fmtDate(today())}.${interviewed.length ? ' Interviews: ' + interviewed.map(p => `${relOf(p).toLowerCase()} (${fmtDate(p.interviewed)})`).join(', ') + '.' : ''}`, { size: 9.5, color: MUTED });
+
+  heading('What the guidelines say about this family');
+  const tag = { act: [169, 52, 72], discuss: [168, 104, 10], note: TEAL, missing: MUTED };
+  if (!cards.length) text('Nothing stands out yet.', { color: MUTED });
+  for (const c of cards) {
+    need(40);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...tag[c.level]); doc.text(lat(LEVEL[c.level][1].toUpperCase()), M, y + 9);
+    text(c.title, { bold: true, size: 10.5, x: M + 78, w: CW - 78 });
+    text(`${c.rec}${c.sources.length ? ' ' + c.sources.map(s => `[${refs.indexOf(s) + 1}]`).join('') : ''}`, { size: 9.5, x: M + 78, w: CW - 78 });
+    c.why.forEach(w => text(`- ${w}`, { size: 9, color: MUTED, x: M + 86, w: CW - 86 }));
+    y += 6;
+  }
+
+  const risks = familyRisk();
+  if (risks.length) {
+    heading('Family-history risk levels');
+    text('Levels use the Scheuner family-history method from CDC Family Healthware: closeness of relatives, age at diagnosis, and how many share a side.', { size: 8.5, color: MUTED });
+    y += 4;
+    const lvColor = { high: [169, 52, 72], moderate: [168, 104, 10], average: [46, 158, 98] };
+    for (const r of risks) {
+      need(26);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(...lvColor[r.level]); doc.text(lat(RISK_LEVEL[r.level].toUpperCase()), M, y + 9);
+      text(`${r.t.name}: ${r.reasons.join(' ')} (${r.hits.map(x => `${x.k.label} ${x.age || '?'}`).join(', ')})`, { size: 9.5, x: M + 118, w: CW - 118 });
+      y += 3;
+    }
+  }
+
+  heading('Conditions in the family');
+  const cols = [M, M + 160, M + 270, M + 320];
+  const row = (cells, { bold = false, color = INK } = {}) => {
+    doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(9); doc.setTextColor(...color);
+    const wrapped = cells.map((c, i) => doc.splitTextToSize(lat(c), (cols[i + 1] || PW - M) - cols[i] - 8));
+    const h = Math.max(...wrapped.map(w => w.length)) * 11.5 + 6; need(h);
+    wrapped.forEach((w, i) => doc.text(w, cols[i] + 4, y + 11)); y += h;
+  };
+  let any = false;
+  row(['Relative', 'Side', 'Age found', 'Reported by'], { bold: true, color: MUTED });
+  for (const c of CONDS) {
+    const list = others.flatMap(p => facts(p.id).filter(f => f.cond === c.id).map(f => ({ p, f })));
+    if (!list.length) continue; any = true;
+    need(32); doc.setFillColor(241, 240, 247); doc.roundedRect(M, y, CW, 17, 4, 4, 'F'); row([c.en], { bold: true });
+    list.forEach(({ p, f }) => row([`${relOf(p)} (${nameOf(p)})${c.id === 'cancer' ? ' - ' + factName('cancer', f.type) : ''}`, sideLabel(p), (f.age || '?') + (f.disagree ? '*' : ''), f.reports.map(r => `${reporterName(r.by)}${r.age ? ' ' + r.age : ''}`).join(', ')], { color: kin(p.id).blood ? INK : MUTED }));
+  }
+  if (!any) text('None recorded yet.', { color: MUTED });
+  else text('* family members gave different ages; the youngest is used. Grey rows are not blood relatives.', { size: 8.5, color: MUTED });
+
+  const dead = others.filter(p => p.living === 'no');
+  if (dead.length) { heading('Relatives who have died'); dead.forEach(p => text(`${relOf(p)} (${nameOf(p)}): age ${p.deathAge || 'unknown'}, ${p.cause || 'cause unknown'}`)); }
+
+  const img = await pedigreePNG();
+  let w = CW, h = w * img.h / img.w;
+  if (h > PH - 2 * M - 60) { h = PH - 2 * M - 60; w = h * img.w / img.h; }
+  heading('Pedigree'); need(h + 30);
+  doc.addImage(img.url, 'PNG', M + (CW - w) / 2, y, w, h); y += h + 6;
+  text('Square = male, circle = female, shaded = has a condition, slash = deceased, dashed = not blood related or adopted, arrow = me.', { size: 8.5, color: MUTED });
+
+  if (refs.length) { heading('Sources'); refs.forEach((s, i) => text(`[${i + 1}] ${SOURCES[s].full} ${SOURCES[s].url}`, { size: 8.5 })); }
+
+  const n = doc.getNumberOfPages();
+  for (let i = 1; i <= n; i++) {
+    doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...MUTED);
+    doc.text(lat(`Family-reported history collected with Heirloom Health. Guideline summaries are not a diagnosis.   Page ${i} of ${n}`), M, PH - 30);
+  }
+  return doc.output('blob');
+}
+async function exportPDF() {
+  S.pdfBusy = true; render();
+  try {
+    const blob = await makePDF();
+    const fname = `family-health-history-${(nameOf(byId(SELF)) || 'me').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`;
+    const dl = window.claude?.use ? await window.claude.use('downloads') : null;
+    if (dl) { await dl.save({ filename: fname, data: blob }); toast('PDF saved'); }
+    else if (window.top === window.self) { const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: fname }); document.body.append(a); a.click(); a.remove(); toast('PDF downloaded'); }
+    else toast("Saving files isn't available in this view. Use Copy as text instead.");
+  } catch (e) {
+    if (e?.code !== 'declined') toast(e?.message && !e.code ? e.message : "Couldn't save the PDF here. Use Copy as text instead.");
+  } finally { S.pdfBusy = false; render(); }
+}
+
+/* ---------- Render ---------- */
+const TABS = { tree: 'Family tree', interview: 'Interview', risks: 'My risks', doctor: 'Doctor report' };
+function renderShell() {
+  const logo = `${mascot(42)}<b>heirloom<i>.</i></b>`;
+  $('#logo-side').innerHTML = logo;
+  $('#logo-top').innerHTML = `<div class="logo">${logo}</div>`;
+  for (const [t, label] of Object.entries(TABS)) { const b = $('#tab-' + t); b.innerHTML = `${ICON[t]}<span>${label}</span>`; b.setAttribute('aria-selected', S.tab === t); }
+  const chip = `<span class="initial">${esc((ACCT.name || '?')[0].toUpperCase())}</span><span class="acct-name">${ACCT.guest ? 'Guest' : esc(ACCT.name)}</span><button class="link" data-action="signout">${ACCT.guest ? 'Exit' : 'Sign out'}</button>`;
+  $('#acct-side').innerHTML = chip;
+  $('#logo-top').innerHTML = `<div class="logo">${logo}</div><div class="acct">${chip}</div>`;
+}
+function renderBanner() {
+  return ACCT?.guest ? `<div class="banner">${mascot(48)}<p><b>You're exploring an example family.</b> The names and illnesses are made up, and changes here aren't yours to keep.</p><button class="btn primary" data-action="start-own">Create my profile</button></div>` : '';
+}
+function render() {
+  const keep = document.activeElement?.id;
+  document.body.classList.toggle('signed-out', !S);
+  if (!S) { $('#main').innerHTML = renderAuth(); if (keep) document.getElementById(keep)?.focus(); return; }
+  renderShell();
+  const page = { tree: renderTree, interview: renderInterview, risks: renderRisks, doctor: renderDoctor }[S.tab] || renderTree;
+  $('#main').innerHTML = renderBanner() + page();
+  if (keep) document.getElementById(keep)?.focus();
+}
+function refreshTree() { const el = $('#tree-svg'); if (el) el.innerHTML = treeSVG(); }
+function setTab(t) { S.tab = t; save(); render(); window.scrollTo({ top: 0 }); }
+async function copyText(text, label) {
+  try { await navigator.clipboard.writeText(text); toast(label); }
+  catch { const ta = $('#copy-fallback') || Object.assign(document.createElement('textarea'), { id: 'copy-fallback' }); if (!ta.parentNode) $('#main').append(ta); ta.hidden = false; ta.value = text; ta.select(); toast('Select all and copy the highlighted text'); }
+}
+
+/* ---------- Events ---------- */
+document.addEventListener('input', e => {
+  const t = e.target, d = t.dataset, p = d.pid && byId(d.pid);
+  if (!p) return;
+  if (d.tr) { p.transcripts[d.tr] = t.value; save(); return; }
+  if (d.f && t.type !== 'checkbox' && t.type !== 'file' && t.tagName !== 'SELECT') { p[d.f] = t.value; save(); refreshTree(); }
+  else if (d.cf === 'age') { addReport(p.id, d.cond, d.type, d.by, { age: t.value }); save(); refreshTree(); }
+});
+document.addEventListener('change', e => {
+  const t = e.target, d = t.dataset;
+  if (t.id === 'rec-file') { const f = t.files?.[0]; if (f) addClip(d.pid, S.iv.step, f, null); t.value = ''; return; }
+  if (d.ivf) { S.iv[d.ivf] = t.type === 'checkbox' ? t.checked : t.value; if (d.ivf === 'who') { S.celebrate = null; S.iv.step = 0; } save(); render(); return; }
+  const p = d.pid && byId(d.pid);
+  if (!p) return;
+  if (d.cf === 'on') {
+    if (t.checked) addReport(p.id, d.cond, '', d.by);
+    else dropReports(r => r.pid === p.id && r.cond === d.cond && r.by === d.by);
+    save(); render();
+    if (t.checked) document.getElementById(t.id + '-age')?.focus();
+  } else if (t.tagName === 'SELECT' && d.f) { p[d.f] = t.value; save(); render(); }
+  else if (d.f === 'cause' || d.f === 'deathAge') render();
+});
+document.addEventListener('click', e => {
+  const tab = e.target.closest('.nav button'); if (tab) return setTab(tab.dataset.tab);
+  const node = e.target.closest('[data-node]'); if (node) { S.sel = node.dataset.node; S.confirmRemove = null; save(); render(); if (innerWidth <= 1100) document.querySelector('.editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+  const hl = e.target.closest('[data-hl]'); if (hl) { S.hl = hl.dataset.hl; save(); render(); return; }
+  const liv = e.target.closest('[data-living]'); if (liv) { const p = byId(liv.dataset.pid); p.living = liv.dataset.living; save(); render(); return; }
+  const b = e.target.closest('[data-action]'); if (!b) return;
+  const a = b.dataset.action;
+  if (a.startsWith('auth-')) return authAction(a, b);
+  if (a === 'signout') return signOut();
+  if (!S) return;
+  const p = b.dataset.pid && byId(b.dataset.pid);
+  if (a !== 'remove') S.confirmRemove = null;
+  if (a !== 'wipe') S.confirmWipe = false;
+  if (a !== 'clip-del') S.confirmClip = null;
+  switch (a) {
+    case 'rec-start': startRec(p.id, S.iv.step); break;
+    case 'rec-stop': REC?.mr.stop(); break;
+    case 'cap-start': startCaptions(p.id, STEPS[S.iv.step].k); break;
+    case 'cap-stop': RECOG?.stop(); break;
+    case 'find': runFinder(false); break;
+    case 'find-ai': runFinder(true); break;
+    case 'sugg-add': {
+      const s = SUGG.list[+b.dataset.i], W = byId(S.iv.who), T = byId(s.pid);
+      if (s.kind === 'death') { T.living = 'no'; if (s.age) T.deathAge = s.age; }
+      else addReport(s.pid, s.cond, s.type, W.id, { age: s.age, said: s.said });
+      SUGG.list.splice(+b.dataset.i, 1); save(); render(); toast(`Added for ${nameOf(T)}`); break;
+    }
+    case 'sugg-skip': SUGG.list.splice(+b.dataset.i, 1); render(); break;
+    case 'ctype': {
+      const { pid, type, by } = b.dataset;
+      const mine = r => r.pid === pid && r.cond === 'cancer' && r.by === by;
+      if (findReport(pid, 'cancer', type, by)) dropReports(r => mine(r) && r.type === type);
+      else { const blank = findReport(pid, 'cancer', '', by); if (blank) blank.type = type; else addReport(pid, 'cancer', type, by); }
+      if (!S.reports.some(mine)) addReport(pid, 'cancer', '', by);
+      save(); render(); break;
+    }
+    case 'del-report': dropReports(r => r.id === b.dataset.rid); save(); render(); break;
+    case 'clip-del': if (S.confirmClip === b.dataset.clip) { S.confirmClip = null; removeClip(b.dataset.clip); } else { S.confirmClip = b.dataset.clip; render(); } break;
+    case 'pdf': exportPDF(); break;
+    case 'start-own': signOut(); AUTH.mode = 'create'; render(); break;
+    case 'goto-doctor': setTab('doctor'); break;
+    case 'add': { const np = addRelative(b.dataset.kind, p.id); S.sel = np.id; save(); render(); document.getElementById('ed-name')?.focus(); break; }
+    case 'add-parent': addRelative(b.dataset.kind, p.id); save(); render(); break;
+    case 'remove': if (S.confirmRemove === p.id) { removePerson(p.id); S.sel = SELF; S.confirmRemove = null; } else S.confirmRemove = p.id; save(); render(); break;
+    case 'interview': S.iv.who = p.id; S.iv.step = 0; S.celebrate = null; setTab('interview'); break;
+    case 'goto': S.sel = p.id; setTab('tree'); break;
+    case 'goto-tree': S.celebrate = null; S.iv.step = 0; setTab('tree'); break;
+    case 'see-report': S.celebrate = null; S.iv.step = 0; setTab('doctor'); break;
+    case 'iv-prev': S.iv.step--; save(); render(); break;
+    case 'iv-next': S.iv.step++; save(); render(); window.scrollTo({ top: 0 }); break;
+    case 'iv-addsib': { const name = $('#iv-newsib').value.trim(); if (!name) { toast('Type a name first'); $('#iv-newsib').focus(); break; } addRelative('sibling', p.id, { name, sex: $('#iv-newsex').value }); save(); render(); toast(`${name} added to the tree`); break; }
+    case 'iv-done': { const w = byId(S.iv.who); w.interviewed = today(); S.celebrate = w.id; S.sel = w.id; save(); render(); window.scrollTo({ top: 0 }); break; }
+    case 'speak': speak(); break;
+    case 'copy-summary': copyText(summaryText(), 'Summary copied'); break;
+    case 'backup': copyText(btoa(unescape(encodeURIComponent(JSON.stringify({ v: 2, people: S.people, rels: S.rels, reports: S.reports })))), 'Backup code copied'); break;
+    case 'restore-open': S.restoreOpen = !S.restoreOpen; render(); break;
+    case 'restore': try {
+      const v = JSON.parse(decodeURIComponent(escape(atob($('#restore-text').value.trim()))));
+      if (!Array.isArray(v.people) || !Array.isArray(v.rels)) throw 0;
+      Object.assign(S, { people: v.people, rels: v.rels, reports: v.reports || [], example: false, restoreOpen: false, sel: SELF }); save(); render(); toast('Family restored');
+    } catch { toast("That code didn't work. Paste the whole code you copied."); } break;
+    case 'wipe': if (S.confirmWipe) { const me = byId(SELF); S = blankState({ name: me.name, born: me.born, sex: me.sex }); save(); render(); toast('Erased. Your blank family is ready.'); } else { S.confirmWipe = true; render(); } break;
+  }
+});
+function authAction(a, b) {
+  if (a === 'auth-mode') { AUTH.mode = b.dataset.mode; AUTH.forgot = false; render(); $('#auth-name')?.focus(); }
+  else if (a === 'auth-pick') { AUTH.pick = b.dataset.id; AUTH.forgot = false; render(); $('#auth-pin')?.focus(); }
+  else if (a === 'auth-forgot') { AUTH.forgot = !AUTH.forgot; render(); }
+  else if (a === 'auth-delete') { const name = listAccounts().find(x => x.id === AUTH.pick)?.name; deleteAccount(AUTH.pick); AUTH = { mode: listAccounts().length ? 'signin' : 'create', pick: null, forgot: false }; render(); toast(`${name}'s profile was deleted from this device`); }
+  else if (a === 'auth-guest') { startSession('guest', false); enter(GUEST); }
+}
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'auth-form') return;
+  e.preventDefault();
+  AUTH.mode === 'signin' ? signIn() : signUp();
+});
+document.addEventListener('keydown', e => {
+  const node = e.target.closest?.('[data-node]');
+  if (node && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); node.dispatchEvent(new MouseEvent('click', { bubbles: true })); }
+});
+function speak() {
+  const st = STEPS[S.iv.step], lang = LANGS.find(l => l.id === S.iv.lang) || LANGS[0], text = tr(Q[st.k], lang.id);
+  try {
+    const synth = window.speechSynthesis; if (!synth) throw 0;
+    const voices = synth.getVoices(), v = voices.find(v => v.lang?.toLowerCase().startsWith(lang.speech.slice(0, 2)));
+    if (!v && voices.length) { toast(`This device has no ${lang.label.split(' · ').pop()} voice. Read the pronunciation line instead.`); return; }
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text); u.lang = lang.speech; if (v) u.voice = v; u.rate = 0.9; synth.speak(u);
+  } catch { toast("Read-aloud isn't available here. Read the pronunciation line instead."); }
+}
+
+/* ---------- Start ---------- */
+const hashTab = (location.hash || '').slice(1);
+const signedIn = currentAccount();
+AUTH = { mode: listAccounts().length ? 'signin' : 'create', pick: listAccounts()[0]?.id || null, forgot: false };
+if (signedIn) {
+  ACCT = signedIn;
+  S = loadFor(ACCT) || (ACCT.guest ? exampleState() : blankState({ name: ACCT.name }));
+  if (['tree', 'interview', 'risks', 'doctor'].includes(hashTab)) S.tab = hashTab;
+  S.pdfBusy = false; S.celebrate = null;
+}
+touchFamily();
+render();
+if (S) loadClips().then(render);
+(async () => { try { if (window.claude?.use && await window.claude.use('sample')) { SAMPLE_OK = true; render(); } } catch {} })();
+
+// Offline support when hosted on the web (not inside an embedded preview).
+if ('serviceWorker' in navigator && location.protocol === 'https:' && window.top === window.self) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
