@@ -1,0 +1,22 @@
+# Cloudflare Worker for Heirloom Health: AI answer-finding, speech-to-text, and encrypted family sync.
+# Setup steps are in README.md in this folder.
+name = "heirloom-health"
+main = "worker.js"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Websites allowed to call this server (comma-separated).
+ALLOWED_ORIGINS = "https://doddasiddharth-debug.github.io,http://localhost:8000"
+# OpenAI speech-to-text model.
+TRANSCRIBE_MODEL = "whisper-1"
+
+# Encrypted family copies. Create it with:  npx wrangler kv namespace create FAMILY
+# then paste the id it prints here.
+[[kv_namespaces]]
+binding = "FAMILY"
+id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"
+
+# Secrets (never put these in this file):
+#   npx wrangler secret put ANTHROPIC_API_KEY
+#   npx wrangler secret put OPENAI_API_KEY
