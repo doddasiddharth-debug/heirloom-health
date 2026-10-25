@@ -17,7 +17,7 @@
 <meta name="apple-mobile-web-app-title" content="Heirloom">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Lexend:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@500;700&family=Noto+Sans+Telugu:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Lexend:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@500;700&family=Noto+Sans+Telugu:wght@500;700&family=Noto+Sans+Tamil:wght@500;700&family=Noto+Sans+Kannada:wght@500;700&family=Noto+Sans+Bengali:wght@500;700&family=Noto+Sans+Gujarati:wght@500;700&family=Noto+Nastaliq+Urdu:wght@500;700&family=Noto+Sans+SC:wght@500;700&display=swap">
 <style>
 /* Layout: app shell. Sidebar nav on wide screens, bottom tab bar on phones; one focused column of soft, tactile cards.
    Palette: white page, peacock teal + marigold (festive, family), leaf for done, rose for alerts, iris for language help.
@@ -379,6 +379,92 @@ svg .t-gen { font: 800 15px var(--f-display); fill: var(--muted); opacity: .55; 
 }
 .sugg mark { background: var(--accent-soft); color: var(--strong); border-radius: 4px; padding: 0 2px; font-style: normal; font-weight: 600; }
 .sugg-who select { padding: 6px 10px; font-size: .85rem; border-radius: 10px; max-width: 100%; }
+.anc-note { font-size: .92rem; background: var(--primary-soft); border-radius: 12px; padding: 8px 12px; }
+.anc-note b { font-weight: 600; color: var(--primary-dk); }
+.src { display: inline-block; font-size: .78rem; color: var(--muted); margin-left: 4px; }
+.anc-pills .pill-btn { font-size: .84rem; }
+.avatar.photo { padding: 0; overflow: hidden; }
+.avatar.photo img { width: 100%; height: 100%; object-fit: cover; }
+svg .ph-ring { fill: var(--panel); stroke: var(--primary); stroke-width: 2; }
+.docs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.docs li { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; background: var(--soft); border-radius: 12px; padding: 8px 10px; }
+.docs img, .doc-ic { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; }
+.doc-ic { display: grid; place-items: center; background: var(--rose-soft); color: var(--rose-dk); font: 700 .7rem var(--f); }
+.doc-name { min-width: 0; overflow-wrap: anywhere; font-size: .9rem; }
+
+/* Interview mode cards */
+.modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.mode-card { display: grid; gap: 4px; text-align: left; border: 2px solid var(--line); border-radius: 16px; background: var(--panel); padding: 12px 14px; cursor: pointer; font: 400 .88rem var(--f); color: var(--muted); }
+.mode-card b { font: 600 1rem var(--f); color: var(--primary-dk); }
+.mode-card:hover { border-color: var(--primary); }
+
+/* Elder mode: everything large */
+body.elder-on .side, body.elder-on .mtop { display: none; }
+body.elder-on .app { grid-template-columns: minmax(0, 1fr); }
+body.elder-on .content { padding-block: 16px 24px; }
+.elder { max-width: 760px; margin: 0 auto; display: grid; gap: 20px; min-height: calc(100vh - 60px); grid-template-rows: auto 1fr auto; }
+.e-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: center; }
+.e-card { display: grid; gap: 18px; justify-items: center; align-content: center; text-align: center; padding: 8px 0; }
+.e-sect { font: 600 1.15rem var(--f); color: var(--primary-dk); background: var(--primary-soft); padding: 6px 16px; border-radius: 999px; }
+.e-q { font-size: clamp(1.6rem, 5vw, 2.3rem); line-height: 1.35; font-weight: 600; color: var(--strong); max-width: 26ch; }
+.e-cond { font-size: clamp(2rem, 7vw, 3.2rem); line-height: 1.25; font-weight: 700; color: var(--strong); }
+.e-rm { font-size: 1.15rem; color: var(--iris); font-style: italic; }
+.e-en { font-size: 1rem; color: var(--muted); }
+.e-yn { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; }
+.e-btn { min-height: 92px; border-radius: 22px; border: 3px solid var(--line); background: var(--panel); font: 700 clamp(1.3rem, 4.5vw, 1.9rem)/1.2 var(--f); color: var(--strong); cursor: pointer; box-shadow: 0 4px 0 var(--line); }
+.e-btn.y { border-color: var(--leaf); color: var(--leaf-dk); }
+.e-btn.n { border-color: var(--rose); color: var(--rose-dk); }
+.e-btn.u { border-color: var(--line); color: var(--muted); }
+.e-btn[aria-pressed="true"].y { background: var(--leaf); color: #fff; }
+.e-btn[aria-pressed="true"].n { background: var(--rose); color: #fff; }
+.e-btn[aria-pressed="true"].u { background: var(--muted); color: #fff; }
+.e-btn.big { width: 100%; max-width: 520px; padding: 18px; }
+.pad { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; width: 100%; }
+.padbtn { min-height: 72px; border-radius: 18px; border: 3px solid var(--line); background: var(--panel); font: 700 1.6rem var(--f); color: var(--strong); cursor: pointer; box-shadow: 0 3px 0 var(--line); }
+.padbtn:hover { border-color: var(--primary); }
+.padbtn.wide { grid-column: span 2; font-size: 1.2rem; }
+.padbtn.ghost { color: var(--muted); }
+.pad-now { font: 800 2.4rem var(--f-display); color: var(--primary-dk); }
+.e-types { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; width: 100%; }
+.e-type { min-height: 72px; border-radius: 16px; border: 3px solid var(--line); background: var(--panel); font: 600 1.15rem var(--f); color: var(--strong); cursor: pointer; display: grid; gap: 2px; place-content: center; padding: 8px; }
+.e-type small { font: 400 .8rem var(--f); color: var(--muted); }
+.e-type[aria-pressed="true"] { border-color: var(--primary); background: var(--primary-soft); }
+.e-nav { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; position: sticky; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); background: var(--bg); padding-top: 8px; }
+.e-nav-btn { min-height: 64px; border-radius: 18px; border: 3px solid var(--line); background: var(--panel); font: 700 1.25rem var(--f); color: var(--ink); cursor: pointer; }
+.e-nav-btn.next { background: var(--primary); border-color: var(--primary); color: #fff; }
+.e-nav-btn:disabled { opacity: .35; }
+.e-listen { min-height: 64px; min-width: 120px; border-radius: 999px; border: 0; background: var(--iris); color: #fff; font: 700 1.15rem var(--f); display: inline-flex; gap: 8px; align-items: center; justify-content: center; padding: 0 20px; cursor: pointer; box-shadow: 0 3px 0 var(--iris-dk); }
+@media (max-width: 520px) { .e-yn { grid-template-columns: 1fr; } .e-btn { min-height: 74px; } .e-listen span { display: none; } .e-listen { min-width: 64px; } }
+
+/* Question voices */
+.vlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.vlist li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--soft); border-radius: 12px; padding: 10px 12px; }
+.vtext { display: grid; gap: 2px; min-width: 0; font-size: 1.02rem; color: var(--strong); }
+.vtext .rm { font-size: .82rem; color: var(--iris); font-style: italic; }
+.vbtns { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+
+/* Pop-up panels */
+.modal-back { position: fixed; inset: 0; z-index: 40; background: rgba(30, 29, 51, .45); display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); overflow-y: auto; }
+.modal { position: relative; background: var(--panel); border-radius: 24px; padding: 24px; width: 100%; max-width: 520px; display: grid; gap: 14px; box-shadow: 0 20px 60px rgba(30, 29, 51, .25); }
+.modal h2 { padding-right: 28px; }
+.modal-x { position: absolute; top: 14px; right: 14px; font-size: 1.1rem; }
+.qr { display: grid; justify-items: center; gap: 6px; }
+.qr svg { width: 220px; height: 220px; }
+.qr.big svg { width: 280px; height: 280px; max-width: 100%; }
+.linkbox input { font-size: .85rem; color: var(--muted); }
+.lang-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.lang-btn { min-height: 72px; border-radius: 18px; border: 3px solid var(--line); background: var(--panel); display: grid; gap: 2px; place-content: center; cursor: pointer; font: 700 1.3rem var(--f); color: var(--strong); }
+.lang-btn small { font: 400 .8rem var(--f); color: var(--muted); }
+.lang-btn:hover { border-color: var(--primary); }
+body.solo .side, body.solo .mtop { display: none; }
+body.solo .app { grid-template-columns: minmax(0, 1fr); }
+.viewer-banner { background: var(--primary-soft); }
+.asks-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.asks-list li { display: flex; justify-content: space-between; gap: 10px; align-items: center; background: var(--soft); border-radius: 12px; padding: 10px 12px; }
+.asks-list li.done span { text-decoration: line-through; color: var(--muted); }
+[dir="rtl"] { text-align: right; }
+.e-card [dir="rtl"], .lang-btn [dir="rtl"] { text-align: center; }
+.lang-ur { line-height: 2; }
 </style>
 </head>
 <body>
@@ -400,15 +486,23 @@ svg .t-gen { font: 800 15px var(--f-display); fill: var(--muted); opacity: .55; 
     <div class="page" id="main"></div>
   </div>
 </div>
+<div id="modal-root"></div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="vendor/jspdf.umd.min.js" defer></script>
+<script src="vendor/qrcode.js" defer></script>
+<script src="js/config.js"></script>
 <script src="js/content.js"></script>
+<script src="js/languages.js"></script>
 <script src="js/family.js"></script>
 <script src="js/risk.js"></script>
 <script src="js/layout.js"></script>
 <script src="js/extract.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/media.js"></script>
+<script src="js/elder.js"></script>
+<script src="js/share.js"></script>
+<script src="js/handoff.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

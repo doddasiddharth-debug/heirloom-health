@@ -1,10 +1,12 @@
 // Offline support: the app's own files are cached on first visit, so interviews work without Wi-Fi.
 // Fonts and the PDF library come from CDNs and are cached the first time they load.
 // Bump VERSION whenever you change a file, so phones pick up the new copy.
-const VERSION = 'heirloom-v2';
+const VERSION = 'heirloom-v3';
 const APP_FILES = [
   './', 'index.html', 'manifest.webmanifest',
-  'js/content.js', 'js/family.js', 'js/risk.js', 'js/layout.js', 'js/extract.js', 'js/auth.js', 'js/app.js',
+  'js/config.js', 'js/content.js', 'js/languages.js', 'js/family.js', 'js/risk.js', 'js/layout.js', 'js/extract.js',
+  'js/auth.js', 'js/media.js', 'js/elder.js', 'js/share.js', 'js/handoff.js', 'js/app.js',
+  'vendor/jspdf.umd.min.js', 'vendor/qrcode.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png',
 ];
 

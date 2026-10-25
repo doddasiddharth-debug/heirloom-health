@@ -192,8 +192,21 @@ function ruleMissing() {
   return out;
 }
 
+function myAncestry() { return new Set(byId(SELF)?.ancestry || []); }
+function ancestryRulesFor(topic) { const mine = myAncestry(); return ANCESTRY_RULES.filter(r => r.topic === topic && r.groups.some(g => mine.has(g))); }
+function ruleAncestry() {
+  const mine = myAncestry(), me = byId(SELF), seen = new Set(), out = [];
+  for (const r of ANCESTRY_RULES) {
+    if (!r.groups.some(g => mine.has(g)) || seen.has(r.title)) continue;
+    const topic = RISK_TOPICS.find(t => t.key === r.topic);
+    if (topic?.sex && me.sex !== 'U' && topic.sex !== me.sex) continue;
+    seen.add(r.title);
+    out.push({ level: r.level, title: r.title, rec: r.text, why: [`Ancestry you entered: ${ANCESTRIES.filter(a => mine.has(a.id) && r.groups.includes(a.id)).map(a => a.en).join(', ')}.`], sources: [r.source] });
+  }
+  return out;
+}
 function guidelineCards() {
-  const cards = [ruleColorectal, ruleFHS7, ruleLynch, ruleOvarianPancreatic, ruleHeart, ruleDiabetes, ruleProstate, ruleDisagreements, ruleNotBlood, ruleMissing].flatMap(r => r());
+  const cards = [ruleColorectal, ruleAncestry, ruleFHS7, ruleLynch, ruleOvarianPancreatic, ruleHeart, ruleDiabetes, ruleProstate, ruleDisagreements, ruleNotBlood, ruleMissing].flatMap(r => r());
   const rank = { act: 0, discuss: 1, note: 2, missing: 3 };
   return cards.sort((a, b) => rank[a.level] - rank[b.level]);
 }
@@ -277,9 +290,11 @@ function familyRisk() {
     // Keep this page consistent with the doctor report: a guideline that calls for genetic counseling raises the level.
     const flagged = (['breast', 'ovarian'].includes(t.key) && ruleFHS7()[0]?.level === 'act') || (['colorectal', 'uterine'].includes(t.key) && ruleLynch()[0]?.level === 'act') || (['ovarian', 'pancreatic'].includes(t.key) && ruleOvarianPancreatic().length);
     if (flagged && hits.length) moderate.push('A screening guideline flags this family pattern for genetic counseling. See the doctor report.');
-    const level = high.length ? 'high' : moderate.length ? 'moderate' : 'average';
-    const reasons = [...new Set(level === 'high' ? high : level === 'moderate' ? moderate : ['Only a more distant relative had it, which is close to average risk.'])].slice(0, 2);
-    const score = { high: 300, moderate: 200, average: 100 }[level] + hits.filter(early).length * 20 + hits.reduce((a, x) => a + (4 - Math.min(x.k.degree, 3)) * 5, 0);
-    return { t, level, hits, reasons, early, score };
-  }).filter(r => r.hits.length).sort((a, b) => b.score - a.score);
+    // Ancestry can raise a topic by itself (see ANCESTRY_RULES in content.js).
+    const anc = ancestryRulesFor(t.key);
+    const level = high.length ? 'high' : moderate.length || anc.length ? 'moderate' : 'average';
+    const reasons = [...new Set(level === 'high' ? high : moderate.length ? moderate : hits.length && !anc.length ? ['Only a more distant relative had it, which is close to average risk.'] : [])].slice(0, 2);
+    const score = { high: 300, moderate: 200, average: 100 }[level] + (anc.length ? 5 : 0) + hits.filter(early).length * 20 + hits.reduce((a, x) => a + (4 - Math.min(x.k.degree, 3)) * 5, 0);
+    return { t, level, hits, reasons, early, score, ancestry: anc };
+  }).filter(r => r.hits.length || r.ancestry.length).sort((a, b) => b.score - a.score);
 }

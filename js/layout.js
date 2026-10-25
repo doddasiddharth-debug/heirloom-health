@@ -222,6 +222,8 @@ function treeSVG({ interactive = true, hl = S.hl, zoom = null } = {}) {
     let n = '';
     if (interactive && S.sel === p.id) n += `<rect class="ring" x="${x - h - 10}" y="${y - h - 10}" width="${LAYOUT.SZ + 20}" height="${LAYOUT.SZ + 20}" rx="14"/>`;
     n += symbol(p, x, y, hit ? 'var(--accent)' : 'var(--panel)', !k.blood && p.id !== SELF);
+    const photo = interactive && typeof photoOf === 'function' && photoOf(p.id);
+    if (photo) n += `<clipPath id="cp-${p.id}"><circle cx="${x - h - 2}" cy="${y - h - 2}" r="13"/></clipPath><circle cx="${x - h - 2}" cy="${y - h - 2}" r="15" class="ph-ring"/><image href="${photo.url}" x="${x - h - 15}" y="${y - h - 15}" width="26" height="26" clip-path="url(#cp-${p.id})" preserveAspectRatio="xMidYMid slice"/>`;
     if (isBlank(p)) n += `<text class="t-q" x="${x}" y="${y + 6}" text-anchor="middle">?</text>`;
     if (p.living === 'no') n += `<line class="ln" x1="${x - h - 7}" y1="${y + h + 7}" x2="${x + h + 7}" y2="${y - h - 7}" style="stroke:var(--sym);stroke-width:2.5"/>`;
     if (p.id === SELF) n += `<path class="ln" d="M${x - h - 40} ${y}H${x - h - 16}" style="stroke:var(--primary);stroke-width:3"/><path d="M${x - h - 12} ${y}l-9 -6v12z" fill="var(--primary)"/>`;

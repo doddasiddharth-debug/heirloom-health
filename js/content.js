@@ -168,6 +168,30 @@ const STEPS = [
   { k: 'closing', type: 'closing' },
 ];
 
+/* ---------- Elder mode: short phrases for tap-to-answer screens ---------- */
+const ELDER_TEXT = {
+  yes: { en: 'Yes', te: 'అవును', te_r: 'Avunu', hi: 'हाँ', hi_r: 'Haan', es: 'Sí' },
+  no: { en: 'No', te: 'లేదు', te_r: 'Ledu', hi: 'नहीं', hi_r: 'Nahin', es: 'No' },
+  unsure: { en: "Don't know", te: 'తెలియదు', te_r: 'Teliyadu', hi: 'पता नहीं', hi_r: 'Pata nahin', es: 'No sé' },
+  next: { en: 'Next', te: 'తరువాత', te_r: 'Taruvaata', hi: 'आगे', hi_r: 'Aage', es: 'Siguiente' },
+  back: { en: 'Back', te: 'వెనక్కి', te_r: 'Venakki', hi: 'पीछे', hi_r: 'Peechhe', es: 'Atrás' },
+  finish: { en: 'Finish', te: 'పూర్తి', te_r: 'Poorti', hi: 'समाप्त', hi_r: 'Samaapt', es: 'Terminar' },
+  age: { en: 'About how old?', te: 'సుమారు ఏ వయసులో?', te_r: 'Sumaaru ee vayasulo?', hi: 'लगभग किस उम्र में?', hi_r: 'Lagbhag kis umar mein?', es: '¿Más o menos a qué edad?' },
+  listen: { en: 'Listen', te: 'వినండి', te_r: 'Vinandi', hi: 'सुनिए', hi_r: 'Suniye', es: 'Escuchar' },
+  thanks: { en: 'Thank you!', te: 'ధన్యవాదాలు!', te_r: 'Dhanyavaadaalu!', hi: 'धन्यवाद!', hi_r: 'Dhanyavaad!', es: '¡Gracias!' },
+  had_self: { en: 'Did a doctor ever tell you that you have this?', te: 'మీకు ఇది ఉందని డాక్టర్ ఎప్పుడైనా చెప్పారా?', te_r: 'Meeku idi undani doctor eppudainaa cheppaaraa?', hi: 'क्या किसी डॉक्टर ने कभी बताया कि आपको यह है?', hi_r: 'Kya kisi doctor ne kabhi bataaya ki aapko yeh hai?', es: '¿Algún médico le dijo alguna vez que tiene esto?' },
+  had_mother: { en: 'Did your mother have this?', te: 'మీ అమ్మగారికి ఇది ఉండేదా?', te_r: 'Mee ammagaariki idi undedaa?', hi: 'क्या आपकी माँ को यह था?', hi_r: 'Kya aapki maa ko yeh tha?', es: '¿Su mamá tuvo esto?' },
+  had_father: { en: 'Did your father have this?', te: 'మీ నాన్నగారికి ఇది ఉండేదా?', te_r: 'Mee naannagaariki idi undedaa?', hi: 'क्या आपके पिताजी को यह था?', hi_r: 'Kya aapke pitaaji ko yeh tha?', es: '¿Su papá tuvo esto?' },
+  about_self: { en: 'About you', te: 'మీ గురించి', te_r: 'Mee gurinchi', hi: 'आपके बारे में', hi_r: 'Aapke baare mein', es: 'Sobre usted' },
+  about_mother: { en: 'About your mother', te: 'మీ అమ్మగారి గురించి', te_r: 'Mee ammagaari gurinchi', hi: 'आपकी माँ के बारे में', hi_r: 'Aapki maa ke baare mein', es: 'Sobre su mamá' },
+  about_father: { en: 'About your father', te: 'మీ నాన్నగారి గురించి', te_r: 'Mee naannagaari gurinchi', hi: 'आपके पिताजी के बारे में', hi_r: 'Aapke pitaaji ke baare mein', es: 'Sobre su papá' },
+  living_q: { en: 'Is this person still living?', te: 'వారు ఇంకా ఉన్నారా?', te_r: 'Vaaru inkaa unnaaraa?', hi: 'क्या वे अभी जीवित हैं?', hi_r: 'Kya ve abhi jeevit hain?', es: '¿Esta persona todavía vive?' },
+  death_age_q: { en: 'How old were they when they passed away?', te: 'కాలం చేసినప్పుడు వారి వయసు ఎంత?', te_r: 'Kaalam chesinappudu vaari vayasu entha?', hi: 'देहांत के समय उनकी उम्र कितनी थी?', hi_r: 'Dehaant ke samay unki umar kitni thi?', es: '¿Qué edad tenía cuando falleció?' },
+  born_q: { en: 'What year were you born?', te: 'మీరు ఏ సంవత్సరంలో పుట్టారు?', te_r: 'Meeru ee samvatsaramlo puttaaru?', hi: 'आपका जन्म किस साल हुआ?', hi_r: 'Aapka janm kis saal hua?', es: '¿En qué año nació?' },
+  welcome: { en: 'Your family asked you to help with a family health history. Tap the answers. You can skip anything.', te: 'కుటుంబ ఆరోగ్య చరిత్ర కోసం మీ సహాయం అడిగారు. జవాబులను తాకండి. ఏదైనా వదిలేయవచ్చు.', te_r: 'Kutumba aarogya charitra kosam mee sahaayam adigaaru. Javaabulanu taakandi. Edainaa vadileyavachchu.', hi: 'आपके परिवार ने पारिवारिक स्वास्थ्य इतिहास में आपकी मदद माँगी है। जवाब पर टैप करें। आप कुछ भी छोड़ सकते हैं।', hi_r: 'Aapke parivaar ne paarivaarik swaasthya itihaas mein aapki madad maangi hai. Jawaab par tap karein. Aap kuchh bhi chhod sakte hain.', es: 'Su familia le pidió ayuda con una historia de salud familiar. Toque las respuestas. Puede saltarse cualquier pregunta.' },
+  send_back: { en: 'Send your answers back', te: 'మీ జవాబులను తిరిగి పంపండి', te_r: 'Mee javaabulanu tirigi pampandi', hi: 'अपने जवाब वापस भेजें', hi_r: 'Apne jawaab waapas bhejein', es: 'Enviar sus respuestas' },
+};
+
 /* ---------- Everyday words → medical terms ----------
    Each entry: the words people actually say, in English, Telugu, Hindi and Spanish
    (native script and romanized), mapped to one condition or cancer type. */
@@ -215,6 +239,7 @@ const NUM_WORDS = {
   'तीस': 30, 'चालीस': 40, 'पचास': 50, 'साठ': 60, 'सत्तर': 70, 'अस्सी': 80, 'नब्बे': 90,
   tees: 30, chaalis: 40, chalis: 40, pachaas: 50, pachas: 50, saath: 60, sattar: 70, assi: 80,
   treinta: 30, cuarenta: 40, cincuenta: 50, sesenta: 60, setenta: 70, ochenta: 80, noventa: 90,
+  '二十': 20, '三十': 30, '四十': 40, '五十': 50, '六十': 60, '七十': 70, '八十': 80, '九十': 90,
 };
 
 // Ones digits that can follow a tens word ("forty-seven", "నలభై ఏడు", "cuarenta y siete").
@@ -223,6 +248,7 @@ const NUM_UNITS = {
   'ఒకటి': 1, 'రెండు': 2, 'మూడు': 3, 'నాలుగు': 4, 'ఐదు': 5, 'ఆరు': 6, 'ఏడు': 7, 'ఎనిమిది': 8, 'తొమ్మిది': 9,
   okati: 1, rendu: 2, moodu: 3, naalugu: 4, aidu: 5, aaru: 6, edu: 7, enimidi: 8, tommidi: 9,
   uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9,
+  '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
 };
 const NUM_TEENS = { ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, veinte: 20, 'ఇరవై': 20, iravai: 20, 'बीस': 20, bees: 20 };
 const LIVING_WORDS = ['still alive', 'alive', 'still living', 'is living', 'బతికే ఉన్నారు', 'బతికున్నారు', 'ఇంకా ఉన్నారు', 'batike unnaaru', 'जीवित', 'ज़िंदा', 'जिंदा', 'zinda', 'jeevit', 'está vivo', 'está viva', 'sigue vivo', 'sigue viva'];
@@ -272,3 +298,35 @@ const RISK_TOPICS = [
 ];
 SOURCES.scheuner = { short: 'Scheuner et al., family history risk method, 1997', full: 'Scheuner MT, Wang SJ, Raffel LJ, Larabell SK, Rotter JI. Family history: a comprehensive genetic risk assessment method for the chronic conditions of adulthood. Am J Med Genet. 1997;71(3):315-324.', url: 'https://pubmed.ncbi.nlm.nih.gov/9268102/' };
 SOURCES.healthware = { short: 'CDC Family Healthware, 2009', full: 'Yoon PW, Scheuner MT, Jorgensen C, Khoury MJ. Developing Family Healthware, a family history screening tool to prevent common chronic diseases. Prev Chronic Dis. 2009;6(1):A33.', url: 'https://www.cdc.gov/pcd/issues/2009/jan/08_0046.htm' };
+
+/* ---------- Ancestry ----------
+   Some guidelines treat ancestry as a risk factor on its own. Each rule says which ancestries it covers,
+   which risk topic it raises, and its source. */
+const ANCESTRIES = [
+  { id: 'southasian', en: 'South Asian', hint: 'Indian, Pakistani, Bangladeshi, Sri Lankan, Nepali' },
+  { id: 'eastasian', en: 'East Asian', hint: 'Chinese, Japanese, Korean' },
+  { id: 'seasian', en: 'Southeast Asian', hint: 'Vietnamese, Filipino, Thai, and others' },
+  { id: 'mena', en: 'Middle Eastern or North African' },
+  { id: 'mediterranean', en: 'Mediterranean', hint: 'Greek, Italian, and others' },
+  { id: 'black', en: 'Black or African', hint: 'including Caribbean' },
+  { id: 'hispanic', en: 'Hispanic or Latino' },
+  { id: 'white', en: 'White or European' },
+  { id: 'ashkenazi', en: 'Ashkenazi Jewish' },
+  { id: 'native', en: 'American Indian or Alaska Native' },
+  { id: 'pacific', en: 'Native Hawaiian or Pacific Islander' },
+];
+const ANCESTRY_RULES = [
+  { topic: 'heart', groups: ['southasian'], source: 'accaha', level: 'discuss', title: 'South Asian ancestry and heart disease',
+    text: 'Heart guidelines count South Asian ancestry as a "risk-enhancing factor" by itself, because heart disease tends to start earlier in South Asian families. Ask your doctor to note it on your record.' },
+  { topic: 'diabetes', groups: ['southasian', 'eastasian', 'seasian', 'black', 'hispanic', 'native', 'pacific'], source: 'ada', level: 'discuss', title: 'Ancestry and type 2 diabetes',
+    text: 'The ADA lists this ancestry as a risk factor when deciding who to test for type 2 diabetes. For Asian American adults, testing starts at a lower weight (BMI 23 instead of 25).' },
+  { topic: 'blood', groups: ['southasian', 'seasian', 'eastasian', 'mena', 'mediterranean', 'black'], source: 'acog', level: 'note', title: 'Thalassemia and sickle cell trait',
+    text: 'Carrying thalassemia or sickle cell trait is more common with this ancestry. It usually causes no symptoms but matters for future children. A routine blood count, and a hemoglobin test if needed, can check.' },
+  { topic: 'breast', groups: ['ashkenazi'], source: 'uspstfBrca', level: 'discuss', title: 'Ashkenazi Jewish ancestry and BRCA',
+    text: 'About 1 in 40 people of Ashkenazi Jewish ancestry carries a BRCA1 or BRCA2 change. The USPSTF lists this ancestry as a reason for a breast and ovarian cancer risk assessment.' },
+  { topic: 'ovarian', groups: ['ashkenazi'], source: 'uspstfBrca', level: 'discuss', title: 'Ashkenazi Jewish ancestry and BRCA',
+    text: 'BRCA changes linked to Ashkenazi Jewish ancestry also raise ovarian cancer risk.' },
+  { topic: 'prostate', groups: ['black'], source: 'acsProstate', level: 'discuss', title: 'Ancestry and prostate cancer',
+    text: 'Prostate cancer is more common and starts earlier in Black men. The American Cancer Society suggests talking about screening from age 45.' },
+];
+SOURCES.acog = { short: 'ACOG carrier screening, 2017', full: 'American College of Obstetricians and Gynecologists. Committee Opinion No. 691: Carrier screening for genetic conditions. Obstet Gynecol. 2017;129:e41-e55.', url: 'https://www.acog.org/clinical/clinical-guidance/committee-opinion/articles/2017/03/carrier-screening-for-genetic-conditions' };

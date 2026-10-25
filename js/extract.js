@@ -23,8 +23,10 @@ function findWord(text, word, from = 0) {
   return m ? m.index + m[1].length : -1;
 }
 const hasWord = (text, word) => findWord(text, word);
-// Telugu (౦-౯) and Hindi (०-९) digits become 0-9.
-const normalize = s => s.replace(/[०-९౦-౯]/g, d => String(d.charCodeAt(0) - (d.charCodeAt(0) >= 0x0C66 ? 0x0C66 : 0x0966)));
+// Digits from every script the app supports (Hindi ०-९, Telugu ౦-౯, Bengali, Gujarati, Tamil, Kannada, Urdu, full-width) become 0-9.
+const DIGIT_ZEROS = [0x0966, 0x09E6, 0x0AE6, 0x0BE6, 0x0C66, 0x0CE6, 0x0660, 0x06F0, 0xFF10];
+const normalize = s => s.replace(/[\u0966-\u096F\u09E6-\u09EF\u0AE6-\u0AEF\u0BE6-\u0BEF\u0C66-\u0C6F\u0CE6-\u0CEF\u0660-\u0669\u06F0-\u06F9\uFF10-\uFF19]/g,
+  d => String(d.codePointAt(0) - DIGIT_ZEROS.find(z => d.codePointAt(0) >= z && d.codePointAt(0) <= z + 9)));
 
 function aboutWhom(sentence) {
   const toks = sentence.toLowerCase().split(/[\s,;:"()!?.।]+/).filter(Boolean);
@@ -44,7 +46,7 @@ function numbersIn(low) {
   for (const w of Object.keys(NUM_WORDS)) {
     for (let i = findWord(low, w); i >= 0; i = findWord(low, w, i + w.length)) {
       let n = NUM_WORDS[w], len = w.length;
-      const rest = low.slice(i + w.length), sep = rest.match(/^[\s-]+(?:y\s+)?/);
+      const rest = low.slice(i + w.length), sep = rest.match(LATIN.test(w) ? /^[\s-]+(?:y\s+)?/ : /^[\s-]*/);
       if (sep && n % 10 === 0) {
         const after = rest.slice(sep[0].length);
         const u = units.find(u => after.startsWith(u) && !(LATIN.test(u) && new RegExp(`[${LETTER}]`).test(after[u.length] || '')));
@@ -78,7 +80,7 @@ function assignAges(hits, ages) {
 // ctx: { subject: pid the question is about, mother, father: pids or null, step: the interview step key }
 function findAnswers(text, ctx) {
   const found = new Map();
-  const sentences = normalize(text).split(/(?<=[.!?।\n])\s*/).map(s => s.trim()).filter(Boolean);
+  const sentences = normalize(text).split(/(?<=[.!?।。！？۔؟\n])\s*/).map(s => s.trim()).filter(Boolean);
   let lastPid = null;
   for (const sentence of sentences) {
     const low = sentence.toLowerCase();
@@ -134,9 +136,10 @@ function findAnswers(text, ctx) {
 // Optional: ask Claude (through the artifact's `sample` capability) to read the transcript.
 async function aiFindAnswers(text, ctx, people) {
   const sample = window.claude?.use ? await window.claude.use('sample') : null;
+  if (!sample && window.CONFIG?.apiBase) return serverFindAnswers(text, people);
   if (!sample) throw { code: 'unavailable' };
-  const roster = Object.entries(people).filter(([, id]) => id).map(([role, id]) => `- "${role}": ${nameOf(byId(id))}`).join('\n');
-  const prompt = `A teenager interviewed a relative about family health history. The transcript may mix English, Telugu, Hindi or Spanish, in native script or romanized.
+  const roster = Object.entries(people).filter(([role, id]) => role !== 'step' && byId(id)).map(([role, id]) => `- "${role}": ${nameOf(byId(id))}`).join('\n');
+  const prompt = `A teenager interviewed a relative about family health history. The transcript may mix English with Telugu, Hindi, Spanish, Tamil, Kannada, Bengali, Gujarati, Urdu, Chinese or Vietnamese, in native script or romanized.
 Find every health fact stated as true. Ignore illnesses the speaker says someone did NOT have.
 
 People the facts can be about:
@@ -164,4 +167,33 @@ Transcript:
     const type = f.cond === 'cancer' && CTYPE[f.type] ? f.type : '';
     return { kind: 'cond', pid, cond: f.cond, type, age, said: String(f.said || ''), quote: String(f.quote || ''), ai: true };
   }).filter(Boolean);
+}
+
+// The same job done by the Heirloom server (server/worker.js), for the public website.
+async function serverFindAnswers(text, people) {
+  const roster = Object.entries(people).filter(([role, id]) => id && role !== 'step').map(([role, id]) => ({ role, name: nameOf(byId(id)) }));
+  const res = await fetch(`${CONFIG.apiBase}/api/extract`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ text: text.slice(0, 8000), people: roster, conditions: CONDS.map(c => c.id), cancerTypes: CANCER_TYPES.map(c => c.id) }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw { code: 'server', message: data.error };
+  return (data.facts || []).map(f => {
+    const pid = people[f.person] || people.subject;
+    if (!pid) return null;
+    const age = Number.isInteger(f.age) && f.age > 0 && f.age <= 110 ? String(f.age) : '';
+    if (f.kind === 'death') return { kind: 'death', pid, age, quote: String(f.quote || ''), said: String(f.said || ''), ai: true };
+    if (!COND[f.cond]) return null;
+    return { kind: 'cond', pid, cond: f.cond, type: f.cond === 'cancer' && CTYPE[f.type] ? f.type : '', age, said: String(f.said || ''), quote: String(f.quote || ''), ai: true };
+  }).filter(Boolean);
+}
+// Turn a recording into text with the Heirloom server.
+async function serverTranscribe(blob, lang) {
+  const form = new FormData();
+  form.append('file', blob, 'answer.' + ((blob.type.split('/')[1] || 'webm').split(';')[0]));
+  form.append('lang', lang);
+  const res = await fetch(`${CONFIG.apiBase}/api/transcribe`, { method: 'POST', body: form });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw { code: 'server', message: data.error };
+  return data.text || '';
 }
