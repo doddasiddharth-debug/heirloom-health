@@ -2,12 +2,15 @@
 //   1. Layering: each person's row is their generation (parents one row up, children one row down).
 //   2. Ordering: partners are glued into "blocks"; blocks are reordered by the average position of their
 //      parents (top-down) and children (bottom-up) a few times, which removes most line crossings.
+//      Inside a block, each partner faces their own parents, and people who married in sit on the outside,
+//      so a person always stays next to their brothers and sisters.
 //   3. Placement: each block is pulled toward the spot that centers parents over their children,
 //      then packed so nobody overlaps. Repeating this settles into a balanced chart.
 'use strict';
 
-const LAYOUT = { W: 134, ROW: 232, TOP: 64, SZ: 40 };
+const LAYOUT = { W: 156, ROW: 240, TOP: 64, SZ: 40, LABEL: 142, GUTTER: 46 };
 const avg = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
+let TREE_GEOM = null; // the last interactive chart drawn, used for zoom and "center on me"
 
 function layoutFamily() {
   const { W, ROW, TOP } = LAYOUT;
@@ -27,17 +30,17 @@ function layoutFamily() {
   }
   const fams = [...famMap.values()];
 
-  // Phase 2: crossing reduction by barycenters.
-  for (let it = 0; it < 4; it++) {
-    for (let r = 1; r < rows.length; r++) sortRow(rows[r], m => parentLinks(m).map(l => l.id), rowIndex(rows[r - 1]));
-    for (let r = rows.length - 2; r >= 0; r--) sortRow(rows[r], m => childLinks(m).map(l => l.id), rowIndex(rows[r + 1]));
+  // Phase 2: crossing reduction by barycenters. Top-down passes also turn couples to face their parents.
+  for (let it = 0; it < 6; it++) {
+    for (let r = 1; r < rows.length; r++) sortRow(rows[r], m => parentLinks(m).map(l => l.id), rowIndex(rows[r - 1]), true);
+    if (it < 5) for (let r = rows.length - 2; r >= 0; r--) sortRow(rows[r], m => childLinks(m).map(l => l.id), rowIndex(rows[r + 1]), false);
   }
 
   // Phase 3: coordinates.
   const where = new Map();
   rows.forEach(row => { let x = 0; row.forEach(b => { b.x = x; x += b.members.length * W; b.members.forEach((m, i) => where.set(m, { b, i })); }); });
   const px = id => { const w = where.get(id); return w.b.x + w.i * W; };
-  for (let it = 0; it < 60; it++) {
+  for (let it = 0; it < 80; it++) {
     const order = it % 2 === 0 ? rows.map((_, i) => i) : rows.map((_, i) => rows.length - 1 - i);
     for (const r of order) {
       const row = rows[r];
@@ -54,18 +57,22 @@ function layoutFamily() {
     }
   }
 
-  const pos = {};
+  const pos = {}, rowY = [];
   let minX = Infinity, maxX = -Infinity;
-  rows.forEach((row, r) => row.forEach(b => b.members.forEach((m, i) => {
-    const x = b.x + i * W;
-    pos[m] = { x, y: TOP + r * ROW };
-    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
-  })));
+  rows.forEach((row, r) => {
+    rowY.push(TOP + r * ROW);
+    row.forEach(b => b.members.forEach((m, i) => {
+      const x = b.x + i * W;
+      pos[m] = { x, y: TOP + r * ROW };
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+    }));
+  });
   // Stagger sibling bars that share a row so they don't sit on top of each other.
   const byRow = new Map();
   for (const f of fams) { const y = pos[f.kids[0].id].y; if (!byRow.has(y)) byRow.set(y, []); byRow.get(y).push(f); }
   for (const list of byRow.values()) list.sort((a, b) => avg(a.kids.map(k => pos[k.id].x)) - avg(b.kids.map(k => pos[k.id].x))).forEach((f, i) => f.stagger = i % 3);
-  return { pos, fams, minX: minX - W / 2 - 16, width: maxX - minX + W + 26, height: TOP + rows.length * ROW - 100 };
+  const left = minX - W / 2 - LAYOUT.GUTTER;
+  return { pos, fams, rowY, minX: left, width: maxX - left + W / 2 + 12, height: TOP + rows.length * ROW - 92 };
 }
 
 function buildBlocks(ids) {
@@ -83,7 +90,7 @@ function buildBlocks(ids) {
   }
   return blocks;
 }
-// Couples: man on the left (pedigree convention). Someone with two partners sits between them.
+// Starting order inside a block: man on the left (pedigree convention); someone with two partners sits between them.
 function orderBlock(comp) {
   if (comp.length === 1) return comp;
   if (comp.length === 2) return byId(comp[0]).sex === 'F' && byId(comp[1]).sex !== 'F' ? [comp[1], comp[0]] : comp;
@@ -96,16 +103,42 @@ function orderBlock(comp) {
   return out;
 }
 function rowIndex(row) { const idx = new Map(); let i = 0; row.forEach(b => b.members.forEach(m => idx.set(m, i++))); return idx; }
-function sortRow(row, nbrs, idx) {
+function sortRow(row, nbrs, idx, orient) {
+  const bary = m => { const v = nbrs(m).filter(n => idx.has(n)).map(n => idx.get(n)); return v.length ? avg(v) : null; };
+  if (orient) {
+    const known = row.flatMap(b => b.members.map(bary)).filter(v => v != null);
+    const mid = known.length ? avg(known) : 0;
+    row.forEach(b => orientBlock(b, bary, mid));
+  }
   let prev = -1;
   const keyed = row.map(b => {
-    const vals = b.members.flatMap(m => nbrs(m).filter(n => idx.has(n)).map(n => idx.get(n)));
+    const vals = b.members.map(bary).filter(v => v != null);
     const k = vals.length ? avg(vals) : prev + 1e-3; // blocks with no links keep their place
     prev = k;
     return { b, k };
   });
   keyed.sort((a, b) => a.k - b.k);
   keyed.forEach((o, i) => row[i] = o.b);
+}
+// Turn a couple (or a chain like wife–husband–second wife) so that each partner sits on the side of their own
+// parents, and partners with no parents on the chart (married in) sit on the outside, away from the family.
+function orientBlock(b, bary, mid) {
+  const m = b.members;
+  if (m.length === 2) {
+    const [ba, bb] = m.map(bary);
+    if (ba != null && bb != null) { if (ba > bb) m.reverse(); }
+    else if (ba != null || bb != null) {
+      const blood = ba != null ? 0 : 1, side = (ba ?? bb) < mid ? 'left' : 'right';
+      // married-in partner goes outside: left of a left-side relative, right of a right-side relative
+      if ((side === 'left') !== (blood === 1)) m.reverse();
+    }
+  } else if (m.length === 3) {
+    const [ba, bx, bc] = m.map(bary), ref = bx ?? mid;
+    if (ba != null && bc != null) { if (ba > bc) m.reverse(); }
+    else if (ba != null) { if (ba > ref) m.reverse(); }
+    else if (bc != null) { if (bc < ref) m.reverse(); }
+    else if (bx != null && bx > mid) m.reverse();
+  }
 }
 // Place blocks as close to their desired x as possible while keeping one slot between neighbors.
 // Packing left-to-right and right-to-left, then averaging, keeps the result centered.
@@ -117,6 +150,30 @@ function pack(row, desired) {
   row.forEach((b, i) => { b.x = (L[i] + R[i]) / 2; });
 }
 
+/* ---------- Measuring label text ---------- */
+const FONTS = {
+  't-nm': '600 13px Lexend, system-ui, sans-serif', 't-rl': '400 11.5px Lexend, system-ui, sans-serif', 't-nb': 'italic 400 11px Lexend, system-ui, sans-serif',
+  't-dt': '500 11px Lexend, system-ui, sans-serif', 't-cd': '600 11px Lexend, system-ui, sans-serif',
+};
+const MEASURE = document.createElement('canvas').getContext('2d');
+function textWidth(cls, t) { MEASURE.font = FONTS[cls]; return MEASURE.measureText(t).width; }
+function fitText(cls, t, max = LAYOUT.LABEL) {
+  if (textWidth(cls, t) <= max) return t;
+  while (t.length > 1 && textWidth(cls, t + '…') > max) t = t.slice(0, -1);
+  return t.trimEnd() + '…';
+}
+// Pack items into lines that fit the label width.
+function wrapItems(cls, items, max = LAYOUT.LABEL) {
+  const lines = [];
+  let cur = '';
+  for (const item of items) {
+    const next = cur ? cur + ' · ' + item : item;
+    if (cur && textWidth(cls, next) > max) { lines.push(cur); cur = item; } else cur = next;
+  }
+  if (cur) lines.push(cur);
+  return lines.map(l => fitText(cls, l, max));
+}
+
 /* ---------- Drawing ---------- */
 function symbol(p, x, y, fill, faint) {
   const h = LAYOUT.SZ / 2, cls = `sym${faint ? ' faint' : ''}`;
@@ -124,25 +181,26 @@ function symbol(p, x, y, fill, faint) {
   if (p.sex === 'F') return `<circle class="${cls}" cx="${x}" cy="${y}" r="${h}" fill="${fill}"/>`;
   return `<path class="${cls}" d="M${x} ${y - h - 3}L${x + h + 3} ${y}L${x} ${y + h + 3}L${x - h - 3} ${y}Z" stroke-linejoin="round" fill="${fill}"/>`;
 }
-function nodeLabels(p, x, y) {
-  const k = kin(p.id), lines = [['t-nm', clip(nameOf(p), 17)]];
-  if ((p.name || '').trim() && p.id !== SELF) lines.push(['t-rl', clip(shortOf(p), 20)]);
-  if (!k.blood && p.id !== SELF) lines.push(['t-nb', k.adopted ? 'Adoptive · not blood' : 'Not blood related']);
-  if (p.living === 'no') lines.push(['t-dt', clip(`d. ${p.deathAge || '?'}${p.cause ? ' · ' + p.cause : ''}`, 19)]);
+// Label under a symbol, on a white backing so any line passing behind it is hidden.
+function nodeLabel(p, x, y) {
+  const k = kin(p.id), lines = [['t-nm', fitText('t-nm', nameOf(p))]];
+  if ((p.name || '').trim() && p.id !== SELF) lines.push(['t-rl', fitText('t-rl', shortOf(p))]);
+  if (!k.blood && p.id !== SELF) lines.push(['t-nb', k.adopted ? 'Adoptive · not blood related' : 'Not blood related']);
+  if (p.living === 'no') lines.push(['t-dt', fitText('t-dt', `d. ${p.deathAge || '?'}${p.cause ? ' · ' + p.cause : ''}`)]);
   else if (p.born) lines.push(['t-dt', `b. ${p.born}${p.living === 'yes' ? ' · ' + (YEAR - p.born) + 'y' : ''}`]);
-  let cur = '';
-  const cl = [];
-  for (const f of facts(p.id)) {
-    const item = `${factShort(f.cond, f.type)}${f.age ? ' ' + f.age : ''}${f.disagree ? '*' : ''}`;
-    if (cur && (cur + ' · ' + item).length > 19) { cl.push(cur); cur = item; } else cur = cur ? cur + ' · ' + item : item;
-  }
-  if (cur) cl.push(cur);
-  cl.slice(0, 3).forEach(t => lines.push(['t-cd', t]));
-  return lines.map(([c, t], i) => `<text class="${c}" x="${x}" y="${y + LAYOUT.SZ / 2 + 18 + i * 14}" text-anchor="middle">${esc(t)}</text>`).join('');
+  const conds = wrapItems('t-cd', facts(p.id).map(f => `${factShort(f.cond, f.type)}${f.age ? ' ' + f.age : ''}${f.disagree ? '*' : ''}`));
+  conds.slice(0, 3).forEach(t => lines.push(['t-cd', t]));
+  if (conds.length > 3) lines[lines.length - 1][1] = fitText('t-cd', lines[lines.length - 1][1] + ' +more');
+  const top = y + LAYOUT.SZ / 2 + 8, lh = 14.5;
+  const w = Math.max(...lines.map(([c, t]) => textWidth(c, t))) + 12;
+  return `<rect class="lbl-bg" x="${x - w / 2}" y="${top}" width="${w}" height="${lines.length * lh + 6}" rx="6"/>` +
+    lines.map(([c, t], i) => `<text class="${c}" x="${x}" y="${top + 13 + i * lh}" text-anchor="middle">${esc(t)}</text>`).join('');
 }
-function treeSVG({ interactive = true, hl = S.hl } = {}) {
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+function treeSVG({ interactive = true, hl = S.hl, zoom = null } = {}) {
   const L = layoutFamily(), P = L.pos, h = LAYOUT.SZ / 2;
-  let g = '';
+  if (interactive) TREE_GEOM = L;
+  let g = L.rowY.map((y, i) => `<text class="t-gen" x="${L.minX + 14}" y="${y + 5}">${ROMAN[i] || i + 1}</text>`).join('');
   for (const r of S.rels) if (r.kind === 'partner' && P[r.a] && P[r.b] && P[r.a].y === P[r.b].y) {
     const [a, b] = P[r.a].x < P[r.b].x ? [P[r.a], P[r.b]] : [P[r.b], P[r.a]];
     g += `<line class="ln" x1="${a.x + h}" y1="${a.y}" x2="${b.x - h}" y2="${b.y}"/>`;
@@ -150,29 +208,28 @@ function treeSVG({ interactive = true, hl = S.hl } = {}) {
   for (const f of L.fams) {
     const ps = f.parents.map(id => P[id]);
     const couple = ps.length === 2 && ps[0].y === ps[1].y;
-    const ky = P[f.kids[0].id].y, sy = ky - h - 30 - f.stagger * 8;
-    let mx, d;
-    if (couple) { mx = (ps[0].x + ps[1].x) / 2; d = `M${mx} ${ps[0].y}V${sy}`; }
-    else { mx = ps[0].x + h + 16; d = `M${ps[0].x + h} ${ps[0].y}H${mx}V${sy}`; } // single parent: step out sideways to clear the labels
+    const ky = P[f.kids[0].id].y, sy = ky - h - 30 - f.stagger * 9;
+    const mx = couple ? (ps[0].x + ps[1].x) / 2 : ps[0].x;
+    const y0 = couple ? ps[0].y : ps[0].y + h; // a single parent's line starts under their symbol and runs behind the label
     const xs = f.kids.map(k => P[k.id].x).concat(mx);
-    g += `<path class="ln" d="${d}M${Math.min(...xs)} ${sy}H${Math.max(...xs)}"/>`;
+    g += `<path class="ln" d="M${mx} ${y0}V${sy}M${Math.min(...xs)} ${sy}H${Math.max(...xs)}"/>`;
     for (const k of f.kids) g += `<line class="ln${k.bio ? '' : ' adopt'}" x1="${P[k.id].x}" y1="${sy}" x2="${P[k.id].x}" y2="${ky - h - (byId(k.id).sex === 'U' ? 3 : 0)}"/>`;
   }
   for (const p of S.people) {
     if (!P[p.id]) continue;
     const { x, y } = P[p.id], fs = facts(p.id), k = kin(p.id);
     const hit = hl === 'any' ? fs.length > 0 : fs.some(f => f.cond === hl);
-    const fill = hit ? 'var(--accent)' : 'var(--panel)';
     let n = '';
     if (interactive && S.sel === p.id) n += `<rect class="ring" x="${x - h - 10}" y="${y - h - 10}" width="${LAYOUT.SZ + 20}" height="${LAYOUT.SZ + 20}" rx="14"/>`;
-    n += symbol(p, x, y, fill, !k.blood && p.id !== SELF);
+    n += symbol(p, x, y, hit ? 'var(--accent)' : 'var(--panel)', !k.blood && p.id !== SELF);
     if (isBlank(p)) n += `<text class="t-q" x="${x}" y="${y + 6}" text-anchor="middle">?</text>`;
     if (p.living === 'no') n += `<line class="ln" x1="${x - h - 7}" y1="${y + h + 7}" x2="${x + h + 7}" y2="${y - h - 7}" style="stroke:var(--sym);stroke-width:2.5"/>`;
-    if (p.id === SELF) n += `<path class="ln" d="M${x - h - 26} ${y + h + 16}L${x - h - 6} ${y + h - 2}" style="stroke:var(--primary);stroke-width:3"/><path d="M${x - h - 4} ${y + h - 4}l-10 1.5 7 7z" fill="var(--primary)"/>`;
+    if (p.id === SELF) n += `<path class="ln" d="M${x - h - 40} ${y}H${x - h - 16}" style="stroke:var(--primary);stroke-width:3"/><path d="M${x - h - 12} ${y}l-9 -6v12z" fill="var(--primary)"/>`;
     if (p.interviewed) n += `<circle class="chk" cx="${x + h + 3}" cy="${y - h - 3}" r="9"/><path d="M${x + h - 1} ${y - h - 3}l3 3 5-6" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
-    n += nodeLabels(p, x, y);
+    n += nodeLabel(p, x, y);
     const aria = `${nameOf(p)}, ${relOf(p)}${p.living === 'no' ? ', deceased' : ''}${fs.length ? ', ' + fs.map(f => factName(f.cond, f.type)).join(', ') : ''}`;
     g += interactive ? `<g class="node" data-node="${p.id}" tabindex="0" role="button" aria-label="${esc(aria)}">${n}</g>` : `<g aria-label="${esc(aria)}">${n}</g>`;
   }
-  return `<svg viewBox="${L.minX} 0 ${L.width} ${L.height}" width="${L.width}" height="${L.height}" style="max-width:100%;min-width:${Math.min(L.width, 820)}px;height:auto" role="img" aria-label="Family pedigree chart">${g}</svg>`;
+  const size = zoom ? `width="${Math.round(L.width * zoom)}" height="${Math.round(L.height * zoom)}"` : `width="${L.width}" height="${L.height}" style="max-width:100%;height:auto"`;
+  return `<svg viewBox="${L.minX} 0 ${L.width} ${L.height}" ${size} role="img" aria-label="Family pedigree chart">${g}</svg>`;
 }

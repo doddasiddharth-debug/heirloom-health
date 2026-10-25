@@ -55,8 +55,13 @@ function addRelative(kind, ofId, opts = {}) {
     const [dad, mom] = ensureParents(ofId);
     S.people.push(p); linkParent(dad, p.id); linkParent(mom, p.id);
   } else if (kind === 'halfsib-mother' || kind === 'halfsib-father') {
+    // A half-sibling shares one parent; their other parent is that parent's other partner
+    // (an unnamed placeholder if none is on the chart yet), as on a medical pedigree.
     const [dad, mom] = ensureParents(ofId);
-    S.people.push(p); linkParent(kind === 'halfsib-mother' ? mom : dad, p.id);
+    const shared = kind === 'halfsib-mother' ? mom : dad, other = kind === 'halfsib-mother' ? dad : mom;
+    let step = partnersOf(shared).find(x => x !== other);
+    if (!step) { const sp = newPerson({ sex: byId(shared).sex === 'F' ? 'M' : 'F' }); S.people.push(sp); linkPartners(shared, sp.id); step = sp.id; }
+    S.people.push(p); linkParent(shared, p.id); linkParent(step, p.id);
   } else if (kind === 'partner') {
     const me = byId(ofId);
     if (p.sex === 'U' && me.sex !== 'U') p.sex = me.sex === 'M' ? 'F' : 'M';

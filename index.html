@@ -71,7 +71,7 @@ p { margin: 0; }
 .side .privacy b { color: var(--strong); }
 .mtop { display: none; }
 .content { min-width: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 64px; }
-.page { max-width: 1040px; margin: 0 auto; display: grid; gap: 20px; }
+.page { max-width: 1240px; margin: 0 auto; display: grid; gap: 20px; }
 @media (max-width: 860px) {
   .app { grid-template-columns: minmax(0, 1fr); }
   .side { position: fixed; inset: auto 0 0 0; top: auto; height: auto; z-index: 20; flex-direction: row; border-right: 0; border-top: 2px solid var(--line); background: var(--panel); padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
@@ -358,6 +358,27 @@ body.signed-out .content { padding-block: 32px 48px; }
 .risk-tip { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; background: var(--soft); border-radius: 12px; padding: 8px 12px; font-size: .9rem; }
 .risk-tip b { font-weight: 600; color: var(--strong); }
 .pill-static { font: 500 .85rem var(--f); padding: 6px 12px; border-radius: 999px; background: var(--soft); color: var(--ink); }
+
+/* Chart: zoom, pan, label backings */
+.zoom { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.zbtn { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--line); background: var(--panel); font: 600 1.15rem/1 var(--f); color: var(--primary-dk); cursor: pointer; }
+.zbtn:hover { border-color: var(--primary); }
+.zval { min-width: 46px; text-align: center; font: 600 .85rem var(--f); color: var(--muted); font-variant-numeric: tabular-nums; }
+.zhint { margin-left: auto; }
+@media (max-width: 600px) { .zhint { display: none; } }
+#tree-svg { max-height: min(78vh, 920px); overflow: auto; cursor: grab; overscroll-behavior: contain; background: var(--soft); border-radius: 14px; margin: 0 12px; padding: 0; }
+#tree-svg.dragging { cursor: grabbing; user-select: none; }
+#tree-svg svg { margin: 0; }
+svg .lbl-bg { fill: var(--panel); }
+svg .t-gen { font: 800 15px var(--f-display); fill: var(--muted); opacity: .55; }
+@media (max-width: 860px) {
+  .tree-card .hd .pills { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; margin: 0 -20px; padding-inline: 20px; scrollbar-width: none; }
+  .tree-card .hd .pills::-webkit-scrollbar { display: none; }
+  .tree-card .hd .pill-btn { flex: none; }
+  #tree-svg { margin: 0 8px; max-height: 70vh; }
+}
+.sugg mark { background: var(--accent-soft); color: var(--strong); border-radius: 4px; padding: 0 2px; font-style: normal; font-weight: 600; }
+.sugg-who select { padding: 6px 10px; font-size: .85rem; border-radius: 10px; max-width: 100%; }
 </style>
 </head>
 <body>

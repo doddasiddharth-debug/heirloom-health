@@ -10,62 +10,123 @@
 'use strict';
 
 const LATIN = /[a-záéíóúñü]/i;
-function hasWord(text, word) {
-  if (!LATIN.test(word)) return text.indexOf(word);
-  const m = new RegExp(`(^|[^a-záéíóúñü])${word.replace(/[.*+?^${}()|[\]\\']/g, '\\$&')}`, 'i').exec(text);
+const LETTER = 'a-záéíóúñü';
+const reEsc = w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Where `word` appears in `text` (from position `from`), or -1.
+// English and Spanish words must be whole words (a plural "s" is fine), so "heartburn" is not "heart"
+// and "now" is not "no". Telugu and Hindi words take suffixes (షుగర్‌తో), so any match counts.
+function findWord(text, word, from = 0) {
+  if (!LATIN.test(word)) return text.indexOf(word, from);
+  const re = new RegExp(`(^|[^${LETTER}])${reEsc(word)}(?:s|es|'s)?(?![${LETTER}])`, 'gi');
+  re.lastIndex = from;
+  const m = re.exec(text);
   return m ? m.index + m[1].length : -1;
 }
-function tokens(text) { return text.toLowerCase().split(/[\s,;:"'()]+/).filter(Boolean); }
+const hasWord = (text, word) => findWord(text, word);
+// Telugu (౦-౯) and Hindi (०-९) digits become 0-9.
+const normalize = s => s.replace(/[०-९౦-౯]/g, d => String(d.charCodeAt(0) - (d.charCodeAt(0) >= 0x0C66 ? 0x0C66 : 0x0966)));
+
 function aboutWhom(sentence) {
-  const toks = tokens(sentence);
+  const toks = sentence.toLowerCase().split(/[\s,;:"()!?.।]+/).filter(Boolean);
   for (const [rel, { stems, not }] of Object.entries(KIN_WORDS)) {
-    if (toks.some(t => stems.some(s => t.startsWith(s)) && !not.some(n => t.startsWith(n)))) return rel;
+    // Short English words must match exactly ("mom" is not "moment"); longer and Indic stems may carry suffixes ("ammaki").
+    const match = t => stems.some(s => LATIN.test(s) && s.length < 4 ? [s, s + 's', s + "'s"].includes(t) : t.startsWith(s));
+    if (toks.some(t => match(t) && !not.some(n => t.startsWith(n)))) return rel;
   }
   return null;
 }
-function agesIn(sentence) {
+
+// Every number in a sentence: digits, and spoken numbers like "forty-seven", "cuarenta y siete" or "నలభై ఏడు".
+function numbersIn(low) {
   const out = [];
-  for (const m of sentence.matchAll(/\d{1,3}/g)) { const n = +m[0]; if (n > 0 && n <= 110) out.push({ n, at: m.index }); }
-  const low = sentence.toLowerCase();
-  for (const [w, n] of Object.entries(NUM_WORDS)) { const at = hasWord(low, w); if (at >= 0) out.push({ n, at }); }
+  for (const m of low.matchAll(/\d{1,4}/g)) out.push({ n: +m[0], at: m.index, len: m[0].length });
+  const units = Object.keys(NUM_UNITS).sort((a, b) => b.length - a.length);
+  for (const w of Object.keys(NUM_WORDS)) {
+    for (let i = findWord(low, w); i >= 0; i = findWord(low, w, i + w.length)) {
+      let n = NUM_WORDS[w], len = w.length;
+      const rest = low.slice(i + w.length), sep = rest.match(/^[\s-]+(?:y\s+)?/);
+      if (sep && n % 10 === 0) {
+        const after = rest.slice(sep[0].length);
+        const u = units.find(u => after.startsWith(u) && !(LATIN.test(u) && new RegExp(`[${LETTER}]`).test(after[u.length] || '')));
+        if (u) { n += NUM_UNITS[u]; len += sep[0].length + u.length; }
+      }
+      out.push({ n, at: i, len });
+    }
+  }
+  for (const [w, n] of Object.entries(NUM_TEENS)) for (let i = findWord(low, w); i >= 0; i = findWord(low, w, i + w.length)) out.push({ n, at: i, len: w.length });
   return out;
 }
-// Numbers right after a word ("passed away at 61") beat numbers before it ("heart attack at 54, and he passed away").
-const nearest = (list, at, len = 0) => {
-  const dist = x => x.at >= at ? x.at - (at + len) : (at - x.at) * 2;
-  return list.reduce((best, x) => !best || dist(x) < dist(best) ? x : best, null);
-};
+// "No" only counts when it is in the same part of the sentence as the illness.
+const CLAUSE = /[,;]| but | pero | lekin | लेकिन | కానీ | kaani /;
+function negatedNear(low, at, len) {
+  const before = low.slice(Math.max(0, at - 32), at).split(CLAUSE).pop();
+  const after = low.slice(at + len, at + len + 24).split(CLAUSE)[0];
+  return NEG_WORDS.some(w => findWord(before, w) >= 0 || findWord(after, w) >= 0);
+}
+const firstWord = (low, list) => list.map(w => ({ w, at: findWord(low, w) })).filter(x => x.at >= 0).sort((a, b) => a.at - b.at || b.w.length - a.w.length)[0];
 
-// ctx: { subject: pid the question is about, mother: pid|null, father: pid|null }
+// Each number goes to the closest illness (or death word) in the sentence, so in
+// "No diabetes, but her cholesterol was high at 47" the 47 belongs to cholesterol.
+function assignAges(hits, ages) {
+  const dist = (x, h) => x.at >= h.at ? x.at - (h.at + h.len) : (h.at - x.at) * 2;
+  for (const x of ages) {
+    const best = hits.reduce((b, h) => !b || dist(x, h) < dist(x, b) ? h : b, null);
+    if (best && dist(x, best) < 60 && (!best.age || dist(x, best) < dist(best.age, best))) best.age = x;
+  }
+}
+
+// ctx: { subject: pid the question is about, mother, father: pids or null, step: the interview step key }
 function findAnswers(text, ctx) {
   const found = new Map();
-  const sentences = text.split(/(?<=[.!?।\n])\s*/).map(s => s.trim()).filter(Boolean);
+  const sentences = normalize(text).split(/(?<=[.!?।\n])\s*/).map(s => s.trim()).filter(Boolean);
+  let lastPid = null;
   for (const sentence of sentences) {
     const low = sentence.toLowerCase();
     const rel = aboutWhom(sentence);
-    const pid = (rel && ctx[rel]) || ctx.subject;
+    // "He had a heart attack" right after "My father..." is still about the father.
+    const pronoun = !rel && lastPid && firstWord(low, PRONOUNS)?.at <= 2;
+    const pid = (rel && ctx[rel]) || (pronoun ? lastPid : ctx.subject);
     if (!pid) continue;
-    const ages = agesIn(sentence);
-    const negated = NEG_WORDS.some(w => hasWord(low, w) >= 0);
-    // Death: "passed away at 61"
-    const deathWord = DEATH_WORDS.find(w => hasWord(low, w) >= 0);
-    if (deathWord) {
-      const a = nearest(ages, hasWord(low, deathWord), deathWord.length);
-      found.set(`death|${pid}`, { kind: 'death', pid, age: a ? String(a.n) : '', quote: sentence, said: deathWord });
-    }
+    lastPid = pid;
+    const nums = numbersIn(low), ages = nums.filter(x => x.n > 0 && x.n <= 110), years = nums.filter(x => x.n >= 1900 && x.n <= YEAR);
+
+    // Birth year: "born in 1953", or any year said while answering the birth-year question.
+    if (years.length && (ctx.step === 'born' || firstWord(low, BORN_WORDS))) found.set(`born|${pid}`, { kind: 'born', pid, year: String(years[0].n), said: String(years[0].n), quote: sentence });
+
+    const hits = [];
     for (const entry of LEXICON) {
-      const hit = entry.words.map(w => ({ w, at: hasWord(low, w) })).filter(x => x.at >= 0).sort((a, b) => b.w.length - a.w.length)[0];
+      const hit = firstWord(low, entry.words);
       if (!hit) continue;
       let type = '';
       if (entry.cond === 'cancer') {
-        const t = CANCER_LEXICON.find(c => c.words.some(w => hasWord(low, w) >= 0));
-        type = t ? t.type : '';
+        const t = CANCER_LEXICON.map(c => ({ c, hit: firstWord(low, c.words) })).filter(x => x.hit).sort((a, b) => Math.abs(a.hit.at - hit.at) - Math.abs(b.hit.at - hit.at))[0];
+        type = t ? t.c.type : '';
       }
-      const a = nearest(ages.filter(x => Math.abs(x.at - hit.at) < 60), hit.at, hit.w.length);
-      const key = `cond|${pid}|${entry.cond}|${type}`;
-      const prev = found.get(key);
-      found.set(key, { kind: 'cond', pid, cond: entry.cond, type, age: a ? String(a.n) : prev?.age || '', said: hit.w, quote: sentence, negated: negated && !a });
+      hits.push({ kind: 'cond', cond: entry.cond, type, at: hit.at, len: hit.w.length, negated: negatedNear(low, hit.at, hit.w.length) });
     }
+    const death = firstWord(low, DEATH_WORDS);
+    if (death && !negatedNear(low, death.at, death.w.length)) hits.push({ kind: 'death', at: death.at, len: death.w.length });
+    assignAges(hits.filter(h => !h.negated), ages);
+    // "Died of a stroke at 72": the 72 is both the stroke age and the age at death.
+    const d = hits.find(h => h.kind === 'death');
+    if (d && !d.age) d.age = ages.filter(x => x.at > d.at).sort((a, b) => a.at - b.at)[0] || null;
+
+    const condsHere = hits.filter(h => h.kind === 'cond' && !h.negated).map(h => h.cond === 'cancer' ? factName('cancer', h.type) : COND[h.cond].en);
+    for (const h of hits) {
+      const said = sentence.slice(h.at, h.at + h.len), age = h.age ? String(h.age.n) : '';
+      if (h.kind === 'death') {
+        const from = low.slice(h.at).match(/\b(?:from|of|due to|because of)\s+(?:a |an )?([a-z ]{3,30}?)(?=[.,;!?]|$| at | when )/);
+        found.set(`death|${pid}`, { kind: 'death', pid, age, cause: condsHere[0] || (from ? from[1].trim() : ''), said, quote: sentence });
+        continue;
+      }
+      const key = `cond|${pid}|${h.cond}|${h.type}`, prev = found.get(key);
+      if (prev && !prev.negated && h.negated) continue;
+      found.set(key, { kind: 'cond', pid, cond: h.cond, type: h.type, age: age || prev?.age || '', said, quote: sentence, negated: h.negated });
+    }
+
+    // Still living
+    const alive = firstWord(low, LIVING_WORDS);
+    if (alive && !death && !negatedNear(low, alive.at, alive.w.length)) found.set(`living|${pid}`, { kind: 'living', pid, said: sentence.slice(alive.at, alive.at + alive.w.length), quote: sentence });
   }
   return [...found.values()];
 }

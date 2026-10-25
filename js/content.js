@@ -217,6 +217,18 @@ const NUM_WORDS = {
   treinta: 30, cuarenta: 40, cincuenta: 50, sesenta: 60, setenta: 70, ochenta: 80, noventa: 90,
 };
 
+// Ones digits that can follow a tens word ("forty-seven", "నలభై ఏడు", "cuarenta y siete").
+const NUM_UNITS = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9,
+  'ఒకటి': 1, 'రెండు': 2, 'మూడు': 3, 'నాలుగు': 4, 'ఐదు': 5, 'ఆరు': 6, 'ఏడు': 7, 'ఎనిమిది': 8, 'తొమ్మిది': 9,
+  okati: 1, rendu: 2, moodu: 3, naalugu: 4, aidu: 5, aaru: 6, edu: 7, enimidi: 8, tommidi: 9,
+  uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9,
+};
+const NUM_TEENS = { ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, veinte: 20, 'ఇరవై': 20, iravai: 20, 'बीस': 20, bees: 20 };
+const LIVING_WORDS = ['still alive', 'alive', 'still living', 'is living', 'బతికే ఉన్నారు', 'బతికున్నారు', 'ఇంకా ఉన్నారు', 'batike unnaaru', 'जीवित', 'ज़िंदा', 'जिंदा', 'zinda', 'jeevit', 'está vivo', 'está viva', 'sigue vivo', 'sigue viva'];
+const PRONOUNS = ['he', 'she', 'his', 'her', 'they', 'ఆయన', 'ఆమె', 'వారు', 'వాళ్ళు', 'वह', 'वो', 'उन्हें', 'उनको', 'उनकी', 'उनका', 'él', 'ella'];
+const BORN_WORDS = ['born', 'birth', 'పుట్టా', 'పుట్టి', 'puttaa', 'జన్మ', 'जन्म', 'पैदा', 'janm', 'nací', 'nació', 'nacimiento'];
+
 /* ---------- Guideline sources cited in the doctor report ---------- */
 const SOURCES = {
   usmstf: { short: 'US Multi-Society Task Force on Colorectal Cancer, 2017', full: 'Rex DK, et al. Colorectal cancer screening: recommendations for physicians and patients from the U.S. Multi-Society Task Force on Colorectal Cancer. Gastroenterology. 2017;153:307-323.', url: 'https://doi.org/10.1053/j.gastro.2017.05.013' },

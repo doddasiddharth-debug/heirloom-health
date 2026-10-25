@@ -205,27 +205,55 @@ function startCaptions(pid, stepKey) {
 function ivPeople(W, st) {
   const mom = motherOf(W.id), dad = fatherOf(W.id);
   const subject = st.who === 'mother' ? mom?.id : st.who === 'father' ? dad?.id : W.id;
-  return { subject, mother: mom?.id || null, father: dad?.id || null };
+  return { subject, mother: mom?.id || null, father: dad?.id || null, step: st.k };
+}
+// Drop suggestions that are already saved exactly as heard.
+function isNew(s, by) {
+  const T = byId(s.pid);
+  if (!T) return false;
+  if (s.kind === 'born') return T.born !== s.year;
+  if (s.kind === 'living') return T.living !== 'yes';
+  if (s.kind === 'death') return T.living !== 'no' || (s.age && T.deathAge !== s.age) || (s.cause && !T.cause);
+  const r = findReport(s.pid, s.cond, s.type, by);
+  return !r || (s.age && r.age !== s.age);
+}
+function showResults(list, ai) {
+  render();
+  const out = $('#finder-out');
+  out?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  toast(list.length ? `Found ${list.length} possible answer${list.length === 1 ? '' : 's'}${ai ? ' with AI' : ''}` : 'No new answers found in that text');
 }
 async function runFinder(useAI) {
-  const W = byId(S.iv.who), st = STEPS[S.iv.step], text = (W.transcripts[st.k] || '').trim();
+  const W = byId(S.iv.who), st = STEPS[S.iv.step], text = ((W.transcripts ||= {})[st.k] || '').trim();
   if (!text) { toast('Type or dictate what they said first'); $('#iv-tr')?.focus(); return; }
   const ctx = ivPeople(W, st), key = W.id + '|' + st.k;
-  if (!useAI) { SUGG = { key, list: findAnswers(text, ctx), busy: false, ai: false }; render(); return; }
+  if (!ctx.subject) { toast(`Add ${nameOf(W)}'s ${st.who} to the tree first`); return; }
+  const fresh = list => list.filter(x => isNew(x, W.id));
+  if (!useAI) { SUGG = { key, list: fresh(findAnswers(text, ctx)), busy: false, ai: false }; showResults(SUGG.list, false); return; }
   SUGG = { key, list: [], busy: true, ai: true }; render();
-  try { SUGG = { key, list: await aiFindAnswers(text, ctx, ctx), busy: false, ai: true }; }
-  catch (e) { SUGG = { key, list: findAnswers(text, ctx), busy: false, ai: false }; toast(e?.code === 'not_granted' ? 'AI was not allowed, so the built-in dictionary was used.' : "AI isn't available right now, so the built-in dictionary was used."); }
-  render();
+  try { SUGG = { key, list: fresh(await aiFindAnswers(text, ctx, ctx)), busy: false, ai: true }; showResults(SUGG.list, true); }
+  catch (e) {
+    SUGG = { key, list: fresh(findAnswers(text, ctx)), busy: false, ai: false }; render();
+    toast(e?.code === 'not_granted' ? 'AI was not allowed, so the built-in word list was used.' : "AI isn't available right now, so the built-in word list was used.");
+  }
 }
 function suggestionHTML(s, i) {
-  const p = byId(s.pid);
-  const what = s.kind === 'death' ? `Passed away${s.age ? ' at ' + s.age : ''}` : `${factName(s.cond, s.type)}${s.age ? ' · age ' + s.age : ''}`;
-  const mapped = s.said ? `Heard “${esc(s.said)}”${s.kind === 'cond' ? ` → ${esc(COND[s.cond].en)}` : ''}` : '';
+  const W = byId(S.iv.who), ctx = ivPeople(W, STEPS[S.iv.step]);
+  const who = [...new Set([ctx.subject, W.id, ctx.mother, ctx.father, s.pid].filter(Boolean))].map(byId);
+  const what = s.kind === 'death' ? `Passed away${s.age ? ' at ' + s.age : ''}${s.cause ? ' · ' + s.cause : ''}`
+    : s.kind === 'born' ? `Born in ${s.year}` : s.kind === 'living' ? 'Still living'
+    : `${factName(s.cond, s.type)}${s.age ? ' · age ' + s.age : ''}`;
+  const mapped = s.kind === 'cond' && s.said ? `Heard “${esc(s.said)}” → ${esc(COND[s.cond].en)}` : '';
+  // Show the sentence with the matched words highlighted.
+  const q = clip(s.quote, 160), at = s.said ? q.toLowerCase().indexOf(s.said.toLowerCase()) : -1;
+  const quote = at >= 0 ? `${esc(q.slice(0, at))}<mark>${esc(q.slice(at, at + s.said.length))}</mark>${esc(q.slice(at + s.said.length))}` : esc(q);
   return `<li class="sugg${s.negated ? ' neg' : ''}">
-    <div class="sugg-main"><span class="eyebrow">${esc(nameOf(p))} · ${esc(relOf(p))}</span><b>${esc(what)}</b>
+    <div class="sugg-main">
+      <label class="sugg-who"><span class="sr">About</span><select data-sugg="${i}" aria-label="Who this answer is about">${who.map(p => `<option value="${p.id}" ${p.id === s.pid ? 'selected' : ''}>${esc(nameOf(p))} · ${esc(relOf(p))}</option>`).join('')}</select></label>
+      <b>${esc(what)}</b>
       ${mapped ? `<span class="small heard">${mapped}</span>` : ''}
       ${s.negated ? '<span class="small neg-note">They may have said no. Check before adding.</span>' : ''}
-      <span class="small muted quote">“${esc(clip(s.quote, 140))}”</span></div>
+      <span class="small muted quote">“${quote}”</span></div>
     <div class="sugg-btns"><button class="btn sm primary" data-action="sugg-add" data-i="${i}">Add</button><button class="link" data-action="sugg-skip" data-i="${i}">Dismiss</button></div>
   </li>`;
 }
@@ -338,12 +366,20 @@ function renderTree() {
     <section class="card tree-card" aria-label="Pedigree chart">
       <div class="hd">
         <div class="row" style="justify-content:space-between"><h2>${S.people.length} people, ${new Set([...generations().values()]).size} generations</h2><span class="tag">${known} of ${blood.length} blood relatives filled in</span></div>
+        <div class="zoom" role="group" aria-label="Chart zoom">
+          <button class="zbtn" data-action="zoom" data-z="-1" aria-label="Zoom out">−</button>
+          <span class="zval" id="zval">${Math.round((S.zoom || 1) * 100)}%</span>
+          <button class="zbtn" data-action="zoom" data-z="1" aria-label="Zoom in">+</button>
+          <button class="btn sm" data-action="zoom-fit">Fit to screen</button>
+          <button class="btn sm" data-action="center-me">Find me</button>
+          <span class="small muted zhint">Drag to move around</span>
+        </div>
         <div class="pills" role="group" aria-label="Shade the chart by condition">
           <button class="pill-btn" data-hl="any" aria-pressed="${S.hl === 'any'}">Any condition</button>
           ${present.map(c => `<button class="pill-btn" data-hl="${c.id}" aria-pressed="${S.hl === c.id}">${esc(c.en.replace(' ("fits")', ''))}</button>`).join('')}
         </div>
       </div>
-      <div class="tree-scroll" id="tree-svg">${treeSVG()}</div>
+      <div class="tree-scroll" id="tree-svg">${treeSVG({ zoom: S.zoom || 1 })}</div>
       ${keyHTML()}
     </section>
     <aside class="card editor" aria-label="Edit relative">
@@ -414,7 +450,7 @@ function followUps(W, target, st, lang, roman) {
   return cards.length ? `<div class="fus">${cards.join('')}</div>` : '';
 }
 function transcriptHTML(W, st) {
-  const key = W.id + '|' + st.k, text = W.transcripts[st.k] || '';
+  const key = W.id + '|' + st.k, text = (W.transcripts || {})[st.k] || '';
   const sugg = SUGG.key === key ? SUGG : null;
   const hasSR = !!(window.SpeechRecognition || window.webkitSpeechRecognition) && !S.capBlocked;
   return `<div class="transcript">
@@ -425,7 +461,7 @@ function transcriptHTML(W, st) {
       <button class="btn sm" data-action="find">Find answers</button>
       ${SAMPLE_OK ? `<button class="btn sm iris" data-action="find-ai" ${sugg?.busy ? 'disabled' : ''}>${ICON.spark}${sugg?.busy ? 'Reading…' : 'Find with AI'}</button>` : ''}
     </div>
-    ${sugg && !sugg.busy ? (sugg.list.length ? `<div style="display:grid;gap:8px"><p class="small"><b>${sugg.list.length} possible answer${sugg.list.length === 1 ? '' : 's'}</b> ${sugg.ai ? 'found by AI' : 'matched from the word list'}. Nothing is saved until you tap Add.</p><ul class="suggs">${sugg.list.map(suggestionHTML).join('')}</ul></div>` : '<p class="small muted">No answers found. Try adding the illness name or an age.</p>') : ''}
+    <div id="finder-out">${sugg && !sugg.busy ? (sugg.list.length ? `<div style="display:grid;gap:8px"><p class="small"><b>${sugg.list.length} possible answer${sugg.list.length === 1 ? '' : 's'}</b> ${sugg.ai ? 'found by AI' : 'matched from the word list'}. Nothing is saved until you tap Add.</p><ul class="suggs">${sugg.list.map(suggestionHTML).join('')}</ul></div>` : '<p class="small muted">No new answers found. Try including the illness name and an age, like "sugar at 50".</p>') : ''}</div>
   </div>`;
 }
 function recHTML(who, step) {
@@ -666,7 +702,7 @@ function summaryText() {
 /* ---------- PDF export ---------- */
 const LIGHT = { '--bg': '#F7F6FB', '--panel': '#FFFFFF', '--soft': '#F1F0F7', '--ink': '#33324A', '--strong': '#1E1D33', '--muted': '#6E6C86', '--line': '#E4E2EE', '--leaf': '#2E9E62', '--primary': '#0E7C86', '--primary-soft': '#DDF1F2', '--accent': '#F5A524', '--accent-dk': '#A8680A', '--sym': '#3A3950' };
 function pedigreePNG() {
-  const css = `.t-nm{font:700 13px Helvetica,Arial,sans-serif;fill:#1E1D33}.t-rl{font:11.5px Helvetica,Arial,sans-serif;fill:#6E6C86}.t-nb{font:italic 11px Helvetica,Arial,sans-serif;fill:#6E6C86}.t-dt{font:11px Helvetica,Arial,sans-serif;fill:#33324A}.t-cd{font:700 11px Helvetica,Arial,sans-serif;fill:#A8680A}.t-q{font:700 18px Helvetica,Arial,sans-serif;fill:#6E6C86}.ln{stroke:#6E6C86;stroke-width:2;fill:none;stroke-linecap:round}.adopt{stroke-dasharray:5 4}.sym{stroke:#3A3950;stroke-width:2.5}.faint{stroke:#6E6C86;stroke-dasharray:4 3}.chk{fill:#2E9E62}`;
+  const css = `.t-nm{font:700 13px Helvetica,Arial,sans-serif;fill:#1E1D33}.t-rl{font:11.5px Helvetica,Arial,sans-serif;fill:#6E6C86}.t-nb{font:italic 11px Helvetica,Arial,sans-serif;fill:#6E6C86}.t-dt{font:11px Helvetica,Arial,sans-serif;fill:#33324A}.t-cd{font:700 11px Helvetica,Arial,sans-serif;fill:#A8680A}.t-q{font:700 18px Helvetica,Arial,sans-serif;fill:#6E6C86}.ln{stroke:#6E6C86;stroke-width:2;fill:none;stroke-linecap:round}.adopt{stroke-dasharray:5 4}.sym{stroke:#3A3950;stroke-width:2.5}.faint{stroke:#6E6C86;stroke-dasharray:4 3}.chk{fill:#2E9E62}.lbl-bg{fill:#FFFFFF}.ring{fill:none;stroke:none}.t-gen{font:700 15px Helvetica,Arial,sans-serif;fill:#A9A7BD}`;
   const s = treeSVG({ interactive: false, hl: 'any' })
     .replace(/var\((--[\w-]+)\)/g, (m, k) => LIGHT[k] || '#000')
     .replace(/ style="max-width[^"]*"/, '')
@@ -799,14 +835,51 @@ function renderBanner() {
 }
 function render() {
   const keep = document.activeElement?.id;
+  const ts0 = $('#tree-svg'), scroll = ts0 ? [ts0.scrollLeft, ts0.scrollTop] : null;
   document.body.classList.toggle('signed-out', !S);
   if (!S) { $('#main').innerHTML = renderAuth(); if (keep) document.getElementById(keep)?.focus(); return; }
   renderShell();
   const page = { tree: renderTree, interview: renderInterview, risks: renderRisks, doctor: renderDoctor }[S.tab] || renderTree;
   $('#main').innerHTML = renderBanner() + page();
+  const ts = $('#tree-svg');
+  if (ts) {
+    if (S.zoom == null) { S.zoom = clampZoom(Math.min(1, Math.max(0.85, fitZoom()))); refreshTree(); const zv = $('#zval'); if (zv) zv.textContent = Math.round(S.zoom * 100) + '%'; }
+    if (scroll) [ts.scrollLeft, ts.scrollTop] = scroll; else centerOn(S.sel || SELF);
+  }
   if (keep) document.getElementById(keep)?.focus();
 }
-function refreshTree() { const el = $('#tree-svg'); if (el) el.innerHTML = treeSVG(); }
+function refreshTree() { const el = $('#tree-svg'); if (el) el.innerHTML = treeSVG({ zoom: S.zoom || 1 }); }
+// Zoom and scrolling for the family chart.
+const clampZoom = z => Math.round(Math.min(1.8, Math.max(0.3, z)) * 100) / 100;
+function fitZoom() { const ts = $('#tree-svg'); return ts && TREE_GEOM ? (ts.clientWidth - 12) / TREE_GEOM.width : 1; }
+function setZoom(z) {
+  const ts = $('#tree-svg'); if (!ts) return;
+  const cx = (ts.scrollLeft + ts.clientWidth / 2) / ts.scrollWidth, cy = (ts.scrollTop + ts.clientHeight / 2) / ts.scrollHeight;
+  S.zoom = clampZoom(z); save(); refreshTree();
+  ts.scrollLeft = cx * ts.scrollWidth - ts.clientWidth / 2; ts.scrollTop = cy * ts.scrollHeight - ts.clientHeight / 2;
+  const zv = $('#zval'); if (zv) zv.textContent = Math.round(S.zoom * 100) + '%';
+}
+function centerOn(id) {
+  const ts = $('#tree-svg'), p = TREE_GEOM?.pos[id]; if (!ts || !p) return;
+  const z = S.zoom || 1;
+  ts.scrollLeft = (p.x - TREE_GEOM.minX) * z - ts.clientWidth / 2;
+  ts.scrollTop = (p.y + 40) * z - ts.clientHeight / 2;
+}
+let DRAG = null, SUPPRESS_CLICK = false;
+document.addEventListener('pointerdown', e => {
+  const ts = e.target.closest('#tree-svg');
+  if (ts && e.pointerType === 'mouse' && e.button === 0) DRAG = { ts, x: e.clientX, y: e.clientY, l: ts.scrollLeft, t: ts.scrollTop, moved: false };
+});
+document.addEventListener('pointermove', e => {
+  if (!DRAG) return;
+  const dx = e.clientX - DRAG.x, dy = e.clientY - DRAG.y;
+  if (Math.abs(dx) + Math.abs(dy) > 5) { DRAG.moved = true; DRAG.ts.classList.add('dragging'); }
+  if (DRAG.moved) { DRAG.ts.scrollLeft = DRAG.l - dx; DRAG.ts.scrollTop = DRAG.t - dy; }
+});
+document.addEventListener('pointerup', () => {
+  if (DRAG?.moved) { SUPPRESS_CLICK = true; setTimeout(() => { SUPPRESS_CLICK = false; }, 0); }
+  DRAG?.ts.classList.remove('dragging'); DRAG = null;
+});
 function setTab(t) { S.tab = t; save(); render(); window.scrollTo({ top: 0 }); }
 async function copyText(text, label) {
   try { await navigator.clipboard.writeText(text); toast(label); }
@@ -817,13 +890,14 @@ async function copyText(text, label) {
 document.addEventListener('input', e => {
   const t = e.target, d = t.dataset, p = d.pid && byId(d.pid);
   if (!p) return;
-  if (d.tr) { p.transcripts[d.tr] = t.value; save(); return; }
+  if (d.tr) { (p.transcripts ||= {})[d.tr] = t.value; save(); return; }
   if (d.f && t.type !== 'checkbox' && t.type !== 'file' && t.tagName !== 'SELECT') { p[d.f] = t.value; save(); refreshTree(); }
   else if (d.cf === 'age') { addReport(p.id, d.cond, d.type, d.by, { age: t.value }); save(); refreshTree(); }
 });
 document.addEventListener('change', e => {
   const t = e.target, d = t.dataset;
   if (t.id === 'rec-file') { const f = t.files?.[0]; if (f) addClip(d.pid, S.iv.step, f, null); t.value = ''; return; }
+  if (d.sugg != null) { SUGG.list[+d.sugg].pid = t.value; render(); return; }
   if (d.ivf) { S.iv[d.ivf] = t.type === 'checkbox' ? t.checked : t.value; if (d.ivf === 'who') { S.celebrate = null; S.iv.step = 0; } save(); render(); return; }
   const p = d.pid && byId(d.pid);
   if (!p) return;
@@ -836,6 +910,7 @@ document.addEventListener('change', e => {
   else if (d.f === 'cause' || d.f === 'deathAge') render();
 });
 document.addEventListener('click', e => {
+  if (SUPPRESS_CLICK && e.target.closest('#tree-svg')) return;
   const tab = e.target.closest('.nav button'); if (tab) return setTab(tab.dataset.tab);
   const node = e.target.closest('[data-node]'); if (node) { S.sel = node.dataset.node; S.confirmRemove = null; save(); render(); if (innerWidth <= 1100) document.querySelector('.editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
   const hl = e.target.closest('[data-hl]'); if (hl) { S.hl = hl.dataset.hl; save(); render(); return; }
@@ -858,7 +933,9 @@ document.addEventListener('click', e => {
     case 'find-ai': runFinder(true); break;
     case 'sugg-add': {
       const s = SUGG.list[+b.dataset.i], W = byId(S.iv.who), T = byId(s.pid);
-      if (s.kind === 'death') { T.living = 'no'; if (s.age) T.deathAge = s.age; }
+      if (s.kind === 'death') { T.living = 'no'; if (s.age) T.deathAge = s.age; if (s.cause && !T.cause) T.cause = s.cause; }
+      else if (s.kind === 'born') T.born = s.year;
+      else if (s.kind === 'living') T.living = 'yes';
       else addReport(s.pid, s.cond, s.type, W.id, { age: s.age, said: s.said });
       SUGG.list.splice(+b.dataset.i, 1); save(); render(); toast(`Added for ${nameOf(T)}`); break;
     }
@@ -874,6 +951,9 @@ document.addEventListener('click', e => {
     case 'del-report': dropReports(r => r.id === b.dataset.rid); save(); render(); break;
     case 'clip-del': if (S.confirmClip === b.dataset.clip) { S.confirmClip = null; removeClip(b.dataset.clip); } else { S.confirmClip = b.dataset.clip; render(); } break;
     case 'pdf': exportPDF(); break;
+    case 'zoom': setZoom((S.zoom || 1) + 0.15 * +b.dataset.z); break;
+    case 'zoom-fit': setZoom(fitZoom()); break;
+    case 'center-me': centerOn(SELF); S.sel = SELF; save(); refreshTree(); break;
     case 'start-own': signOut(); AUTH.mode = 'create'; render(); break;
     case 'goto-doctor': setTab('doctor'); break;
     case 'add': { const np = addRelative(b.dataset.kind, p.id); S.sel = np.id; save(); render(); document.getElementById('ed-name')?.focus(); break; }
