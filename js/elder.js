@@ -124,10 +124,12 @@ function elderCards() {
   const condCards = (sect, c) => [...(SUBTYPES[c.id] ? [{ k: 'ctype', sect, cond: c.id }] : []), { k: 'age', sect, cond: c.id }];
   for (const sect of SECTIONS) {
     if (sect !== 'self') cards.push({ k: 'living', sect }, { k: 'deathAge', sect });
-    for (const c of CONDS.filter(c => !c.more)) cards.push({ k: 'cond', sect, cond: c.id }, ...condCards(sect, c));
+    for (const c of CONDS.filter(c => !c.more && !c.free)) cards.push({ k: 'cond', sect, cond: c.id }, ...condCards(sect, c));
     // The less common illnesses share one screen, so the interview doesn't get much longer.
     cards.push({ k: 'more', sect });
     for (const c of CONDS.filter(c => c.more)) cards.push(...condCards(sect, c));
+    // Anything else: a yes here leaves a reminder in the regular interview to write down what it was.
+    cards.push({ k: 'otherq', sect });
   }
   for (const st of STEPS) if (st.type === 'check' && st.k !== 'ancestry') cards.push({ k: 'check', id: st.k });
   cards.push({ k: 'thanks' });
@@ -173,6 +175,7 @@ function elderListen() {
   else if (card.k === 'ctype') card.cond === 'cancer' ? push('f:cancer_type', FOLLOW.cancer_type) : (push('c:' + card.cond, COND[card.cond]), push('f:kind', FOLLOW.kind));
   else if (card.k === 'more') { push('e:had_' + card.sect, T['had_' + card.sect]); push('e:tap_all', T.tap_all); }
   else if (card.k === 'check') push('q:' + card.id, Q[card.id]);
+  else if (card.k === 'otherq') { push('e:about_' + card.sect, T['about_' + card.sect]); push('e:other_q', T.other_q); }
   else if (card.k === 'age') push('e:age', T.age);
   else push('e:thanks', T.thanks);
   speakSeq(items, L);
@@ -212,6 +215,9 @@ function renderElder() {
     const on = c => t && elderReports(t.id, c.id).length;
     body = `<span class="e-sect" ${langAttrs(L)}>${esc(say(T['had_' + card.sect], L))}</span>${big(T.tap_all)}
       <div class="e-types">${CONDS.filter(c => c.more).map(c => `<button class="e-type" data-action="e-more" data-cond="${c.id}" aria-pressed="${!!on(c)}"><span ${langAttrs(L)}>${esc(say(c, L))}</span>${L !== 'en' ? `<small>${esc(c.en)}</small>` : ''}</button>`).join('')}</div>`;
+  } else if (card.k === 'otherq') {
+    const named = t ? elderReports(t.id, 'other') : [];
+    body = `<span class="e-sect" ${langAttrs(L)}>${esc(say(T['about_' + card.sect], L))}</span>${big(T.other_q)}${yn(named.length ? 'yes' : E.no?.[`${card.sect}|other`] ? 'no' : null, 'e-otherq')}`;
   } else if (card.k === 'check') {
     body = `<span class="e-sect" ${langAttrs(L)}>${esc(say(T.about_family, L))}</span>${big(Q[card.id])}${yn(W.checks?.[card.id]?.a || null, 'e-check')}`;
   } else if (card.k === 'age') {
@@ -261,6 +267,12 @@ function elderAction(a, b) {
       const mine = r => r.pid === t.id && r.cond === cond && r.by === E.who;
       if (S.reports.some(mine)) { noteDeleted('r', S.reports.filter(mine).map(r => r.id)); dropReports(mine); } else addReport(t.id, cond, '', E.who);
       save(); render(); return true;
+    }
+    case 'e-otherq': {
+      const v = b.dataset.v; E.no ||= {}; E.no[`${card.sect}|other`] = v === 'no';
+      if (v === 'yes') { const t = elderTarget(card.sect, true); if (!elderReports(t.id, 'other').length) addReport(t.id, 'other', '', E.who); }
+      else { const t = elderTarget(card.sect), gone = r => r.pid === t?.id && r.cond === 'other' && !r.type && r.by === E.who; if (t) { noteDeleted('r', S.reports.filter(gone).map(r => r.id)); dropReports(gone); } }
+      save(); render(); elderAdvance(250); return true;
     }
     case 'e-check': { const W = byId(E.who), c = ((W.checks ||= {})[card.id] ||= {}); c.a = b.dataset.v; W.u = Date.now(); save(); render(); elderAdvance(250); return true; }
     case 'pad-decade': E.decade = b.dataset.d === '' ? null : +b.dataset.d; render(); return true;

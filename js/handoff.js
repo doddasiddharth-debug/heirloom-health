@@ -36,6 +36,7 @@ const ASK = {
   'Get a hepatitis B blood test': 'Can I have a hepatitis B blood test, and am I vaccinated?',
   'Ask about a celiac blood test': 'Should I have a celiac blood test?',
   'Blood clots in a parent or sibling': 'Does the blood clot in my family matter for birth control or surgery?',
+  'Other conditions in the family': 'Do any of the other conditions in my family run in families or change my care?',
   'Polycystic kidney disease in a parent or sibling': 'When should I be checked for polycystic kidney disease?',
 };
 const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');

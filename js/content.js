@@ -34,6 +34,10 @@ const CONDS = [
   { id: 'autoimmune', more: true, short: 'Autoimmune', en: 'Lupus, rheumatoid arthritis, or another autoimmune disease', te: 'లూపస్, రుమటాయిడ్ ఆర్థరైటిస్ (కీళ్ళ వాతం), లేదా ఇంకో ఆటోఇమ్యూన్ వ్యాధి', te_r: 'Lupus, rheumatoid arthritis (keella vaatam), leda inko autoimmune vyaadhi', hi: 'ल्यूपस, रूमेटॉइड आर्थराइटिस (गठिया), या कोई और ऑटोइम्यून बीमारी', hi_r: 'Lupus, rheumatoid arthritis (gathiya), ya koi aur autoimmune beemaari', es: 'Lupus, artritis reumatoide u otra enfermedad autoinmune' },
   { id: 'substance', more: true, short: 'Addiction', en: 'Alcohol or drug addiction', te: 'మద్యం (తాగుడు) లేదా మత్తుమందుల వ్యసనం', te_r: 'Madyam (taagudu) leda mattumandula vyasanam', hi: 'शराब या नशे की लत', hi_r: 'Sharaab ya nashe ki lat', es: 'Adicción al alcohol o a las drogas' },
   { id: 'hearing', more: true, short: 'Hearing', en: 'Hearing loss that started young', te: 'చిన్న వయసులోనే వినికిడి తగ్గడం (చెవుడు)', te_r: 'Chinna vayasulone vinikidi taggadam (chevudu)', hi: 'कम उम्र से ही कम सुनाई देना (बहरापन)', hi_r: 'Kam umar se hi kam sunaai dena (behraapan)', es: 'Pérdida de audición que empezó de joven' },
+  // Anything not on the list. The relative's own words become the "kind", so it is saved, grouped and reported like the rest.
+  { id: 'other', free: true, short: 'Other', report: 'Other conditions (named by relatives)', en: 'Something else not on this list', te: 'ఈ జాబితాలో లేని ఇంకేదైనా జబ్బు', te_r: 'Ee jaabitaalo leni inkedainaa jabbu', hi: 'इस सूची के बाहर कोई और बीमारी', hi_r: 'Is soochi ke baahar koi aur beemaari', es: 'Otra enfermedad que no está en la lista',
+    ta: 'இந்தப் பட்டியலில் இல்லாத வேறு ஏதாவது நோய்', ta_r: 'Indha pattiyalil illaadha veru edhaavadhu noi', kn: 'ಈ ಪಟ್ಟಿಯಲ್ಲಿ ಇಲ್ಲದ ಬೇರೆ ಯಾವುದಾದರೂ ಕಾಯಿಲೆ', kn_r: 'Ee pattiyalli illada bere yaavudaadaroo kaayile', bn: 'এই তালিকার বাইরে অন্য কোনো অসুখ', bn_r: 'Ei taalikaar baire onno kono osukh',
+    gu: 'આ યાદીમાં ન હોય એવી બીજી કોઈ બીમારી', gu_r: 'Aa yaadimaan na hoy evi biji koi bimaari', ur: 'اس فہرست کے علاوہ کوئی اور بیماری', ur_r: 'Is fehrist ke ilaawa koi aur beemaari', zh: '清单上没有的其他疾病', zh_r: 'Qīngdān shàng méiyǒu de qítā jíbìng', vi: 'Bệnh khác không có trong danh sách' },
 ];
 const COND = Object.fromEntries(CONDS.map(c => [c.id, c]));
 
@@ -111,13 +115,14 @@ const SUBTYPES = {
 };
 const subtypeOf = (cond, type) => type && SUBTYPES[cond]?.find(t => t.id === type);
 function factName(cond, type) {
+  if (cond === 'other') return type || 'Another condition, name unknown';
   const t = subtypeOf(cond, type);
   if (cond !== 'cancer') return t ? t.name : COND[cond].en;
   if (!type) return 'Cancer, kind unknown';
   if (type === 'other') return 'Cancer, another kind';
   return t ? t.name || `${t.en.replace(' (womb)', '')} cancer` : 'Cancer';
 }
-function factShort(cond, type) { return subtypeOf(cond, type)?.short || (cond === 'cancer' ? 'Cancer' : COND[cond].short); }
+function factShort(cond, type) { if (cond === 'other') return type ? (type.length > 16 ? type.slice(0, 15) + '…' : type) : 'Other'; return subtypeOf(cond, type)?.short || (cond === 'cancer' ? 'Cancer' : COND[cond].short); }
 
 /* ---------- Interview script ---------- */
 const Q = {
@@ -261,6 +266,19 @@ const Q = {
 
 // Follow-up questions the app adds when an answer is incomplete.
 const FOLLOW = {
+  other_what: {
+    en: 'What was the other illness? About how old were they when it was found?',
+    te: 'ఆ ఇంకో జబ్బు ఏమిటి? అది తెలిసినప్పుడు సుమారు ఏ వయసు?', te_r: 'Aa inko jabbu emiti? Adi telisinappudu sumaaru ee vayasu?',
+    hi: 'वह दूसरी बीमारी क्या थी? जब पता चला तब लगभग कितनी उम्र थी?', hi_r: 'Woh doosri beemaari kya thi? Jab pata chala tab lagbhag kitni umar thi?',
+    es: '¿Cuál era esa otra enfermedad? ¿Más o menos qué edad tenía cuando se la encontraron?',
+    ta: 'அந்த வேறு நோய் என்ன? அது தெரிந்தபோது சுமார் என்ன வயது?', ta_r: 'Andha veru noi enna? Adhu therindhapodhu sumaar enna vayadhu?',
+    kn: 'ಆ ಬೇರೆ ಕಾಯಿಲೆ ಯಾವುದು? ಅದು ಗೊತ್ತಾದಾಗ ಸುಮಾರು ಎಷ್ಟು ವಯಸ್ಸು?', kn_r: 'Aa bere kaayile yaavudu? Adu gottaadaaga sumaaru eshtu vayassu?',
+    bn: 'সেই অন্য অসুখটা কী ছিল? ধরা পড়ার সময় বয়স মোটামুটি কত ছিল?', bn_r: 'Shei onno osukhta ki chhilo? Dhora porar shomoy boyosh motamuti koto chhilo?',
+    gu: 'એ બીજી બીમારી કઈ હતી? ખબર પડી ત્યારે આશરે કેટલી ઉંમર હતી?', gu_r: 'E biji bimaari kai hati? Khabar padi tyaare aashre ketli ummar hati?',
+    ur: 'وہ دوسری بیماری کیا تھی؟ جب پتا چلا تو تقریباً کتنی عمر تھی؟', ur_r: 'Woh doosri beemaari kya thi? Jab pata chala to taqreeban kitni umar thi?',
+    zh: '那个其他的病是什么？大概多大年纪时查出来的？', zh_r: 'Nàge qítā de bìng shì shénme? Dàgài duō dà niánjì shí chá chūlái de?',
+    vi: 'Bệnh khác đó là bệnh gì? Phát hiện khi khoảng bao nhiêu tuổi?',
+  },
   kind: {
     en: 'What kind was it?',
     te: 'అది ఏ రకం?', te_r: 'Adi ee rakam?',
@@ -359,6 +377,9 @@ const ELDER_TEXT = {
   send_back: { en: 'Send your answers back', te: 'మీ జవాబులను తిరిగి పంపండి', te_r: 'Mee javaabulanu tirigi pampandi', hi: 'अपने जवाब वापस भेजें', hi_r: 'Apne jawaab waapas bhejein', es: 'Enviar sus respuestas' },
   tap_all: { en: 'Tap all that apply.', te: 'సరిపోయే వాటన్నింటినీ తాకండి.', te_r: 'Saripoye vaatanninteenee taakandi.', hi: 'जो-जो लागू हों, सब पर टैप करें।', hi_r: 'Jo-jo laagoo hon, sab par tap karein.', es: 'Toque todas las que correspondan.' },
   about_family: { en: 'About the whole family', te: 'మొత్తం కుటుంబం గురించి', te_r: 'Mottam kutumbam gurinchi', hi: 'पूरे परिवार के बारे में', hi_r: 'Poore parivaar ke baare mein', es: 'Sobre toda la familia' },
+  other_q: { en: 'Any other illness we have not asked about?', te: 'మనం అడగని ఇంకేదైనా జబ్బు ఉందా?', te_r: 'Manam adagani inkedainaa jabbu undaa?', hi: 'कोई और बीमारी जिसके बारे में हमने नहीं पूछा?', hi_r: 'Koi aur beemaari jiske baare mein humne nahin poochha?', es: '¿Alguna otra enfermedad por la que no hayamos preguntado?',
+    ta: 'நாம் கேட்காத வேறு ஏதாவது நோய் இருக்கிறதா?', ta_r: 'Naam ketkaadha veru edhaavadhu noi irukkiradhaa?', kn: 'ನಾವು ಕೇಳದ ಬೇರೆ ಯಾವುದಾದರೂ ಕಾಯಿಲೆ ಇದೆಯಾ?', kn_r: 'Naavu kelada bere yaavudaadaroo kaayile ideyaa?', bn: 'আমরা জিজ্ঞেস করিনি এমন অন্য কোনো অসুখ আছে?', bn_r: 'Amra jiggesh korini emon onno kono osukh achhe?',
+    gu: 'આપણે ન પૂછી હોય એવી બીજી કોઈ બીમારી છે?', gu_r: 'Aapne na poochhi hoy evi biji koi bimaari chhe?', ur: 'کوئی اور بیماری جس کے بارے میں ہم نے نہیں پوچھا؟', ur_r: 'Koi aur beemaari jis ke baare mein hum ne nahin poochha?', zh: '还有我们没问到的其他疾病吗？', zh_r: 'Hái yǒu wǒmen méi wèn dào de qítā jíbìng ma?', vi: 'Còn bệnh nào khác mà chúng ta chưa hỏi không?' },
 };
 
 /* ---------- Everyday words → medical terms ----------

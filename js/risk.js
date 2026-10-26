@@ -262,6 +262,14 @@ function ruleOtherConditions() {
   return out;
 }
 
+// Illnesses typed in under "Something else". No rule here knows them, so make sure the doctor looks.
+function ruleOtherReported() {
+  const hits = withFact(f => f.cond === 'other', 3);
+  if (!hits.length) return [];
+  return [{ level: 'note', title: 'Other conditions in the family',
+    rec: "These were named by relatives and aren't covered by the rules in this app. Ask your doctor whether any of them run in families or change your care.",
+    why: hits.map(x => `${who(x)}: ${factName('other', x.f.type)} ${atAge(x)}.`), sources: [] }];
+}
 function ruleDisagreements() {
   const lines = [];
   for (const p of S.people) for (const f of facts(p.id)) if (f.disagree) {
@@ -299,7 +307,7 @@ function ruleAncestry() {
   return out;
 }
 function guidelineCards() {
-  const cards = [ruleColorectal, rulePolyps, ruleAncestry, ruleFHS7, ruleLynch, ruleOvarianPancreatic, ruleHeart, ruleInheritedHeart, ruleDiabetes, ruleProstate, ruleFamilyQuestions, ruleOtherConditions, ruleDisagreements, ruleNotBlood, ruleMissing].flatMap(r => r());
+  const cards = [ruleColorectal, rulePolyps, ruleAncestry, ruleFHS7, ruleLynch, ruleOvarianPancreatic, ruleHeart, ruleInheritedHeart, ruleDiabetes, ruleProstate, ruleFamilyQuestions, ruleOtherConditions, ruleOtherReported, ruleDisagreements, ruleNotBlood, ruleMissing].flatMap(r => r());
   const rank = { act: 0, discuss: 1, note: 2, missing: 3 };
   return cards.sort((a, b) => rank[a.level] - rank[b.level]);
 }

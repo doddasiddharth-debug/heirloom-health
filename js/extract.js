@@ -253,7 +253,7 @@ People the facts can be about:
 ${roster}
 If a sentence does not say who, it is about "subject".
 
-Allowed conditions: ${CONDS.map(c => c.id).join(', ')}.
+Allowed conditions: ${CONDS.filter(c => !c.free).map(c => c.id).join(', ')}.
 Allowed cancer types (only when cond is "cancer"): ${CANCER_TYPES.map(c => c.id).join(', ')}.
 
 Reply with JSON only, in this shape:
@@ -281,7 +281,7 @@ async function serverFindAnswers(text, people) {
   const roster = Object.entries(people).filter(([role, id]) => id && role !== 'step' && byId(id)).map(([role, id]) => ({ role, name: nameOf(byId(id)) }));
   const res = await fetch(`${CONFIG.apiBase}/api/extract`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ text: text.slice(0, 8000), people: roster, conditions: CONDS.map(c => c.id), cancerTypes: CANCER_TYPES.map(c => c.id) }),
+    body: JSON.stringify({ text: text.slice(0, 8000), people: roster, conditions: CONDS.filter(c => !c.free).map(c => c.id), cancerTypes: CANCER_TYPES.map(c => c.id) }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw { code: 'server', message: data.error };

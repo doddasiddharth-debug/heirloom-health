@@ -51,7 +51,7 @@ function cleanPerson(p) {
 }
 function cleanReport(r) {
   if (!r || !okId(r.pid) || !COND[r.cond]) return null;
-  const type = subtypeOf(r.cond, r.type) || (r.cond === 'cancer' && r.type === 'other') ? r.type : '';
+  const type = r.cond === 'other' ? okText(r.type, 60).trim() : subtypeOf(r.cond, r.type) || (r.cond === 'cancer' && r.type === 'other') ? r.type : '';
   const out = { pid: r.pid, cond: r.cond, type, age: okNum(r.age, 3) };
   if (okId(r.id)) out.id = r.id;
   if (okId(r.by)) out.by = r.by;
