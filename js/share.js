@@ -165,7 +165,7 @@ const cloudOn = () => !!(window.CONFIG?.apiBase);
 async function aesKey(raw) { return crypto.subtle.importKey('raw', unb64u(raw), 'AES-GCM', false, ['encrypt', 'decrypt']); }
 async function encryptFamily() {
   const key = await aesKey(S.sync.key), iv = crypto.getRandomValues(new Uint8Array(12));
-  const plain = new TextEncoder().encode(JSON.stringify({ people: S.people, rels: S.rels, reports: S.reports, familyId: S.familyId, deleted: S.deleted || {} }));
+  const plain = new TextEncoder().encode(JSON.stringify({ people: S.people.map(withoutStories), rels: S.rels, reports: S.reports, familyId: S.familyId, deleted: S.deleted || {} }));
   const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plain));
   return JSON.stringify({ iv: b64u(iv), ct: b64u(ct) });
 }

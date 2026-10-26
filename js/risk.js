@@ -67,7 +67,7 @@ function ruleColorectal() {
   if (fdr.some(x => !x.age || x.age < 60) || fdr.length >= 2) {
     const ages = fdr.map(x => x.age).filter(Boolean), youngest = ages.length ? Math.min(...ages) : null;
     const start = youngest ? Math.min(40, youngest - 10) : 40;
-    return [{ level: 'act', title: 'Start colon cancer screening early',
+    return [{ level: 'act', title: 'Start colon cancer screening early', start,
       rec: `Start colonoscopy at age ${start} and repeat every 5 years. Most people start at 45. The rule is age 40, or 10 years before the youngest close relative's diagnosis, whichever comes first.`,
       why: [...fdr.map(x => `${who(x)}: colorectal cancer ${atAge(x)}.`), ...(fdr.some(x => !x.age) ? ['An age is missing, so the earlier rule is used to be safe.'] : [])], sources: src }];
   }
@@ -187,7 +187,7 @@ function ruleProstate() {
   if (!young.length && !noAge.length) return [{ level: 'note', title: 'Prostate cancer in a father or brother',
     rec: 'A father or brother had prostate cancer at 65 or older. The American Cancer Society moves the PSA screening talk earlier only when the diagnosis came before 65, so the usual plan applies: talk about it from age 50. Still mention it to your doctor.',
     why, sources: ['acsProstate'] }];
-  return [{ level: 'discuss', title: 'Talk about prostate cancer screening earlier',
+  return [{ level: 'discuss', title: 'Talk about prostate cancer screening earlier', start: young.length >= 2 ? 40 : 45,
     rec: young.length >= 2 ? 'More than one father or brother had prostate cancer before 65. The American Cancer Society suggests talking about PSA screening from age 40.'
       : young.length ? 'A father or brother had prostate cancer before 65. The American Cancer Society suggests talking about PSA screening from age 45 (40 if more than one was diagnosed before 65).'
       : 'A father or brother had prostate cancer. If it was found before 65, the American Cancer Society suggests talking about PSA screening from age 45 (40 if more than one was diagnosed before 65).',
