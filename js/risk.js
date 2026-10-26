@@ -25,10 +25,12 @@ function facts(pid) {
     groups.get(key).reports.push(r);
   }
   // "Cancer, kind unknown" from one person and "breast cancer" from another are probably the same cancer.
-  const typed = [...groups.values()].filter(g => g.cond === 'cancer' && g.type);
-  const untyped = groups.get('cancer|');
-  if (untyped && typed.length === 1) { typed[0].reports.push(...untyped.reports); groups.delete('cancer|'); }
-  const order = c => CONDS.findIndex(x => x.id === c.cond) * 100 + (c.type ? CANCER_TYPES.findIndex(t => t.id === c.type) : 99);
+  for (const cond of Object.keys(SUBTYPES)) {
+    const typed = [...groups.values()].filter(g => g.cond === cond && g.type);
+    const untyped = groups.get(cond + '|');
+    if (untyped && typed.length === 1) { typed[0].reports.push(...untyped.reports); groups.delete(cond + '|'); }
+  }
+  const order = c => CONDS.findIndex(x => x.id === c.cond) * 100 + (c.type ? (SUBTYPES[c.cond] || []).findIndex(t => t.id === c.type) : 99);
   return [...groups.values()].map(g => {
     const ages = g.reports.map(r => +r.age).filter(a => a > 0);
     const min = ages.length ? Math.min(...ages) : null, max = ages.length ? Math.max(...ages) : null;
@@ -138,12 +140,12 @@ function ruleOvarianPancreatic() {
 
 function ruleHeart() {
   const early = x => x.age && x.age < (x.p.sex === 'F' ? 65 : 55);
-  const cvd = withFact(f => f.cond === 'heart' || f.cond === 'stroke', 2);
+  const cvd = withFact(f => (f.cond === 'heart' && ['', 'attack', 'failure'].includes(f.type)) || f.cond === 'stroke', 2);
   const premature = cvd.filter(early);
   const parentChol = withFact(f => f.cond === 'chol', 1).filter(x => x.k.dS === 1 && x.k.dX === 0);
   const out = [];
   if (premature.length || parentChol.length) {
-    const why = [...premature.map(x => `${who(x)}: ${COND[x.f.cond].en.toLowerCase()} at ${x.age}, which counts as early (before ${x.p.sex === 'F' ? 65 : 55}).`),
+    const why = [...premature.map(x => `${who(x)}: ${factName(x.f.cond, x.f.type).toLowerCase()} at ${x.age}, which counts as early (before ${x.p.sex === 'F' ? 65 : 55}).`),
       ...parentChol.map(x => `${who(x)}: high cholesterol${x.age ? ' found at ' + x.age : ''}.`)];
     if (premature.length && parentChol.length) why.push('Early heart disease together with high cholesterol in a parent can be a sign of familial hypercholesterolemia, an inherited condition that is very treatable when found early.');
     out.push({ level: 'act', title: 'Get a cholesterol test now',
@@ -153,19 +155,24 @@ function ruleHeart() {
   const fdr = premature.filter(x => x.k.degree === 1);
   if (fdr.length) out.push({ level: 'discuss', title: 'Early heart disease in a parent or sibling',
     rec: 'For adults, doctors count early heart disease in a parent or sibling as a "risk-enhancing factor" when deciding on cholesterol treatment. Keep it on your record for the future.',
-    why: fdr.map(x => `${who(x)}: ${COND[x.f.cond].en.toLowerCase()} at ${x.age}.`), sources: ['accaha'] });
+    why: fdr.map(x => `${who(x)}: ${factName(x.f.cond, x.f.type).toLowerCase()} at ${x.age}.`), sources: ['accaha'] });
   const unknownAge = cvd.filter(x => !x.age);
   if (unknownAge.length) out.push({ level: 'missing', title: 'Find out when heart disease or stroke started',
-    rec: 'Whether heart disease counts as "early" depends on the age it started. These ages are missing.', why: unknownAge.map(x => `${who(x)}: ${COND[x.f.cond].en.toLowerCase()}, age unknown.`), sources: ['nhlbi'] });
+    rec: 'Whether heart disease counts as "early" depends on the age it started. These ages are missing.', why: unknownAge.map(x => `${who(x)}: ${factName(x.f.cond, x.f.type).toLowerCase()}, age unknown.`), sources: ['nhlbi'] });
   return out;
 }
 
 function ruleDiabetes() {
-  const hits = withFact(f => f.cond === 'diabetes', 2);
-  if (!hits.length) return [];
-  const why = hits.map(x => `${who(x)}: diabetes ${atAge(x)}.`);
+  const out = [];
+  const t1 = withFact(f => f.cond === 'diabetes' && f.type === 't1', 1);
+  if (t1.length) out.push({ level: 'discuss', title: 'Ask about screening for type 1 diabetes',
+    rec: 'Type 1 diabetes in a parent or sibling raises your chance of it. The ADA says close relatives can be offered a blood test for diabetes antibodies, which can show type 1 diabetes years before symptoms. Know the warning signs: strong thirst, peeing a lot, and losing weight without trying.',
+    why: t1.map(x => `${who(x)}: type 1 diabetes ${atAge(x)}.`), sources: ['ada'] });
+  const hits = withFact(f => f.cond === 'diabetes' && ['', 't2', 'gest'].includes(f.type), 2);
+  if (!hits.length) return out;
+  const why = hits.map(x => `${who(x)}: ${factName(x.f.cond, x.f.type).toLowerCase()} ${atAge(x)}.`);
   if (hits.some(x => x.k.dS === 1 && x.k.dX === 0 && x.p.sex === 'F')) why.push("Your mother's diabetes, including diabetes during pregnancy, is listed as its own risk factor.");
-  return [{ level: 'discuss', title: 'Ask about testing for type 2 diabetes',
+  return [...out, { level: 'discuss', title: 'Ask about testing for type 2 diabetes',
     rec: 'The ADA recommends testing young people for type 2 diabetes from age 10, or once puberty starts, if they have overweight or obesity plus at least one risk factor. A parent, grandparent, aunt, uncle or sibling with type 2 diabetes is a risk factor. So is Asian American, Black, Hispanic or Latino, Native American or Pacific Islander heritage. For Asian American adults, ADA tests at a lower BMI (23 instead of 25).',
     why, sources: ['ada'] }];
 }
@@ -185,6 +192,74 @@ function ruleProstate() {
       : young.length ? 'A father or brother had prostate cancer before 65. The American Cancer Society suggests talking about PSA screening from age 45 (40 if more than one was diagnosed before 65).'
       : 'A father or brother had prostate cancer. If it was found before 65, the American Cancer Society suggests talking about PSA screening from age 45 (40 if more than one was diagnosed before 65).',
     why: [...why, ...(noAge.length ? ['An age is missing, so the earlier rule is used to be safe. Find out how old they were.'] : [])], sources: ['acsProstate'] }];
+}
+
+// Colon polyps: USMSTF treats an advanced polyp in a parent or sibling like colon cancer for screening age.
+function rulePolyps() {
+  const fdr = withFact(f => f.cond === 'polyps', 1);
+  if (!fdr.length) return [];
+  return [{ level: 'discuss', title: 'Colon polyps in a parent or sibling',
+    rec: 'Find out what kind of polyps they were. If a parent or sibling had an "advanced" polyp (large, or with pre-cancer changes), the US Multi-Society Task Force recommends starting colonoscopy at 40, or 10 years before their age when it was found. Smaller polyps usually do not change the plan.',
+    why: fdr.map(x => `${who(x)}: colon polyps ${atAge(x)}.`), sources: ['usmstf'] }];
+}
+// Heart muscle and rhythm conditions, and sudden deaths, can be inherited and found early in relatives.
+function ruleInheritedHeart() {
+  const heart = withFact(f => f.cond === 'heart' && ['muscle', 'rhythm'].includes(f.type), 2);
+  const sudden = checkAnswers('sudden');
+  if (!heart.length && !sudden.length) return [];
+  const close = heart.filter(x => x.k.degree === 1);
+  return [{ level: close.length || sudden.length ? 'act' : 'discuss', title: 'Ask about checking for inherited heart conditions',
+    rec: 'Some heart muscle (cardiomyopathy) and heart rhythm conditions run in families and can cause fainting or sudden death in young people. Heart guidelines recommend that close relatives be checked, usually with an ECG and a heart ultrasound, and sometimes a genetic test. Tell your doctor right away if you ever faint during exercise.',
+    why: [...heart.map(x => `${who(x)}: ${factName(x.f.cond, x.f.type).toLowerCase()} ${atAge(x)}.`), ...sudden.map(c => `${reporterName(c.by)} said someone died suddenly young, fainted while exercising, or drowned${c.note ? ': ' + c.note : ''}.`)],
+    sources: ['ahaHcm', 'ahaScd'] }];
+}
+// Answers to the whole-family questions, from everyone who was interviewed.
+function checkAnswers(key, answer = 'yes') {
+  return S.people.filter(p => p.checks?.[key]?.a === answer).map(p => ({ by: p.id, note: p.checks[key].note || '' }));
+}
+function ruleFamilyQuestions() {
+  const out = [], said = (list, what) => list.map(c => `${reporterName(c.by)}: ${c.note || what}`);
+  const gen = checkAnswers('genetic');
+  if (gen.length) out.push({ level: 'act', title: 'Get a copy of the genetic test result',
+    rec: 'A relative had a genetic test. If it found a change in a gene (a "variant"), close relatives can be tested for that exact change, which is quicker and more certain than testing from scratch. Ask for a copy of the report and bring it to your doctor or a genetic counselor.',
+    why: said(gen, 'someone in the family had a genetic test.'), sources: ['nsgcPedigree', 'nccn'] });
+  const rel = checkAnswers('related');
+  if (rel.length) out.push({ level: 'discuss', title: 'Parents related by blood',
+    rec: 'When parents are related, for example cousins, conditions that need a gene change from both parents are more likely. This is common and usually causes no problems, but doctors want to know. When you plan a family one day, carrier screening can be offered.',
+    why: said(rel, 'parents in the family were related by blood.'), sources: ['nsgcConsang'] });
+  const preg = checkAnswers('pregnancy'), birth = checkAnswers('birth');
+  if (preg.length || birth.length) out.push({ level: 'discuss', title: 'Pregnancy losses, birth differences or childhood conditions',
+    rec: 'Several miscarriages or stillbirths, babies born with health problems, or children with learning or hearing problems can sometimes point to a condition that runs in the family. Mention them to your doctor, who may suggest a genetic counselor.',
+    why: [...said(preg, 'miscarriages, stillbirths or infant deaths in the family.'), ...said(birth, 'a birth difference or childhood learning or hearing problem in the family.')], sources: ['nsgcPedigree'] });
+  const anes = checkAnswers('anesthesia');
+  if (anes.length) out.push({ level: 'act', title: 'Tell every surgeon and dentist about the anesthesia reaction',
+    rec: 'A serious reaction to anesthesia, such as a sudden very high fever (malignant hyperthermia), can run in families. Before any operation or dental work with anesthesia, tell the team, so they can use medicines that are safe for you.',
+    why: said(anes, 'someone had a serious reaction to anesthesia.'), sources: ['mhaus'] });
+  return out;
+}
+function ruleOtherConditions() {
+  const out = [];
+  const hepb = withFact(f => f.cond === 'liver' && f.type === 'hepb', 2);
+  if (hepb.length) out.push({ level: 'act', title: 'Get a hepatitis B blood test',
+    rec: 'Hepatitis B can pass from a mother to her baby and between people who live together. The CDC recommends testing for anyone with a family member or household member who has it, and the vaccine protects you if you test negative.',
+    why: hepb.map(x => `${who(x)}: hepatitis B.`), sources: ['cdcHepB'] });
+  const celiac = withFact(f => f.cond === 'celiac', 1);
+  if (celiac.length) out.push({ level: 'discuss', title: 'Ask about a celiac blood test',
+    rec: 'Celiac disease is much more common in parents, brothers, sisters and children of people who have it. The American College of Gastroenterology recommends a blood test for close relatives who have symptoms, and says it can be considered even without symptoms.',
+    why: celiac.map(x => `${who(x)}: celiac disease ${atAge(x)}.`), sources: ['acgCeliac'] });
+  const clots = withFact(f => f.cond === 'clots', 1);
+  if (clots.length) out.push({ level: 'discuss', title: 'Blood clots in a parent or sibling',
+    rec: 'Tell your doctor before starting birth control or other medicine with estrogen, and before surgery. Blood-clot guidelines suggest testing for an inherited clotting problem in some situations, for example a woman considering estrogen whose parent or sibling had a clot.',
+    why: clots.map(x => `${who(x)}: blood clots ${atAge(x)}.`), sources: ['ashVte'] });
+  const pkd = withFact(f => f.cond === 'kidney' && f.type === 'pkd', 1);
+  if (pkd.length) out.push({ level: 'discuss', title: 'Polycystic kidney disease in a parent or sibling',
+    rec: 'Polycystic kidney disease is usually inherited. Have your blood pressure checked regularly. As an adult, a kidney ultrasound or a genetic test can show whether you have it, and early treatment can protect the kidneys.',
+    why: pkd.map(x => `${who(x)}: polycystic kidney disease ${atAge(x)}.`), sources: ['kdigoPkd'] });
+  const glaucoma = withFact(f => f.cond === 'glaucoma', 1);
+  if (glaucoma.length) out.push({ level: 'note', title: 'Glaucoma in a parent or sibling',
+    rec: 'Glaucoma has no early symptoms, and a parent or sibling with it is one of the biggest risk factors. Tell your eye doctor. As an adult, get eye pressure checks earlier and more often than usual.',
+    why: glaucoma.map(x => `${who(x)}: glaucoma ${atAge(x)}.`), sources: ['aaoGlaucoma'] });
+  return out;
 }
 
 function ruleDisagreements() {
@@ -224,7 +299,7 @@ function ruleAncestry() {
   return out;
 }
 function guidelineCards() {
-  const cards = [ruleColorectal, ruleAncestry, ruleFHS7, ruleLynch, ruleOvarianPancreatic, ruleHeart, ruleDiabetes, ruleProstate, ruleDisagreements, ruleNotBlood, ruleMissing].flatMap(r => r());
+  const cards = [ruleColorectal, rulePolyps, ruleAncestry, ruleFHS7, ruleLynch, ruleOvarianPancreatic, ruleHeart, ruleInheritedHeart, ruleDiabetes, ruleProstate, ruleFamilyQuestions, ruleOtherConditions, ruleDisagreements, ruleNotBlood, ruleMissing].flatMap(r => r());
   const rank = { act: 0, discuss: 1, note: 2, missing: 3 };
   return cards.sort((a, b) => rank[a.level] - rank[b.level]);
 }
@@ -239,6 +314,7 @@ function gapsOf(p) {
   if (p.living === 'no' && !p.cause) g.push('cause of death');
   for (const f of facts(p.id)) {
     if (f.cond === 'cancer' && !f.type) g.push('what kind of cancer');
+    if (f.cond === 'diabetes' && !f.type) g.push('which type of diabetes');
     if (!f.age) g.push(`when ${factName(f.cond, f.type).toLowerCase()} started`);
     if (f.disagree) g.push(`the right age for ${factName(f.cond, f.type).toLowerCase()}`);
   }

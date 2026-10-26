@@ -26,6 +26,17 @@ const ASK = {
   'Thalassemia and sickle cell trait': 'Should I get a blood test for thalassemia or sickle cell trait?',
   'Ashkenazi Jewish ancestry and BRCA': 'Should I have a BRCA risk assessment?',
   'Ancestry and prostate cancer': 'When should I start talking about prostate cancer screening?',
+  'Colon polyps in a parent or sibling': 'Should polyps in my family change when I start colon cancer screening?',
+  'Ask about checking for inherited heart conditions': 'Should I have an ECG or heart ultrasound because of heart conditions or sudden deaths in my family?',
+  'Ask about screening for type 1 diabetes': 'Should I have a blood test for type 1 diabetes antibodies?',
+  'Get a copy of the genetic test result': 'My relative had a genetic test. Should I be tested for the same gene change?',
+  'Parents related by blood': 'My parents (or grandparents) are related by blood. Does that change anything for me?',
+  'Pregnancy losses, birth differences or childhood conditions': 'Could the pregnancy losses or childhood conditions in my family be genetic?',
+  'Tell every surgeon and dentist about the anesthesia reaction': 'Should my records say that a relative had a serious reaction to anesthesia?',
+  'Get a hepatitis B blood test': 'Can I have a hepatitis B blood test, and am I vaccinated?',
+  'Ask about a celiac blood test': 'Should I have a celiac blood test?',
+  'Blood clots in a parent or sibling': 'Does the blood clot in my family matter for birth control or surgery?',
+  'Polycystic kidney disease in a parent or sibling': 'When should I be checked for polycystic kidney disease?',
 };
 const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 function checklist() {

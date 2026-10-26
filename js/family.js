@@ -10,7 +10,7 @@ const byId = id => S.people.find(p => p.id === id);
 const uid = prefix => prefix + '-' + Math.random().toString(36).slice(2, 8);
 
 function newPerson(o = {}) {
-  return Object.assign({ id: uid('p'), name: '', sex: 'U', born: '', living: 'unknown', deathAge: '', cause: '', notes: '', sibNotes: '', parentNotes: '', interviewed: '', transcripts: {} }, o);
+  return Object.assign({ id: uid('p'), name: '', sex: 'U', born: '', living: 'unknown', deathAge: '', cause: '', notes: '', sibNotes: '', parentNotes: '', kidNotes: '', interviewed: '', transcripts: {}, checks: {} }, o);
 }
 
 /* ---------- Edges ---------- */
