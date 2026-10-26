@@ -158,6 +158,141 @@
         'Nín de xiōngdì jiěmèi zhōng, yǒu méiyǒu rén dé guo yánzhòng de bìng, huòzhě niánjì qīngqīng jiù qùshì le?'],
       vi: 'Trong số anh chị em của ông/bà, có ai bị bệnh nặng, hoặc mất sớm khi còn trẻ không ạ?',
     },
+    children: {
+      ta: ['உங்கள் பிள்ளைகளைப் பற்றிச் சொல்லுங்கள். அவர்களில் யாருக்காவது பெரிய உடல்நலப் பிரச்சினைகள் இருந்தனவா, அல்லது யாராவது சின்ன வயதிலேயே இறந்துவிட்டார்களா?',
+        'Ungal pillaigalai patri sollungal. Avargalil yaarukkaavadhu periya udalnala prachchinaigal irundhanavaa, alladhu yaaraavadhu chinna vayadhileye irandhuvittaargalaa?'],
+      kn: ['ನಿಮ್ಮ ಮಕ್ಕಳ ಬಗ್ಗೆ ಹೇಳಿ. ಅವರಲ್ಲಿ ಯಾರಿಗಾದರೂ ಗಂಭೀರ ಆರೋಗ್ಯ ಸಮಸ್ಯೆಗಳು ಇದ್ದವೇ, ಅಥವಾ ಯಾರಾದರೂ ಚಿಕ್ಕ ವಯಸ್ಸಿನಲ್ಲೇ ತೀರಿಕೊಂಡರೇ?',
+        'Nimma makkala bagge heli. Avaralli yaarigaadaroo gambheera aarogya samasyegalu iddave, athavaa yaaraadaroo chikka vayassinalle teerikondare?'],
+      bn: ['আপনার ছেলেমেয়েদের কথা বলুন। ওদের মধ্যে কারও কি কোনো গুরুতর স্বাস্থ্য সমস্যা ছিল, বা কেউ কি অল্প বয়সে মারা গেছে?',
+        'Aapnaar chhelemeyeder kotha bolun. Oder moddhe kaaro ki kono gurutoro shaasthyo shomoshsha chhilo, ba keu ki olpo boyoshe maara gechhe?'],
+      gu: ['આપનાં બાળકો વિશે કહો. શું તેમાંથી કોઈને ગંભીર આરોગ્યની તકલીફ હતી, કે કોઈનું નાની ઉંમરે અવસાન થયું હતું?',
+        'Aapnaan baalko vishe kaho. Shun temaanthi koine gambhir aarogyani takleef hati, ke koinun naani ummare avsaan thayun hatun?'],
+      ur: ['مجھے اپنے بچوں کے بارے میں بتائیے۔ کیا ان میں سے کسی کو کوئی سنگین صحت کا مسئلہ تھا، یا کسی کا کم عمری میں انتقال ہوا؟',
+        'Mujhe apne bachchon ke baare mein bataaiye. Kya un mein se kisi ko koi sangeen sehat ka masla tha, ya kisi ka kam umri mein intiqaal hua?'],
+      zh: ['跟我说说您的孩子们吧。他们当中有没有人得过严重的病，或者年纪轻轻就去世了？',
+        'Gēn wǒ shuōshuo nín de háizimen ba. Tāmen dāngzhōng yǒu méiyǒu rén dé guo yánzhòng de bìng, huòzhě niánjì qīngqīng jiù qùshì le?'],
+      vi: 'Ông/bà kể cho cháu nghe về các con của ông/bà nhé. Có ai bị bệnh nặng, hoặc mất sớm khi còn trẻ không ạ?',
+    },
+    genetic: {
+      ta: ['நம் குடும்பத்தில் யாராவது மரபணுப் பரிசோதனை (ஜெனிடிக் டெஸ்ட்) செய்திருக்கிறார்களா? உதாரணமாக BRCA அல்லது லிஞ்ச் சிண்ட்ரோமுக்கு. அது யார், அதில் என்ன தெரிந்தது?',
+        'Nam kudumbatthil yaaraavadhu marabanu parisodhanai (genetic test) seidhirukkiraargalaa? Udhaaranamaaga BRCA alladhu Lynch syndrome-ukku. Adhu yaar, adhil enna therindhadhu?'],
+      kn: ['ನಮ್ಮ ಕುಟುಂಬದಲ್ಲಿ ಯಾರಾದರೂ ಜೆನೆಟಿಕ್ ಟೆಸ್ಟ್ (ವಂಶವಾಹಿ ಪರೀಕ್ಷೆ) ಮಾಡಿಸಿಕೊಂಡಿದ್ದಾರಾ? ಉದಾಹರಣೆಗೆ BRCA ಅಥವಾ ಲಿಂಚ್ ಸಿಂಡ್ರೋಮ್‌ಗಾಗಿ. ಅದು ಯಾರು, ಅದರಲ್ಲಿ ಏನು ಗೊತ್ತಾಯಿತು?',
+        'Namma kutumbadalli yaaraadaroo genetic test (vamshavaahi pareekshe) maadisikondiddaaraa? Udaaharanege BRCA athavaa Lynch syndrome-gaagi. Adu yaaru, adaralli enu gottaayitu?'],
+      bn: ['পরিবারের কেউ কি জেনেটিক টেস্ট (জিনের পরীক্ষা) করিয়েছেন, যেমন BRCA বা লিঞ্চ সিনড্রোমের জন্য? কে করিয়েছিলেন, আর তাতে কী পাওয়া গেছে?',
+        'Poribaarer keu ki genetic test (jiner porikkha) koriyechhen, jemon BRCA ba Lynch syndrome-er jonno? Ke koriyechhilen, aar taate ki paawa gechhe?'],
+      gu: ['શું કુટુંબમાં કોઈએ જિનેટિક ટેસ્ટ (વારસાગત તપાસ) કરાવ્યો છે, જેમ કે BRCA કે લિંચ સિન્ડ્રોમ માટે? એ કોણ હતું, અને તેમાં શું આવ્યું?',
+        'Shun kutumbmaan koie genetic test (vaarsaagat tapaas) karaavyo chhe, jem ke BRCA ke Lynch syndrome maate? E kon hatun, ane temaan shun aavyun?'],
+      ur: ['کیا خاندان میں کسی نے جینیاتی ٹیسٹ کروایا ہے، جیسے BRCA یا لنچ سنڈروم کے لیے؟ وہ کون تھا، اور اس میں کیا نکلا؟',
+        'Kya khaandaan mein kisi ne jeneyaati test karwaaya hai, jaise BRCA ya Lynch syndrome ke liye? Woh kaun tha, aur us mein kya nikla?'],
+      zh: ['家里有没有人做过基因检测，比如查BRCA或林奇综合征？是谁做的，结果查出了什么？',
+        'Jiā li yǒu méiyǒu rén zuò guo jīyīn jiǎncè, bǐrú chá BRCA huò Línqí zōnghézhēng? Shì shéi zuò de, jiéguǒ chá chū le shénme?'],
+      vi: 'Trong gia đình có ai từng làm xét nghiệm gen không ạ, ví dụ gen BRCA hoặc hội chứng Lynch? Là ai, và kết quả thế nào ạ?',
+    },
+    sudden: {
+      ta: ['நம் குடும்பத்தில் யாராவது 50 வயதுக்கு முன்பே தெளிவான காரணமில்லாமல் திடீரென்று இறந்தார்களா, உடற்பயிற்சி செய்யும்போது மயங்கி விழுந்தார்களா, அல்லது நீரில் மூழ்கி இறந்தார்களா?',
+        'Nam kudumbatthil yaaraavadhu 50 vayadhukku munbe thelivaana kaaranamillaamal thideerendru irandhaargalaa, udarpayirchi seiyumbodhu mayangi vizhundhaargalaa, alladhu neeril moozhgi irandhaargalaa?'],
+      kn: ['ನಮ್ಮ ಕುಟುಂಬದಲ್ಲಿ ಯಾರಾದರೂ 50 ವರ್ಷಕ್ಕಿಂತ ಮೊದಲೇ ಸ್ಪಷ್ಟ ಕಾರಣವಿಲ್ಲದೆ ಇದ್ದಕ್ಕಿದ್ದಂತೆ ತೀರಿಕೊಂಡರೇ, ವ್ಯಾಯಾಮ ಮಾಡುವಾಗ ಮೂರ್ಛೆ ಹೋದರೇ, ಅಥವಾ ನೀರಿನಲ್ಲಿ ಮುಳುಗಿ ತೀರಿಕೊಂಡರೇ?',
+        'Namma kutumbadalli yaaraadaroo 50 varshakkinta modale spashta kaaranavillade iddakkiddante teerikondare, vyaayaama maaduvaaga moorchhe hodare, athavaa neerinalli mulugi teerikondare?'],
+      bn: ['পরিবারের কেউ কি 50 বছরের আগে কোনো স্পষ্ট কারণ ছাড়াই হঠাৎ মারা গেছেন, ব্যায়াম করার সময় অজ্ঞান হয়ে গেছেন, বা জলে ডুবে মারা গেছেন?',
+        'Poribaarer keu ki 50 bochhorer aage kono sposhto kaaron chhaarai hothaat maara gechhen, byaayaam koraar shomoy ogyaan hoye gechhen, ba jole dube maara gechhen?'],
+      gu: ['શું કુટુંબમાં કોઈનું 50 વર્ષ પહેલાં કોઈ સ્પષ્ટ કારણ વગર અચાનક અવસાન થયું, કોઈ કસરત કરતાં બેભાન થઈ ગયું, કે કોઈ પાણીમાં ડૂબી ગયું?',
+        'Shun kutumbmaan koinun 50 varsh pahelaan koi spasht kaaran vagar achaanak avsaan thayun, koi kasrat kartaan bebhaan thai gayun, ke koi paanimaan doobi gayun?'],
+      ur: ['کیا خاندان میں کسی کا 50 سال سے پہلے بغیر کسی واضح وجہ کے اچانک انتقال ہوا، کوئی ورزش کرتے ہوئے بے ہوش ہوا، یا کوئی ڈوب کر فوت ہوا؟',
+        'Kya khaandaan mein kisi ka 50 saal se pehle baghair kisi waazeh wajah ke achaanak intiqaal hua, koi warzish karte hue behosh hua, ya koi doob kar faut hua?'],
+      zh: ['家里有没有人在50岁以前没有明显原因就突然去世，或者运动时晕倒，或者溺水？',
+        'Jiā li yǒu méiyǒu rén zài wǔshí suì yǐqián méiyǒu míngxiǎn yuányīn jiù tūrán qùshì, huòzhě yùndòng shí yūndǎo, huòzhě nìshuǐ?'],
+      vi: 'Trong gia đình có ai mất đột ngột không rõ lý do trước 50 tuổi, ngất khi đang vận động, hoặc bị đuối nước không ạ?',
+    },
+    related: {
+      ta: ['உங்கள் அம்மாவும் அப்பாவும் ரத்த சொந்தமா, உதாரணமாக அத்தை / மாமா பிள்ளைகள், அல்லது மாமா-மருமகள்? நீங்களும் உங்கள் கணவர் / மனைவியும் சொந்தமா?',
+        'Ungal ammaavum appaavum ratha sondhamaa, udhaaranamaaga atthai / maamaa pillaigal, alladhu maamaa-marumagal? Neengalum ungal kanavar / manaiviyum sondhamaa?'],
+      kn: ['ನಿಮ್ಮ ತಂದೆ-ತಾಯಿ ರಕ್ತಸಂಬಂಧಿಗಳೇ, ಉದಾಹರಣೆಗೆ ಸೋದರಸಂಬಂಧಿಗಳು, ಅಥವಾ ಸೋದರಮಾವ-ಸೋದರಸೊಸೆ? ನೀವು ಮತ್ತು ನಿಮ್ಮ ಗಂಡ / ಹೆಂಡತಿ ಕೂಡ ಸಂಬಂಧಿಗಳೇ?',
+        'Nimma tande-taayi raktasambandhigale, udaaharanege sodarasambandhigalu, athavaa sodaramaava-sodarasose? Neevu mattu nimma ganda / hendati kooda sambandhigale?'],
+      bn: ['আপনার বাবা-মা কি রক্তের সম্পর্কে আত্মীয় ছিলেন, যেমন খুড়তুতো / মামাতো ভাই-বোন, বা মামা-ভাগ্নি? আপনি আর আপনার স্বামী বা স্ত্রী কি আত্মীয়?',
+        'Aapnaar baabaa-maa ki rokter shomporke aattiyo chhilen, jemon khurtuto / maamaato bhai-bon, ba maama-bhaagni? Aapni aar aapnaar shaami ba stri ki aattiyo?'],
+      gu: ['શું આપનાં માતા-પિતા લોહીના સંબંધમાં સગાં હતાં, જેમ કે પિતરાઈ / મામાનાં ભાઈ-બહેન, કે મામા-ભાણી? શું આપ અને આપના પતિ કે પત્ની પણ સગાં છો?',
+        'Shun aapnaan maataa-pitaa lohinaa sambandhmaan sagaan hataan, jem ke pitraai / maamaanaan bhai-bahen, ke maamaa-bhaani? Shun aap ane aapnaa pati ke patni pan sagaan chho?'],
+      ur: ['کیا آپ کے والدین آپس میں خونی رشتہ دار تھے، جیسے کزن (چچا زاد، ماموں زاد)، یا ماموں اور بھانجی؟ کیا آپ اور آپ کے شوہر یا بیوی بھی رشتہ دار ہیں؟',
+        'Kya aap ke waalidain aapas mein khooni rishtedaar the, jaise cousin (chacha zaad, maamoon zaad), ya maamoon aur bhaanji? Kya aap aur aap ke shauhar ya biwi bhi rishtedaar hain?'],
+      zh: ['您的父母是不是有血缘关系，比如表亲、堂亲，或者舅舅和外甥女？您和您的老伴呢？',
+        'Nín de fùmǔ shì bu shì yǒu xuèyuán guānxì, bǐrú biǎoqīn, tángqīn, huòzhě jiùjiu hé wàishengnǚ? Nín hé nín de lǎobàn ne?'],
+      vi: 'Bố mẹ của ông/bà có họ hàng ruột thịt với nhau không ạ, ví dụ anh chị em họ, hoặc chú/cậu với cháu gái? Còn ông/bà với chồng/vợ của mình thì sao ạ?',
+    },
+    pregnancy: {
+      ta: ['நம் குடும்பத்தில் கருச்சிதைவுகள், இறந்து பிறந்த குழந்தைகள், அல்லது ஒரு வயதுக்குள் இறந்த குழந்தைகள் இருந்தார்களா?',
+        'Nam kudumbatthil karuchidhaivugal, irandhu pirandha kuzhandhaigal, alladhu oru vayadhukkul irandha kuzhandhaigal irundhaargalaa?'],
+      kn: ['ನಮ್ಮ ಕುಟುಂಬದಲ್ಲಿ ಗರ್ಭಪಾತಗಳು, ಸತ್ತು ಹುಟ್ಟಿದ ಮಕ್ಕಳು, ಅಥವಾ ಒಂದು ವರ್ಷದೊಳಗೆ ತೀರಿಕೊಂಡ ಮಕ್ಕಳು ಇದ್ದರೇ?',
+        'Namma kutumbadalli garbhapaatagalu, sattu huttida makkalu, athavaa ondu varshadolage teerikonda makkalu iddare?'],
+      bn: ['আমাদের পরিবারে কি গর্ভপাত, মৃত সন্তান প্রসব, বা এক বছরের মধ্যে মারা যাওয়া শিশু ছিল?',
+        'Aamaader poribaare ki gorbhopaat, mrito shontaan proshob, ba ek bochhorer moddhe maara jaawa shishu chhilo?'],
+      gu: ['શું આપણા કુટુંબમાં કસુવાવડ, મરેલાં જન્મેલાં બાળકો, કે પહેલા વર્ષમાં જ ગુજરી ગયેલાં બાળકો હતાં?',
+        'Shun aapanaa kutumbmaan kasuvaavad, marelaan janmelaan baalko, ke pahelaa varshmaan j gujri gayelaan baalko hataan?'],
+      ur: ['کیا ہمارے خاندان میں حمل ضائع ہوئے، بچے مردہ پیدا ہوئے، یا کوئی بچہ پہلے سال میں ہی فوت ہو گیا؟',
+        'Kya hamaare khaandaan mein hamal zaaya hue, bachche murda paida hue, ya koi bachcha pehle saal mein hi faut ho gaya?'],
+      zh: ['我们家有没有人流产、死胎，或者孩子不到一岁就夭折了？',
+        'Wǒmen jiā yǒu méiyǒu rén liúchǎn, sǐtāi, huòzhě háizi bú dào yí suì jiù yāozhé le?'],
+      vi: 'Trong gia đình mình có ai bị sảy thai, thai chết lưu, hoặc em bé mất trong năm đầu không ạ?',
+    },
+    birth: {
+      ta: ['நம் குடும்பத்தில் யாராவது பிறவியிலேயே ஏதாவது உடல்நலப் பிரச்சினையுடன் பிறந்தார்களா? அல்லது சிறு வயதில் யாருக்காவது படிப்பதில் சிரமம், அறிவுசார் குறைபாடு, அல்லது காது கேளாமை இருந்ததா?',
+        'Nam kudumbatthil yaaraavadhu piraviyileye edhaavadhu udalnala prachchinaiyudan pirandhaargalaa? Alladhu siru vayadhil yaarukkaavadhu padippadhil siramam, arivusaar kuraipaadu, alladhu kaadhu kelaamai irundhadhaa?'],
+      kn: ['ನಮ್ಮ ಕುಟುಂಬದಲ್ಲಿ ಯಾರಾದರೂ ಹುಟ್ಟಿನಿಂದಲೇ ಯಾವುದಾದರೂ ಆರೋಗ್ಯ ಸಮಸ್ಯೆಯೊಂದಿಗೆ ಹುಟ್ಟಿದರೇ? ಅಥವಾ ಚಿಕ್ಕಂದಿನಲ್ಲಿ ಯಾರಿಗಾದರೂ ಕಲಿಯುವುದರಲ್ಲಿ ತೊಂದರೆ, ಬುದ್ಧಿಮಾಂದ್ಯ, ಅಥವಾ ಕಿವುಡು ಇತ್ತೇ?',
+        'Namma kutumbadalli yaaraadaroo huttinindale yaavudaadaroo aarogya samasyeyondige huttidare? Athavaa chikkandinalli yaarigaadaroo kaliyuvudaralli tondare, buddhimaandya, athavaa kivudu itte?'],
+      bn: ['পরিবারের কেউ কি জন্ম থেকেই কোনো স্বাস্থ্য সমস্যা নিয়ে জন্মেছিলেন, বা ছোটবেলায় কারও কি পড়াশোনা শিখতে অসুবিধা, বুদ্ধি প্রতিবন্ধকতা, বা কানে কম শোনার সমস্যা ছিল?',
+        'Poribaarer keu ki jonmo thekei kono shaasthyo shomoshsha niye jonmechhilen, ba chhotobelaay kaaro ki porashona shikhte oshubidha, buddhi protibondhokota, ba kaane kom shonaar shomoshsha chhilo?'],
+      gu: ['શું કુટુંબમાં કોઈ જન્મથી જ કોઈ આરોગ્યની તકલીફ સાથે જન્મ્યું હતું, કે નાનપણમાં કોઈને શીખવામાં તકલીફ, માનસિક અક્ષમતા, કે ઓછું સંભળાવાની તકલીફ હતી?',
+        'Shun kutumbmaan koi janmathi j koi aarogyani takleef saathe janmyun hatun, ke naanpanmaan koine sheekhvaamaan takleef, maanasik akshamtaa, ke ochhun sambhalaavaani takleef hati?'],
+      ur: ['کیا خاندان میں کوئی پیدائشی طور پر کسی صحت کے مسئلے کے ساتھ پیدا ہوا، یا بچپن میں کسی کو سیکھنے میں دقت، ذہنی معذوری، یا کم سنائی دینے کا مسئلہ تھا؟',
+        'Kya khaandaan mein koi paidaaishi taur par kisi sehat ke masle ke saath paida hua, ya bachpan mein kisi ko seekhne mein diqqat, zehni mazoori, ya kam sunaai dene ka masla tha?'],
+      zh: ['家里有没有人生下来就有健康问题，或者小时候学习有困难、智力障碍，或者听力不好？',
+        'Jiā li yǒu méiyǒu rén shēng xiàlái jiù yǒu jiànkāng wèntí, huòzhě xiǎoshíhou xuéxí yǒu kùnnan, zhìlì zhàng’ài, huòzhě tīnglì bù hǎo?'],
+      vi: 'Trong gia đình có ai sinh ra đã có vấn đề sức khỏe, hoặc lúc nhỏ bị khó khăn trong học tập, chậm phát triển trí tuệ, hoặc nghe kém không ạ?',
+    },
+    anesthesia: {
+      ta: ['நம் குடும்பத்தில் யாருக்காவது ஆபரேஷனின்போது மயக்க மருந்தால் (அனஸ்தீசியா) கடுமையான பாதிப்பு ஏற்பட்டதா, உதாரணமாக மிக அதிகக் காய்ச்சல்?',
+        'Nam kudumbatthil yaarukkaavadhu operation-inbodhu mayakka marundhaal (anesthesia) kadumaiyaana baadhippu erpattadhaa, udhaaranamaaga miga adhiga kaaichal?'],
+      kn: ['ನಮ್ಮ ಕುಟುಂಬದಲ್ಲಿ ಯಾರಿಗಾದರೂ ಆಪರೇಷನ್ ಸಮಯದಲ್ಲಿ ಅರಿವಳಿಕೆ (ಅನಸ್ತೀಶಿಯಾ) ಮದ್ದಿನಿಂದ ಗಂಭೀರ ಪ್ರತಿಕ್ರಿಯೆ ಆಯಿತೇ, ಉದಾಹರಣೆಗೆ ತುಂಬಾ ಜಾಸ್ತಿ ಜ್ವರ?',
+        'Namma kutumbadalli yaarigaadaroo operation samayadalli arivalike (anesthesia) maddininda gambheera pratikriye aayite, udaaharanege tumbaa jaasti jvara?'],
+      bn: ['পরিবারের কারও কি অপারেশনের সময় অজ্ঞান করার ওষুধে (অ্যানেস্থেশিয়া) গুরুতর প্রতিক্রিয়া হয়েছিল, যেমন খুব বেশি জ্বর?',
+        'Poribaarer kaaro ki operation-er shomoy ogyaan koraar oshudhe (anesthesia) gurutoro protikriya hoyechhilo, jemon khub beshi jor?'],
+      gu: ['શું કુટુંબમાં કોઈને ઓપરેશન વખતે બેભાન કરવાની દવા (એનેસ્થેસિયા)થી ગંભીર રિએક્શન આવ્યું હતું, જેમ કે બહુ વધારે તાવ?',
+        'Shun kutumbmaan koine operation vakhte bebhaan karvaani davaa (anesthesia)thi gambhir reaction aavyun hatun, jem ke bahu vadhaare taav?'],
+      ur: ['کیا خاندان میں کسی کو آپریشن کے دوران بے ہوشی کی دوا (اینستھیزیا) سے سنگین ردعمل ہوا، جیسے بہت تیز بخار؟',
+        'Kya khaandaan mein kisi ko operation ke dauraan behoshi ki dawa (anesthesia) se sangeen radd-e-amal hua, jaise bahut tez bukhaar?'],
+      zh: ['家里有没有人做手术时对麻药有严重反应，比如发很高的烧？',
+        'Jiā li yǒu méiyǒu rén zuò shǒushù shí duì máyào yǒu yánzhòng fǎnyìng, bǐrú fā hěn gāo de shāo?'],
+      vi: 'Trong gia đình có ai từng bị phản ứng nặng với thuốc mê khi mổ, như sốt rất cao, không ạ?',
+    },
+    tobacco: {
+      ta: ['நீங்களோ உங்கள் அம்மா அப்பாவோ சிகரெட் / பீடி புகைத்தீர்களா, அல்லது புகையிலை, குட்கா, பான் மென்றீர்களா? எத்தனை வருடங்கள்?',
+        'Neengalo ungal amma appaavo cigarette / beedi pugaittheergalaa, alladhu pugaiyilai, gutka, paan mendreergalaa? Etthanai varudangal?'],
+      kn: ['ನೀವು ಅಥವಾ ನಿಮ್ಮ ತಂದೆ-ತಾಯಿ ಸಿಗರೇಟ್ / ಬೀಡಿ ಸೇದುತ್ತಿದ್ದಿರಾ, ಅಥವಾ ತಂಬಾಕು, ಗುಟ್ಕಾ, ಪಾನ್ ಜಗಿಯುತ್ತಿದ್ದಿರಾ? ಎಷ್ಟು ವರ್ಷ?',
+        'Neevu athavaa nimma tande-taayi cigarette / beedi seduttiddiraa, athavaa tambaaku, gutka, paan jagiyuttiddiraa? Eshtu varsha?'],
+      bn: ['আপনি বা আপনার বাবা-মা কি সিগারেট / বিড়ি খেতেন, বা তামাক, গুটখা, পান-জর্দা চিবোতেন? কত বছর ধরে?',
+        'Aapni ba aapnaar baabaa-maa ki cigarette / biri kheten, ba taamaak, gutkha, paan-jorda chiboten? Koto bochhor dhore?'],
+      gu: ['શું આપ કે આપનાં માતા-પિતા સિગારેટ / બીડી પીતાં, કે તમાકુ, ગુટખા કે પાન ખાતાં? કેટલાં વર્ષ સુધી?',
+        'Shun aap ke aapnaan maataa-pitaa cigarette / beedi peetaan, ke tamaaku, gutkha ke paan khaataan? Ketlaan varsh sudhi?'],
+      ur: ['کیا آپ یا آپ کے والدین سگریٹ / بیڑی پیتے تھے، یا تمباکو، گٹکا یا پان کھاتے تھے؟ کتنے سال تک؟',
+        'Kya aap ya aap ke waalidain cigarette / beedi peete the, ya tambaakoo, gutka ya paan khaate the? Kitne saal tak?'],
+      zh: ['您或者您的父母抽烟吗？或者嚼烟草、槟榔？抽了或嚼了多少年？',
+        'Nín huòzhě nín de fùmǔ chōuyān ma? Huòzhě jiáo yāncǎo, bīnláng? Chōu le huò jiáo le duōshao nián?'],
+      vi: 'Ông/bà hoặc bố mẹ của ông/bà có hút thuốc, hoặc nhai thuốc lá, ăn trầu không ạ? Trong bao nhiêu năm ạ?',
+    },
+    ancestry: {
+      ta: ['உங்கள் அம்மா அப்பாவின் குடும்பங்களும், தாத்தா பாட்டிகளின் குடும்பங்களும் எங்கிருந்து வந்தவர்கள்?',
+        'Ungal amma appaavin kudumbangalum, thaatthaa paattigalin kudumbangalum engirundhu vandhavargal?'],
+      kn: ['ನಿಮ್ಮ ತಂದೆ-ತಾಯಿ ಮತ್ತು ಅಜ್ಜ-ಅಜ್ಜಿಯರ ಕುಟುಂಬಗಳು ಎಲ್ಲಿಂದ ಬಂದವರು?',
+        'Nimma tande-taayi mattu ajja-ajjiyara kutumbagalu ellinda bandavaru?'],
+      bn: ['আপনার বাবা-মা আর তাঁদের বাবা-মায়ের পরিবার কোথা থেকে এসেছিল?',
+        'Aapnaar baabaa-maa aar taader baabaa-maayer poribaar kotha theke eshechhilo?'],
+      gu: ['આપનાં માતા-પિતા અને દાદા-દાદી, નાના-નાનીનાં કુટુંબ ક્યાંથી આવ્યાં હતાં?',
+        'Aapnaan maataa-pitaa ane daadaa-daadi, naanaa-naaninaan kutumb kyaanthi aavyaan hataan?'],
+      ur: ['آپ کے والدین اور دادا دادی، نانا نانی کے خاندان کہاں سے آئے تھے؟',
+        'Aap ke waalidain aur daada daadi, naana naani ke khaandaan kahaan se aaye the?'],
+      zh: ['您父母和祖父母、外祖父母的家族是从哪里来的？',
+        'Nín fùmǔ hé zǔfùmǔ, wàizǔfùmǔ de jiāzú shì cóng nǎli lái de?'],
+      vi: 'Gia đình bên bố mẹ và ông bà của ông/bà gốc ở đâu ạ?',
+    },
     closing: {
       ta: ['மிக்க நன்றி. இது என் உடல்நலத்தைக் கவனித்துக்கொள்ள எனக்கும் என் டாக்டருக்கும் உதவும்.',
         'Mikka nandri. Idhu en udalnalatthai kavanitthukkolla enakkum en doctor-ukkum udhavum.'],
@@ -177,6 +312,7 @@
 
   /* ---------- Follow-up questions ---------- */
   const FT = {
+    kind: { ta: ['அது எந்த வகை?', 'Adhu endha vagai?'], kn: ['ಅದು ಯಾವ ರೀತಿಯದು?', 'Adu yaava reetiyadu?'], bn: ['ওটা কী ধরনের ছিল?', 'Ota ki dhoroner chhilo?'], gu: ['એ કયા પ્રકારનું હતું?', 'E kayaa prakaarnun hatun?'], ur: ['وہ کس قسم کا تھا؟', 'Woh kis qism ka tha?'], zh: ['是哪一种？', 'Shì nǎ yì zhǒng?'], vi: 'Đó là loại nào ạ?' },
     cancer_type: {
       ta: ['அது எந்த வகைப் புற்றுநோய்? உடலில் எங்கே தொடங்கியது?', 'Adhu endha vagai putrunoi? Udalil enge thodangiyadhu?'],
       kn: ['ಅದು ಯಾವ ರೀತಿಯ ಕ್ಯಾನ್ಸರ್? ದೇಹದಲ್ಲಿ ಎಲ್ಲಿ ಶುರುವಾಯಿತು?', 'Adu yaava reetiya cancer? Dehadalli elli shuruvaayitu?'],
@@ -278,6 +414,8 @@
       vi: 'Gia đình nhờ ông/bà giúp làm bản tiền sử sức khỏe gia đình. Xin ông/bà chạm vào câu trả lời. Ông/bà có thể bỏ qua bất cứ câu nào.',
     },
     send_back: { ta: ['உங்கள் பதில்களைத் திருப்பி அனுப்புங்கள்', 'Ungal badhilgalai thiruppi anuppungal'], kn: ['ನಿಮ್ಮ ಉತ್ತರಗಳನ್ನು ವಾಪಸ್ ಕಳುಹಿಸಿ', 'Nimma uttaragalannu vaapas kaluhisi'], bn: ['আপনার উত্তরগুলো ফেরত পাঠান', 'Aapnaar uttorgulo pherot paathaan'], gu: ['આપના જવાબો પાછા મોકલો', 'Aapnaa javaabo paachhaa moklo'], ur: ['اپنے جوابات واپس بھیجیں', 'Apne jawaabaat waapas bhejein'], zh: ['把您的回答发回去', 'Bǎ nín de huídá fā huíqu'], vi: 'Gửi câu trả lời về' },
+    tap_all: { ta: ['பொருந்தும் எல்லாவற்றையும் தொடுங்கள்.', 'Porundhum ellaavatraiyum thodungal.'], kn: ['ಸರಿಹೊಂದುವ ಎಲ್ಲವನ್ನೂ ಒತ್ತಿ.', 'Sarihonduva ellavannoo otti.'], bn: ['যেগুলো মেলে, সবগুলোতে চাপ দিন।', 'Jegulo mele, shobgulote chaap din.'], gu: ['લાગુ પડે તે બધા પર ટૅપ કરો.', 'Laagu pade te badhaa par tap karo.'], ur: ['جو جو لاگو ہوں، سب پر ٹیپ کریں۔', 'Jo jo laagoo hon, sab par tap karein.'], zh: ['符合的都请点选。', 'Fúhé de dōu qǐng diǎnxuǎn.'], vi: 'Chạm vào tất cả các ý đúng.' },
+    about_family: { ta: ['முழுக் குடும்பத்தைப் பற்றி', 'Muzhu kudumbatthai patri'], kn: ['ಇಡೀ ಕುಟುಂಬದ ಬಗ್ಗೆ', 'Idee kutumbada bagge'], bn: ['পুরো পরিবার সম্পর্কে', 'Puro poribaar shomporke'], gu: ['આખા કુટુંબ વિશે', 'Aakhaa kutumb vishe'], ur: ['پورے خاندان کے بارے میں', 'Poore khaandaan ke baare mein'], zh: ['关于全家', 'Guānyú quánjiā'], vi: 'Về cả gia đình' },
   };
 
   /* ---------- Conditions: everyday word first, formal term in parentheses ---------- */
@@ -295,11 +433,21 @@
     dementia: { ta: ['ஞாபக மறதி நோய் (டிமென்ஷியா)', 'Nyaabaga maradhi noi (dementia)'], kn: ['ಮರೆವಿನ ಕಾಯಿಲೆ (ಡಿಮೆನ್ಷಿಯಾ)', 'Marevina kaayile (dementia)'], bn: ['ভুলে যাওয়ার রোগ (ডিমেনশিয়া)', 'Bhule jaawaar rog (dementia)'], gu: ['ભૂલવાની બીમારી (ડિમેન્શિયા)', 'Bhoolvaani beemaari (dementia)'], ur: ['بھولنے کی بیماری (ڈیمنشیا)', 'Bhoolne ki beemaari (dementia)'], zh: ['老年痴呆（失智症）', 'Lǎonián chīdāi (shīzhìzhèng)'], vi: 'Lú lẫn, mất trí nhớ (sa sút trí tuệ)' },
     mental: { ta: ['மனச்சோர்வு (டிப்ரஷன்) / மனநலப் பிரச்சினை', 'Manachorvu (depression) / mananala prachchinai'], kn: ['ಖಿನ್ನತೆ (ಡಿಪ್ರೆಶನ್) / ಮಾನಸಿಕ ಆರೋಗ್ಯ ಸಮಸ್ಯೆ', 'Khinnate (depression) / maanasika aarogya samasye'], bn: ['ডিপ্রেশন / মানসিক স্বাস্থ্যের সমস্যা', 'Depression / maanoshik shaasthyer shomoshsha'], gu: ['ડિપ્રેશન / માનસિક આરોગ્યની તકલીફ', 'Depression / maanasik aarogyani takleef'], ur: ['ڈپریشن / ذہنی صحت کا مسئلہ', 'Depression / zehni sehat ka masla'], zh: ['抑郁症或其他心理健康问题', 'Yìyùzhèng huò qítā xīnlǐ jiànkāng wèntí'], vi: 'Trầm cảm hoặc bệnh tâm lý khác' },
     blood: { ta: ['தலசீமியா / அரிவாள் செல் / ரத்த சோகை', 'Thalassemia / arivaal cell / ratha sogai'], kn: ['ಥಲಸ್ಸೇಮಿಯಾ / ಸಿಕಲ್ ಸೆಲ್ / ರಕ್ತಹೀನತೆ', 'Thalassemia / sickle cell / raktaheenate'], bn: ['থ্যালাসেমিয়া / সিকেল সেল / রক্তশূন্যতা', 'Thalassemia / sickle cell / roktoshunnota'], gu: ['થેલેસેમિયા / સિકલ સેલ / લોહીની ઉણપ', 'Thalassemia / sickle cell / lohini unap'], ur: ['تھیلیسیمیا / سکل سیل / خون کی کمی', 'Thalassemia / sickle cell / khoon ki kami'], zh: ['地中海贫血 / 镰状细胞病 / 贫血', 'Dìzhōnghǎi pínxuè / liánzhuàng xìbāo bìng / pínxuè'], vi: 'Tan máu bẩm sinh (thalassemia), hồng cầu hình liềm, hoặc thiếu máu' },
+    polyps: { ta: ['பெருங்குடலில் பாலிப் (கொலனோஸ்கோபியில் காணப்படும் சிறு கட்டிகள்)', 'Perungudalil polyp (colonoscopy-yil kaanappadum siru kattigal)'], kn: ['ದೊಡ್ಡ ಕರುಳಿನಲ್ಲಿ ಪಾಲಿಪ್ (ಕೊಲೊನೋಸ್ಕೋಪಿಯಲ್ಲಿ ಕಾಣುವ ಸಣ್ಣ ಗಡ್ಡೆಗಳು)', 'Dodda karulinalli polyp (colonoscopy-yalli kaanuva sanna gaddegalu)'], bn: ['কোলনে পলিপ (কোলনোস্কোপিতে পাওয়া ছোট মাংসপিণ্ড)', 'Colon-e polyp (colonoscopy-te paawa chhoto maangshopindo)'], gu: ['આંતરડામાં પોલિપ (કોલોનોસ્કોપીમાં મળતી નાની ગાંઠો)', 'Aantardaamaan polyp (colonoscopy-maan malti naani gaantho)'], ur: ['بڑی آنت میں پولیپ (کولونوسکوپی میں ملنے والی چھوٹی گلٹیاں)', 'Badi aant mein polyp (colonoscopy mein milne waali chhoti giltiyaan)'], zh: ['肠息肉（做肠镜时发现的）', 'Cháng xīròu (zuò chángjìng shí fāxiàn de)'], vi: 'Polyp đại tràng (khối nhỏ tìm thấy khi nội soi đại tràng)' },
+    liver: { ta: ['ஹெபடைடிஸ் பி அல்லது சி, அல்லது வேறு கல்லீரல் நோய்', 'Hepatitis B alladhu C, alladhu veru kalleeral noi'], kn: ['ಹೆಪಟೈಟಿಸ್ ಬಿ ಅಥವಾ ಸಿ, ಅಥವಾ ಬೇರೆ ಲಿವರ್ (ಯಕೃತ್ತು) ಕಾಯಿಲೆ', 'Hepatitis B athavaa C, athavaa bere liver (yakruttu) kaayile'], bn: ['হেপাটাইটিস বি বা সি, বা লিভারের অন্য অসুখ', 'Hepatitis B ba C, ba liver-er onno oshukh'], gu: ['હેપેટાઇટિસ બી કે સી, કે લિવરની બીજી કોઈ બીમારી', 'Hepatitis B ke C, ke liverni beeji koi beemaari'], ur: ['ہیپاٹائٹس بی یا سی، یا جگر کی کوئی اور بیماری', 'Hepatitis B ya C, ya jigar ki koi aur beemaari'], zh: ['乙肝或丙肝，或其他肝病', 'Yǐgān huò bǐnggān, huò qítā gānbìng'], vi: 'Viêm gan B hoặc C, hoặc bệnh gan khác' },
+    clots: { ta: ['கால்களில் அல்லது நுரையீரலில் ரத்தம் உறைதல் (ரத்தக் கட்டி)', 'Kaalgalil alladhu nuraiyeeralil ratham uraidhal (rathak katti)'], kn: ['ಕಾಲುಗಳಲ್ಲಿ ಅಥವಾ ಶ್ವಾಸಕೋಶದಲ್ಲಿ ರಕ್ತ ಹೆಪ್ಪುಗಟ್ಟುವುದು', 'Kaalugalalli athavaa shwaasakoshadalli rakta heppugattuvudu'], bn: ['পায়ে বা ফুসফুসে রক্ত জমাট বাঁধা', 'Paaye ba phusphuse rokto jomaat baandha'], gu: ['પગમાં કે ફેફસાંમાં લોહીના ગઠ્ઠા', 'Pagmaan ke fefsaanmaan lohinaa gaththaa'], ur: ['ٹانگوں یا پھیپھڑوں میں خون جمنا (کلاٹ)', 'Taangon ya phephron mein khoon jamna (clot)'], zh: ['腿上或肺里有血栓', 'Tuǐ shang huò fèi li yǒu xuèshuān'], vi: 'Cục máu đông ở chân hoặc phổi' },
+    ibd: { ta: ['க்ரோன்ஸ் நோய் அல்லது அல்சரேட்டிவ் கோலைட்டிஸ் (குடல் புண் வீக்கம்)', "Crohn's noi alladhu ulcerative colitis (kudal pun veekkam)"], kn: ['ಕ್ರೋನ್ಸ್ ಕಾಯಿಲೆ ಅಥವಾ ಅಲ್ಸರೇಟಿವ್ ಕೊಲೈಟಿಸ್ (ಕರುಳಿನ ಉರಿಯೂತ)', "Crohn's kaayile athavaa ulcerative colitis (karulina uriyoota)"], bn: ['ক্রোনস ডিজিজ বা আলসারেটিভ কোলাইটিস (অন্ত্রে ঘা ও প্রদাহ)', "Crohn's disease ba ulcerative colitis (ontre ghaa o prodaah)"], gu: ['ક્રોહન્સ રોગ કે અલ્સરેટિવ કોલાઇટિસ (આંતરડામાં સોજો અને ચાંદાં)', "Crohn's rog ke ulcerative colitis (aantardaamaan sojo ane chaandaan)"], ur: ['کرونز کی بیماری یا السریٹو کولائٹس (آنتوں میں سوزش)', "Crohn's ki beemaari ya ulcerative colitis (aanton mein sozish)"], zh: ['克罗恩病或溃疡性结肠炎', 'Kèluó’ēn bìng huò kuìyángxìng jiéchángyán'], vi: 'Bệnh Crohn hoặc viêm loét đại tràng' },
+    celiac: { ta: ['சீலியாக் நோய் (கோதுமை / குளூட்டன் சாப்பிட முடியாது)', 'Celiac noi (godhumai / gluten saappida mudiyaadhu)'], kn: ['ಸೀಲಿಯಾಕ್ ಕಾಯಿಲೆ (ಗೋಧಿ / ಗ್ಲುಟೆನ್ ತಿನ್ನಲು ಆಗುವುದಿಲ್ಲ)', 'Celiac kaayile (godhi / gluten tinnalu aaguvudilla)'], bn: ['সিলিয়াক রোগ (গম বা গ্লুটেন খেতে পারেন না)', 'Celiac rog (gom ba gluten khete paaren na)'], gu: ['સીલિયાક રોગ (ઘઉં કે ગ્લુટેન ખાઈ શકતા નથી)', 'Celiac rog (ghau ke gluten khaai shaktaa nathi)'], ur: ['سیلیک کی بیماری (گندم یا گلوٹین نہیں کھا سکتے)', 'Celiac ki beemaari (gandum ya gluten nahin kha sakte)'], zh: ['乳糜泻（不能吃小麦或麸质）', 'Rǔmíxiè (bù néng chī xiǎomài huò fūzhì)'], vi: 'Bệnh celiac (không ăn được lúa mì hoặc gluten)' },
+    glaucoma: { ta: ['கண் அழுத்த நோய் (கிளாக்கோமா)', 'Kan azhuttha noi (glaucoma)'], kn: ['ಗ್ಲಾಕೋಮಾ (ಕಣ್ಣಿನ ಒತ್ತಡ ಜಾಸ್ತಿ)', 'Glaucoma (kannina ottada jaasti)'], bn: ['গ্লুকোমা (চোখের চাপ বেশি)', 'Glaucoma (chokher chaap beshi)'], gu: ['ઝામર / ગ્લુકોમા (આંખનું દબાણ વધારે)', 'Zaamar / glaucoma (aankhnun dabaan vadhaare)'], ur: ['کالا موتیا (آنکھ کا دباؤ زیادہ)', 'Kaala motiya (aankh ka dabaao zyaada)'], zh: ['青光眼（眼压高）', 'Qīngguāngyǎn (yǎnyā gāo)'], vi: 'Tăng nhãn áp (glôcôm)' },
+    osteo: { ta: ['எலும்பு பலவீனம் (ஆஸ்டியோபோரோசிஸ்) அல்லது இடுப்பு எலும்பு முறிவு', 'Elumbu balaveenam (osteoporosis) alladhu iduppu elumbu murivu'], kn: ['ಮೂಳೆ ದುರ್ಬಲ (ಆಸ್ಟಿಯೋಪೊರೋಸಿಸ್) ಅಥವಾ ಸೊಂಟದ ಮೂಳೆ ಮುರಿತ', 'Moole durbala (osteoporosis) athavaa sontada moole murita'], bn: ['হাড় দুর্বল (অস্টিওপোরোসিস) বা কোমরের হাড় ভাঙা', 'Haar durbol (osteoporosis) ba komorer haar bhaanga'], gu: ['નબળાં હાડકાં (ઓસ્ટિયોપોરોસિસ) કે થાપાનું હાડકું તૂટવું', 'Nablaan haadkaan (osteoporosis) ke thaapaanun haadkun tootvun'], ur: ['کمزور ہڈیاں (آسٹیوپوروسس) یا کولہے کی ہڈی ٹوٹنا', 'Kamzor haddiyaan (osteoporosis) ya koolhe ki haddi tootna'], zh: ['骨质疏松或髋部骨折', 'Gǔzhì shūsōng huò kuānbù gǔzhé'], vi: 'Loãng xương hoặc gãy xương hông' },
+    autoimmune: { ta: ['லூபஸ், முடக்கு வாதம் (ருமட்டாய்டு ஆர்த்ரைட்டிஸ்), அல்லது வேறு தன்னுடல் தாக்கு நோய்', 'Lupus, mudakku vaadham (rheumatoid arthritis), alladhu veru thannudal thaakku noi'], kn: ['ಲೂಪಸ್, ರುಮಟಾಯ್ಡ್ ಆರ್ಥ್ರೈಟಿಸ್ (ಸಂಧಿವಾತ), ಅಥವಾ ಬೇರೆ ಆಟೋಇಮ್ಯೂನ್ ಕಾಯಿಲೆ', 'Lupus, rheumatoid arthritis (sandhivaata), athavaa bere autoimmune kaayile'], bn: ['লুপাস, রিউমাটয়েড আর্থ্রাইটিস (বাত), বা অন্য কোনো অটোইমিউন রোগ', 'Lupus, rheumatoid arthritis (baat), ba onno kono autoimmune rog'], gu: ['લ્યુપસ, રૂમેટોઇડ આર્થરાઇટિસ (સંધિવા), કે બીજો કોઈ ઑટોઇમ્યુન રોગ', 'Lupus, rheumatoid arthritis (sandhivaa), ke beejo koi autoimmune rog'], ur: ['لیوپس، رمیٹائیڈ آرتھرائٹس (گٹھیا)، یا کوئی اور آٹو امیون بیماری', 'Lupus, rheumatoid arthritis (gathiya), ya koi aur autoimmune beemaari'], zh: ['红斑狼疮、类风湿关节炎或其他自身免疫病', 'Hóngbān lángchuāng, lèifēngshī guānjiéyán huò qítā zìshēn miǎnyì bìng'], vi: 'Lupus, viêm khớp dạng thấp, hoặc bệnh tự miễn khác' },
+    substance: { ta: ['குடிப்பழக்கம் அல்லது போதைப் பழக்கம்', 'Kudippazhakkam alladhu bodhai pazhakkam'], kn: ['ಕುಡಿತದ ಚಟ ಅಥವಾ ಮಾದಕ ವಸ್ತುಗಳ ಚಟ', 'Kuditada chata athavaa maadaka vastugala chata'], bn: ['মদ বা নেশার আসক্তি', 'Mod ba neshaar aashokti'], gu: ['દારૂ કે નશાની લત', 'Daaru ke nashaani lat'], ur: ['شراب یا نشے کی لت', 'Sharaab ya nashe ki lat'], zh: ['酗酒或吸毒成瘾', 'Xùjiǔ huò xīdú chéngyǐn'], vi: 'Nghiện rượu hoặc nghiện ma túy' },
+    hearing: { ta: ['சிறு வயதிலேயே காது கேளாமை', 'Siru vayadhileye kaadhu kelaamai'], kn: ['ಚಿಕ್ಕ ವಯಸ್ಸಿನಲ್ಲೇ ಕಿವುಡು (ಕಿವಿ ಕೇಳದಿರುವುದು)', 'Chikka vayassinalle kivudu (kivi keladiruvudu)'], bn: ['অল্প বয়স থেকেই কানে কম শোনা', 'Olpo boyosh thekei kaane kom shona'], gu: ['નાની ઉંમરથી જ ઓછું સંભળાવું (બહેરાશ)', 'Naani ummarthi j ochhun sambhalaavun (baheraash)'], ur: ['کم عمری سے ہی کم سنائی دینا (بہرا پن)', 'Kam umri se hi kam sunaai dena (behra pan)'], zh: ['年轻时就开始听力下降（耳背）', 'Niánqīng shí jiù kāishǐ tīnglì xiàjiàng (ěrbèi)'], vi: 'Nghe kém (lãng tai) từ khi còn trẻ' },
   };
 
   /* ---------- Cancer kinds ---------- */
   const KT = {
-    breast: { ta: ['மார்பகம்', 'Maarbagam'], kn: ['ಸ್ತನ', 'Stana'], bn: ['স্তন', 'Stan'], gu: ['સ્તન', 'Stan'], ur: ['چھاتی', 'Chhaati'], zh: ['乳腺', 'Rǔxiàn'], vi: 'Vú' },
+    breast: { ta: ['மார்பகம் (பெண்ணுக்கோ ஆணுக்கோ)', 'Maarbagam (pennukko aanukko)'], kn: ['ಸ್ತನ (ಹೆಂಗಸರಲ್ಲಿ ಅಥವಾ ಗಂಡಸರಲ್ಲಿ)', 'Stana (hengasaralli athavaa gandasaralli)'], bn: ['স্তন (মহিলা বা পুরুষের)', 'Stan (mohila ba purusher)'], gu: ['સ્તન (સ્ત્રી કે પુરુષમાં)', 'Stan (stree ke purushmaan)'], ur: ['چھاتی (عورت یا مرد میں)', 'Chhaati (aurat ya mard mein)'], zh: ['乳腺（女性或男性）', 'Rǔxiàn (nǚxìng huò nánxìng)'], vi: 'Vú (ở phụ nữ hoặc nam giới)' },
     breast2: { ta: ['இரண்டு மார்பகங்களிலும்', 'Irandu maarbagangalilum'], kn: ['ಎರಡೂ ಸ್ತನಗಳಲ್ಲಿ', 'Eradoo stanagalalli'], bn: ['দুই স্তনেই', 'Dui stonei'], gu: ['બંને સ્તનમાં', 'Banne stanmaan'], ur: ['دونوں چھاتیوں میں', 'Donon chhaatiyon mein'], zh: ['两侧乳腺', 'Liǎng cè rǔxiàn'], vi: 'Cả hai bên vú' },
     ovarian: { ta: ['சினைப்பை (கருமுட்டைப் பை)', 'Sinaippai (karumuttai pai)'], kn: ['ಅಂಡಾಶಯ', 'Andaashaya'], bn: ['ডিম্বাশয়', 'Dimbaashoy'], gu: ['અંડાશય', 'Andaashay'], ur: ['بیضہ دانی', 'Baiza daani'], zh: ['卵巢', 'Luǎncháo'], vi: 'Buồng trứng' },
     colorectal: { ta: ['பெருங்குடல் / மலக்குடல்', 'Perungudal / malakkudal'], kn: ['ದೊಡ್ಡ ಕರುಳು', 'Dodda karulu'], bn: ['বৃহদন্ত্র (কোলন) / মলাশয়', 'Brihodantro (colon) / molaashoy'], gu: ['મોટું આંતરડું (કોલોન)', 'Motun aantardun (colon)'], ur: ['بڑی آنت (کولون)', 'Badi aant (colon)'], zh: ['结肠或直肠（大肠）', 'Jiécháng huò zhícháng (dàcháng)'], vi: 'Đại tràng hoặc trực tràng (ruột già)' },
@@ -312,7 +460,59 @@
     lung: { ta: ['நுரையீரல்', 'Nuraiyeeral'], kn: ['ಶ್ವಾಸಕೋಶ', 'Shwaasakosha'], bn: ['ফুসফুস', 'Phusphus'], gu: ['ફેફસાં', 'Fefsaan'], ur: ['پھیپھڑے', 'Phephre'], zh: ['肺', 'Fèi'], vi: 'Phổi' },
     bloodca: { ta: ['ரத்தப் புற்றுநோய்', 'Rathap putrunoi'], kn: ['ರಕ್ತದ ಕ್ಯಾನ್ಸರ್', 'Raktada cancer'], bn: ['ব্লাড ক্যান্সার', 'Blood cancer'], gu: ['બ્લડ કેન્સર', 'Blood cancer'], ur: ['خون کا کینسر', 'Khoon ka cancer'], zh: ['血癌（白血病、淋巴瘤）', 'Xuè’ái (báixuèbìng, línbāliú)'], vi: 'Ung thư máu (bệnh bạch cầu, u lympho)' },
     skin: { ta: ['தோல்', 'Thol'], kn: ['ಚರ್ಮ', 'Charma'], bn: ['ত্বক (চামড়া)', 'Twok (chaamra)'], gu: ['ચામડી', 'Chaamdi'], ur: ['جلد', 'Jild'], zh: ['皮肤（黑色素瘤）', 'Pífū (hēisèsùliú)'], vi: 'Da (u hắc tố)' },
+    thyroidca: { ta: ['தைராய்டு', 'Thyroid'], kn: ['ಥೈರಾಯ್ಡ್', 'Thyroid'], bn: ['থাইরয়েড', 'Thyroid'], gu: ['થાઇરોઇડ', 'Thyroid'], ur: ['تھائیرائیڈ', 'Thyroid'], zh: ['甲状腺', 'Jiǎzhuàngxiàn'], vi: 'Tuyến giáp' },
+    kidneyca: { ta: ['சிறுநீரகம் (கிட்னி)', 'Siruneeragam (kidney)'], kn: ['ಮೂತ್ರಪಿಂಡ (ಕಿಡ್ನಿ)', 'Mootrapinda (kidney)'], bn: ['কিডনি', 'Kidney'], gu: ['કિડની', 'Kidney'], ur: ['گردہ', 'Gurda'], zh: ['肾', 'Shèn'], vi: 'Thận' },
+    liverca: { ta: ['கல்லீரல்', 'Kalleeral'], kn: ['ಯಕೃತ್ತು (ಲಿವರ್)', 'Yakruttu (liver)'], bn: ['লিভার (যকৃৎ)', 'Liver (jokrit)'], gu: ['લિવર (યકૃત)', 'Liver (yakrut)'], ur: ['جگر', 'Jigar'], zh: ['肝', 'Gān'], vi: 'Gan' },
+    cervical: { ta: ['கர்ப்பப்பை வாய்', 'Karppappai vaai'], kn: ['ಗರ್ಭಕಂಠ', 'Garbhakantha'], bn: ['জরায়ুমুখ', 'Jorayumukh'], gu: ['ગર્ભાશયનું મુખ', 'Garbhaashaynun mukh'], ur: ['بچہ دانی کا منہ', 'Bachcha daani ka munh'], zh: ['宫颈', 'Gōngjǐng'], vi: 'Cổ tử cung' },
+    headneck: { ta: ['வாய், நாக்கு அல்லது தொண்டை', 'Vaai, naakku alladhu thondai'], kn: ['ಬಾಯಿ, ನಾಲಿಗೆ ಅಥವಾ ಗಂಟಲು', 'Baayi, naalige athavaa gantalu'], bn: ['মুখ, জিভ বা গলা', 'Mukh, jibh ba gola'], gu: ['મોં, જીભ કે ગળું', 'Mon, jeebh ke galun'], ur: ['منہ، زبان یا گلا', 'Munh, zabaan ya gala'], zh: ['口腔、舌头或喉咙', 'Kǒuqiāng, shétou huò hóulóng'], vi: 'Miệng, lưỡi hoặc họng' },
+    esophagus: { ta: ['உணவுக் குழாய்', 'Unavu kuzhaai'], kn: ['ಅನ್ನನಾಳ', 'Annanaala'], bn: ['খাদ্যনালি', 'Khaddonaali'], gu: ['અન્નનળી', 'Annanali'], ur: ['کھانے کی نالی', 'Khaane ki naali'], zh: ['食道（食管）', 'Shídào (shíguǎn)'], vi: 'Thực quản' },
+    bladder: { ta: ['சிறுநீர்ப்பை', 'Siruneerppai'], kn: ['ಮೂತ್ರಕೋಶ', 'Mootrakosha'], bn: ['মূত্রথলি', 'Mutrotholi'], gu: ['મૂત્રાશય', 'Mootraashay'], ur: ['مثانہ', 'Masaana'], zh: ['膀胱', 'Pángguāng'], vi: 'Bàng quang' },
+    brain: { ta: ['மூளை', 'Moolai'], kn: ['ಮೆದುಳು', 'Medulu'], bn: ['মস্তিষ্ক (ব্রেন)', 'Mostishko (brain)'], gu: ['મગજ', 'Magaj'], ur: ['دماغ', 'Dimaagh'], zh: ['脑', 'Nǎo'], vi: 'Não' },
+    testicular: { ta: ['விந்தகம் (விரை)', 'Vindhagam (virai)'], kn: ['ವೃಷಣ', 'Vrushana'], bn: ['অণ্ডকোষ', 'Ondokosh'], gu: ['વૃષણ (અંડકોષ)', 'Vrushan (andkosh)'], ur: ['خصیہ', 'Khusya'], zh: ['睾丸', 'Gāowán'], vi: 'Tinh hoàn' },
+    sarcoma: { ta: ['எலும்பு அல்லது தசை (சார்கோமா)', 'Elumbu alladhu thasai (sarcoma)'], kn: ['ಮೂಳೆ ಅಥವಾ ಸ್ನಾಯು (ಸಾರ್ಕೋಮಾ)', 'Moole athavaa snaayu (sarcoma)'], bn: ['হাড় বা পেশি (সারকোমা)', 'Haar ba peshi (sarcoma)'], gu: ['હાડકું કે સ્નાયુ (સાર્કોમા)', 'Haadkun ke snaayu (sarcoma)'], ur: ['ہڈی یا پٹھے (سارکوما)', 'Haddi ya patthe (sarcoma)'], zh: ['骨头或肌肉（肉瘤）', 'Gǔtou huò jīròu (ròuliú)'], vi: 'Xương hoặc cơ (sarcoma)' },
     other: { ta: ['வேறு வகை', 'Veru vagai'], kn: ['ಬೇರೆ ರೀತಿಯದು', 'Bere reetiyadu'], bn: ['অন্য ধরনের', 'Onno dhoroner'], gu: ['બીજો પ્રકાર', 'Beejo prakaar'], ur: ['کوئی اور قسم', 'Koi aur qism'], zh: ['其他种类', 'Qítā zhǒnglèi'], vi: 'Loại khác' },
+  };
+
+  /* ---------- Kinds of other conditions (tap chips: short, everyday words) ---------- */
+  const STT = {
+    diabetes: {
+      t2: { ta: ['டைப் 2 (பொதுவாகப் பெரியவர்களுக்கு வரும் சர்க்கரை)', 'Type 2 (podhuvaaga periyavargalukku varum sarkkarai)'], kn: ['ಟೈಪ್ 2 (ಸಾಮಾನ್ಯವಾಗಿ ದೊಡ್ಡವರಾದ ಮೇಲೆ ಬರುವ ಶುಗರ್)', 'Type 2 (saamaanyavaagi doddavaraada mele baruva sugar)'], bn: ['টাইপ 2 (সাধারণত বড় বয়সে হয়)', 'Type 2 (shadharonoto boro boyoshe hoy)'], gu: ['ટાઇપ 2 (સામાન્ય રીતે મોટી ઉંમરે થાય)', 'Type 2 (saamaanya reete moti ummare thaay)'], ur: ['ٹائپ 2 (عام طور پر بڑی عمر میں ہوتی ہے)', 'Type 2 (aam taur par badi umar mein hoti hai)'], zh: ['2型（多数是成年后得的）', 'Èr xíng (duōshù shì chéngnián hòu dé de)'], vi: 'Tuýp 2 (thường bị khi đã lớn tuổi)' },
+      t1: { ta: ['டைப் 1 (சிறு வயதிலிருந்தே இன்சுலின் தேவை)', 'Type 1 (siru vayadhilirundhe insulin thevai)'], kn: ['ಟೈಪ್ 1 (ಚಿಕ್ಕ ವಯಸ್ಸಿನಿಂದಲೇ ಇನ್ಸುಲಿನ್ ಬೇಕು)', 'Type 1 (chikka vayassinindale insulin beku)'], bn: ['টাইপ 1 (অল্প বয়স থেকেই ইনসুলিন লাগে)', 'Type 1 (olpo boyosh thekei insulin laage)'], gu: ['ટાઇપ 1 (નાની ઉંમરથી જ ઇન્સ્યુલિન જોઈએ)', 'Type 1 (naani ummarthi j insulin joie)'], ur: ['ٹائپ 1 (کم عمری سے ہی انسولین چاہیے)', 'Type 1 (kam umri se hi insulin chaahiye)'], zh: ['1型（从小就要打胰岛素）', 'Yī xíng (cóngxiǎo jiù yào dǎ yídǎosù)'], vi: 'Tuýp 1 (cần tiêm insulin từ nhỏ)' },
+      gest: { ta: ['கர்ப்ப காலத்தில் மட்டும்', 'Karppa kaalatthil mattum'], kn: ['ಗರ್ಭಿಣಿಯಾಗಿದ್ದಾಗ ಮಾತ್ರ', 'Garbhiniyaagiddaaga maatra'], bn: ['শুধু গর্ভাবস্থায়', 'Shudhu gorbhaabosthaay'], gu: ['ફક્ત ગર્ભાવસ્થામાં', 'Fakt garbhaavasthaamaan'], ur: ['صرف حمل کے دوران', 'Sirf hamal ke dauraan'], zh: ['只在怀孕期间（妊娠糖尿病）', 'Zhǐ zài huáiyùn qījiān (rènshēn tángniàobìng)'], vi: 'Chỉ khi mang thai (tiểu đường thai kỳ)' },
+    },
+    heart: {
+      attack: { ta: ['மாரடைப்பு, இதய ரத்தக்குழாய் அடைப்பு, பைபாஸ் அல்லது ஸ்டென்ட்', 'Maaradaippu, idhaya rathakkuzhaai adaippu, bypass alladhu stent'], kn: ['ಹೃದಯಾಘಾತ, ರಕ್ತನಾಳ ಬ್ಲಾಕ್, ಬೈಪಾಸ್ ಅಥವಾ ಸ್ಟೆಂಟ್', 'Hrudayaaghaata, raktanaala block, bypass athavaa stent'], bn: ['হার্ট অ্যাটাক, হার্টের নালিতে ব্লক, বাইপাস বা স্টেন্ট', 'Heart attack, heart-er naalite block, bypass ba stent'], gu: ['હાર્ટ એટેક, નસોમાં બ્લોકેજ, બાયપાસ કે સ્ટેન્ટ', 'Heart attack, nasomaan blockage, bypass ke stent'], ur: ['دل کا دورہ، نالیوں میں رکاوٹ، بائی پاس یا اسٹینٹ', 'Dil ka daura, naaliyon mein rukaawat, bypass ya stent'], zh: ['心梗、血管堵塞、搭桥或放支架', 'Xīngěng, xuèguǎn dǔsè, dāqiáo huò fàng zhījià'], vi: 'Nhồi máu cơ tim, tắc mạch vành, mổ bắc cầu hoặc đặt stent' },
+      muscle: { ta: ['இதயத் தசை பலவீனம் அல்லது தடிப்பு (கார்டியோமயோபதி)', 'Idhaya thasai balaveenam alladhu thadippu (cardiomyopathy)'], kn: ['ಹೃದಯದ ಸ್ನಾಯು ದುರ್ಬಲ ಅಥವಾ ದಪ್ಪ (ಕಾರ್ಡಿಯೋಮಯೋಪತಿ)', 'Hrudayada snaayu durbala athavaa dappa (cardiomyopathy)'], bn: ['হার্টের পেশি দুর্বল বা মোটা (কার্ডিওমায়োপ্যাথি)', 'Heart-er peshi durbol ba mota (cardiomyopathy)'], gu: ['હૃદયના સ્નાયુ નબળા કે જાડા (કાર્ડિયોમાયોપથી)', 'Hrudaynaa snaayu nablaa ke jaadaa (cardiomyopathy)'], ur: ['دل کے پٹھے کمزور یا موٹے (کارڈیومایوپیتھی)', 'Dil ke patthe kamzor ya mote (cardiomyopathy)'], zh: ['心肌无力或肥厚（心肌病）', 'Xīnjī wúlì huò féihòu (xīnjībìng)'], vi: 'Cơ tim yếu hoặc dày (bệnh cơ tim)' },
+      rhythm: { ta: ['இதயத் துடிப்புப் பிரச்சினை அல்லது பேஸ்மேக்கர்', 'Idhaya thudippu prachchinai alladhu pacemaker'], kn: ['ಹೃದಯ ಬಡಿತದ ಸಮಸ್ಯೆ ಅಥವಾ ಪೇಸ್‌ಮೇಕರ್', 'Hrudaya baditada samasye athavaa pacemaker'], bn: ['হার্টবিটের সমস্যা বা পেসমেকার', 'Heartbeat-er shomoshsha ba pacemaker'], gu: ['ધબકારાની તકલીફ કે પેસમેકર', 'Dhabkaaraani takleef ke pacemaker'], ur: ['دھڑکن کی خرابی یا پیس میکر', 'Dhadkan ki kharaabi ya pacemaker'], zh: ['心律不齐或装了起搏器', 'Xīnlǜ bù qí huò zhuāng le qǐbóqì'], vi: 'Rối loạn nhịp tim hoặc đặt máy tạo nhịp' },
+      failure: { ta: ['இதயச் செயலிழப்பு (ஹார்ட் ஃபெயிலியர்)', 'Idhaya seyalizhappu (heart failure)'], kn: ['ಹೃದಯ ವೈಫಲ್ಯ (ಹಾರ್ಟ್ ಫೇಲ್ಯೂರ್)', 'Hrudaya vaiphalya (heart failure)'], bn: ['হার্ট ফেইলিওর (হার্ট দুর্বল হয়ে যাওয়া)', 'Heart failure (heart durbol hoye jaawa)'], gu: ['હાર્ટ ફેલ્યોર (હૃદય નબળું પડવું)', 'Heart failure (hruday nablun padvun)'], ur: ['ہارٹ فیلیئر (دل کا کمزور ہونا)', 'Heart failure (dil ka kamzor hona)'], zh: ['心衰（心力衰竭）', 'Xīnshuāi (xīnlì shuāijié)'], vi: 'Suy tim' },
+      birth: { ta: ['பிறவியிலேயே இதயக் கோளாறு', 'Piraviyileye idhaya kolaaru'], kn: ['ಹುಟ್ಟಿನಿಂದಲೇ ಹೃದಯದ ಸಮಸ್ಯೆ', 'Huttinindale hrudayada samasye'], bn: ['জন্ম থেকেই হার্টের সমস্যা', 'Jonmo thekei heart-er shomoshsha'], gu: ['જન્મથી હૃદયની તકલીફ', 'Janmathi hrudayni takleef'], ur: ['پیدائشی دل کی بیماری', 'Paidaaishi dil ki beemaari'], zh: ['先天性心脏病', 'Xiāntiānxìng xīnzàngbìng'], vi: 'Bệnh tim bẩm sinh' },
+    },
+    kidney: {
+      failure: { ta: ['சிறுநீரகச் செயலிழப்பு அல்லது டயாலிசிஸ்', 'Siruneeraga seyalizhappu alladhu dialysis'], kn: ['ಕಿಡ್ನಿ ವೈಫಲ್ಯ ಅಥವಾ ಡಯಾಲಿಸಿಸ್', 'Kidney vaiphalya athavaa dialysis'], bn: ['কিডনি বিকল বা ডায়ালাইসিস', 'Kidney bikol ba dialysis'], gu: ['કિડની ફેલ થવી કે ડાયાલિસિસ', 'Kidney fail thavi ke dialysis'], ur: ['گردے فیل ہونا یا ڈائلیسس', 'Gurde fail hona ya dialysis'], zh: ['肾衰竭或洗肾（透析）', 'Shèn shuāijié huò xǐshèn (tòuxī)'], vi: 'Suy thận hoặc chạy thận' },
+      pkd: { ta: ['சிறுநீரகத்தில் நீர்க்கட்டிகள் (பாலிசிஸ்டிக்)', 'Siruneeragatthil neerkattigal (polycystic)'], kn: ['ಕಿಡ್ನಿಯಲ್ಲಿ ನೀರುಗುಳ್ಳೆಗಳು (ಪಾಲಿಸಿಸ್ಟಿಕ್)', 'Kidneyyalli neerugullegalu (polycystic)'], bn: ['কিডনিতে সিস্ট (পলিসিস্টিক কিডনি)', 'Kidney-te cyst (polycystic kidney)'], gu: ['કિડનીમાં પાણીની ગાંઠો (પોલિસિસ્ટિક)', 'Kidneymaan paanini gaantho (polycystic)'], ur: ['گردوں میں پانی کی تھیلیاں (پولی سسٹک)', 'Gurdon mein paani ki thailiyaan (polycystic)'], zh: ['多囊肾（肾囊肿）', 'Duōnángshèn (shèn nángzhǒng)'], vi: 'Thận đa nang (nang thận)' },
+      stones: { ta: ['சிறுநீரகக் கல்', 'Siruneeragak kal'], kn: ['ಕಿಡ್ನಿ ಕಲ್ಲು', 'Kidney kallu'], bn: ['কিডনিতে পাথর', 'Kidney-te paathor'], gu: ['પથરી', 'Pathri'], ur: ['گردے کی پتھری', 'Gurde ki pathri'], zh: ['肾结石', 'Shèn jiéshí'], vi: 'Sỏi thận' },
+    },
+    mental: {
+      mood: { ta: ['மனச்சோர்வு அல்லது பதற்றம்', 'Manachorvu alladhu padhatram'], kn: ['ಖಿನ್ನತೆ ಅಥವಾ ಆತಂಕ', 'Khinnate athavaa aatanka'], bn: ['ডিপ্রেশন বা দুশ্চিন্তা (অ্যাংজাইটি)', 'Depression ba dushchinta (anxiety)'], gu: ['ડિપ્રેશન કે ગભરામણ (ચિંતા)', 'Depression ke gabhraaman (chintaa)'], ur: ['ڈپریشن یا گھبراہٹ', 'Depression ya ghabraahat'], zh: ['抑郁或焦虑', 'Yìyù huò jiāolǜ'], vi: 'Trầm cảm hoặc lo âu' },
+      bipolar: { ta: ['பைபோலார் (மனநிலை மாறி மாறி வருவது)', 'Bipolar (mananilai maari maari varuvadhu)'], kn: ['ಬೈಪೋಲಾರ್ (ಮನಸ್ಥಿತಿ ಏರುಪೇರು)', 'Bipolar (manasthiti eruperu)'], bn: ['বাইপোলার ডিসঅর্ডার', 'Bipolar disorder'], gu: ['બાયપોલર (મૂડ ખૂબ બદલાય)', 'Bipolar (mood khoob badlaay)'], ur: ['بائی پولر (موڈ بہت اوپر نیچے ہونا)', 'Bipolar (mood bahut oopar neeche hona)'], zh: ['双相情感障碍（躁郁症）', 'Shuāngxiàng qínggǎn zhàng’ài (zàoyùzhèng)'], vi: 'Rối loạn lưỡng cực' },
+      psychosis: { ta: ['ஸ்கிசோஃப்ரீனியா அல்லது மனப்பிறழ்வு', 'Schizophrenia alladhu manappirazhvu'], kn: ['ಸ್ಕಿಜೋಫ್ರೇನಿಯಾ ಅಥವಾ ಸೈಕೋಸಿಸ್', 'Schizophrenia athavaa psychosis'], bn: ['সিজোফ্রেনিয়া বা সাইকোসিস', 'Schizophrenia ba psychosis'], gu: ['સ્કિઝોફ્રેનિયા કે સાયકોસિસ', 'Schizophrenia ke psychosis'], ur: ['شیزوفرینیا یا سائیکوسس', 'Schizophrenia ya psychosis'], zh: ['精神分裂症或精神病', 'Jīngshén fēnlièzhèng huò jīngshénbìng'], vi: 'Tâm thần phân liệt hoặc loạn thần' },
+      suicide: { ta: ['தற்கொலை செய்துகொண்டார் அல்லது முயன்றார்', 'Tharkolai seidhukondaar alladhu muyandraar'], kn: ['ಆತ್ಮಹತ್ಯೆ ಮಾಡಿಕೊಂಡರು ಅಥವಾ ಪ್ರಯತ್ನಿಸಿದರು', 'Aatmahatye maadikondaru athavaa prayatnisidaru'], bn: ['আত্মহত্যা করেছেন বা চেষ্টা করেছেন', 'Aatmohotta korechhen ba cheshta korechhen'], gu: ['આપઘાત કર્યો કે પ્રયત્ન કર્યો', 'Aapghaat karyo ke prayatna karyo'], ur: ['خودکشی کی یا کوشش کی', 'Khudkushi ki ya koshish ki'], zh: ['自杀身亡或自杀未遂', 'Zìshā shēnwáng huò zìshā wèisuì'], vi: 'Tự tử hoặc từng tìm cách tự tử' },
+      neuro: { ta: ['ஆட்டிசம் அல்லது ADHD', 'Autism alladhu ADHD'], kn: ['ಆಟಿಸಂ ಅಥವಾ ADHD', 'Autism athavaa ADHD'], bn: ['অটিজম বা ADHD', 'Autism ba ADHD'], gu: ['ઑટિઝમ કે ADHD', 'Autism ke ADHD'], ur: ['آٹزم یا ADHD', 'Autism ya ADHD'], zh: ['自闭症或多动症', 'Zìbìzhèng huò duōdòngzhèng'], vi: 'Tự kỷ hoặc tăng động giảm chú ý (ADHD)' },
+    },
+    blood: {
+      thal: { ta: ['தலசீமியா', 'Thalassemia'], kn: ['ಥಲಸ್ಸೇಮಿಯಾ', 'Thalassemia'], bn: ['থ্যালাসেমিয়া', 'Thalassemia'], gu: ['થેલેસેમિયા', 'Thalassemia'], ur: ['تھیلیسیمیا', 'Thalassemia'], zh: ['地中海贫血', 'Dìzhōnghǎi pínxuè'], vi: 'Tan máu bẩm sinh (thalassemia)' },
+      sickle: { ta: ['அரிவாள் செல் நோய் அல்லது பண்பு (ட்ரெயிட்)', 'Arivaal cell noi alladhu panbu (trait)'], kn: ['ಸಿಕಲ್ ಸೆಲ್ ಕಾಯಿಲೆ ಅಥವಾ ವಾಹಕ (ಟ್ರೇಟ್)', 'Sickle cell kaayile athavaa vaahaka (trait)'], bn: ['সিকেল সেল রোগ বা বাহক (ট্রেট)', 'Sickle cell rog ba baahok (trait)'], gu: ['સિકલ સેલ રોગ કે વાહક (ટ્રેટ)', 'Sickle cell rog ke vaahak (trait)'], ur: ['سکل سیل کی بیماری یا ٹریٹ (حامل)', 'Sickle cell ki beemaari ya trait (haamil)'], zh: ['镰状细胞病或携带者', 'Liánzhuàng xìbāo bìng huò xiédàizhě'], vi: 'Bệnh hồng cầu hình liềm hoặc mang gen' },
+      g6pd: { ta: ['G6PD குறைபாடு', 'G6PD kuraipaadu'], kn: ['G6PD ಕೊರತೆ', 'G6PD korate'], bn: ['G6PD-এর ঘাটতি', 'G6PD-er ghaatti'], gu: ['G6PD ની ઉણપ', 'G6PD ni unap'], ur: ['G6PD کی کمی', 'G6PD ki kami'], zh: ['G6PD缺乏症（蚕豆病）', 'G6PD quēfázhèng (cándòubìng)'], vi: 'Thiếu men G6PD' },
+      anemia: { ta: ['ரத்த சோகை', 'Ratha sogai'], kn: ['ರಕ್ತಹೀನತೆ (ರಕ್ತ ಕಡಿಮೆ)', 'Raktaheenate (rakta kadime)'], bn: ['রক্তশূন্যতা (রক্ত কম)', 'Roktoshunnota (rokto kom)'], gu: ['લોહીની ઉણપ (એનિમિયા)', 'Lohini unap (anemia)'], ur: ['خون کی کمی', 'Khoon ki kami'], zh: ['贫血', 'Pínxuè'], vi: 'Thiếu máu' },
+      bleeding: { ta: ['ரத்தம் உறையாத நோய் (ஹீமோஃபீலியா, வான் வில்லெப்ராண்ட்)', 'Ratham uraiyaadha noi (hemophilia, von Willebrand)'], kn: ['ರಕ್ತ ಹೆಪ್ಪುಗಟ್ಟದ ಕಾಯಿಲೆ (ಹೀಮೋಫಿಲಿಯಾ, ವಾನ್ ವಿಲ್ಲೆಬ್ರಾಂಡ್)', 'Rakta heppugattada kaayile (hemophilia, von Willebrand)'], bn: ['রক্ত বন্ধ না হওয়ার রোগ (হিমোফিলিয়া, ভন উইলেব্র্যান্ড)', 'Rokto bondho na hawaar rog (hemophilia, von Willebrand)'], gu: ['લોહી ન અટકવાની બીમારી (હિમોફિલિયા, વૉન વિલેબ્રાન્ડ)', 'Lohi na atakvaani beemaari (hemophilia, von Willebrand)'], ur: ['خون نہ رکنے کی بیماری (ہیموفیلیا، وان ولیبرانڈ)', 'Khoon na rukne ki beemaari (hemophilia, von Willebrand)'], zh: ['出血病（血友病、血管性血友病）', 'Chūxuè bìng (xuèyǒubìng, xuèguǎnxìng xuèyǒubìng)'], vi: 'Bệnh máu khó đông (hemophilia, von Willebrand)' },
+    },
+    liver: {
+      hepb: { ta: ['ஹெபடைடிஸ் பி', 'Hepatitis B'], kn: ['ಹೆಪಟೈಟಿಸ್ ಬಿ', 'Hepatitis B'], bn: ['হেপাটাইটিস বি', 'Hepatitis B'], gu: ['હેપેટાઇટિસ બી', 'Hepatitis B'], ur: ['ہیپاٹائٹس بی', 'Hepatitis B'], zh: ['乙肝', 'Yǐgān'], vi: 'Viêm gan B' },
+      hepc: { ta: ['ஹெபடைடிஸ் சி', 'Hepatitis C'], kn: ['ಹೆಪಟೈಟಿಸ್ ಸಿ', 'Hepatitis C'], bn: ['হেপাটাইটিস সি', 'Hepatitis C'], gu: ['હેપેટાઇટિસ સી', 'Hepatitis C'], ur: ['ہیپاٹائٹس سی', 'Hepatitis C'], zh: ['丙肝', 'Bǐnggān'], vi: 'Viêm gan C' },
+      fatty: { ta: ['கொழுப்புக் கல்லீரல் (ஃபேட்டி லிவர்)', 'Kozhuppu kalleeral (fatty liver)'], kn: ['ಫ್ಯಾಟಿ ಲಿವರ್ (ಲಿವರ್‌ನಲ್ಲಿ ಕೊಬ್ಬು)', 'Fatty liver (liver-nalli kobbu)'], bn: ['ফ্যাটি লিভার', 'Fatty liver'], gu: ['ફેટી લિવર (લિવરમાં ચરબી)', 'Fatty liver (livermaan charbi)'], ur: ['فیٹی لیور (جگر میں چربی)', 'Fatty liver (jigar mein charbi)'], zh: ['脂肪肝', 'Zhīfánggān'], vi: 'Gan nhiễm mỡ' },
+      cirrhosis: { ta: ['கல்லீரல் சுருக்கம் (சிரோசிஸ்) அல்லது கல்லீரல் செயலிழப்பு', 'Kalleeral surukkam (cirrhosis) alladhu kalleeral seyalizhappu'], kn: ['ಸಿರೋಸಿಸ್ ಅಥವಾ ಲಿವರ್ ವೈಫಲ್ಯ', 'Cirrhosis athavaa liver vaiphalya'], bn: ['সিরোসিস বা লিভার বিকল', 'Cirrhosis ba liver bikol'], gu: ['સિરોસિસ કે લિવર ફેલ થવું', 'Cirrhosis ke liver fail thavun'], ur: ['سروسس یا جگر کا فیل ہونا', 'Cirrhosis ya jigar ka fail hona'], zh: ['肝硬化或肝衰竭', 'Gānyìnghuà huò gān shuāijié'], vi: 'Xơ gan hoặc suy gan' },
+      iron: { ta: ['உடலில் இரும்புச்சத்து அதிகம் (ஹீமோக்ரோமடோசிஸ்)', 'Udalil irumbuchathu adhigam (hemochromatosis)'], kn: ['ದೇಹದಲ್ಲಿ ಕಬ್ಬಿಣಾಂಶ ಜಾಸ್ತಿ (ಹೀಮೋಕ್ರೊಮಟೋಸಿಸ್)', 'Dehadalli kabbinaamsha jaasti (hemochromatosis)'], bn: ['শরীরে আয়রন বেশি (হিমোক্রোমাটোসিস)', 'Shorire iron beshi (hemochromatosis)'], gu: ['શરીરમાં લોહતત્ત્વ વધારે (હિમોક્રોમેટોસિસ)', 'Shareermaan lohtattva vadhaare (hemochromatosis)'], ur: ['جسم میں آئرن زیادہ (ہیموکرومیٹوسس)', 'Jism mein iron zyaada (hemochromatosis)'], zh: ['体内铁太多（血色病）', 'Tǐnèi tiě tài duō (xuèsèbìng)'], vi: 'Thừa sắt (bệnh nhiễm sắc tố sắt)' },
+    },
   };
 
   for (const [k, v] of Object.entries(QT)) put(Q[k], v);
@@ -320,6 +520,7 @@
   for (const [k, v] of Object.entries(ET)) put(ELDER_TEXT[k], v);
   for (const c of CONDS) if (CT[c.id]) put(c, CT[c.id]);
   for (const c of CANCER_TYPES) if (KT[c.id]) put(c, KT[c.id]);
+  for (const [cond, kinds] of Object.entries(STT)) for (const t of SUBTYPES[cond] || []) if (kinds[t.id]) put(t, kinds[t.id]);
 
   /* ---------- Answer finder vocabulary ----------
      Latin-script words (romanized Indic/Urdu, Vietnamese) are matched as whole words.
@@ -449,6 +650,70 @@
       '地中海贫血', '贫血', '镰状细胞', '镰刀型',
       'tan máu bẩm sinh', 'thiếu máu', 'hồng cầu hình liềm',
     ],
+    polyps: [
+      'பாலிப்', 'ಪಾಲಿಪ್', 'পলিপ', 'પોલિપ', 'પોલીપ', 'پولیپ', 'پولپ', '息肉', 'polyp đại tràng',
+    ],
+    liver: [
+      'ஹெபடைடிஸ்', 'கல்லீரல் நோய்', 'சிரோசிஸ்', 'கொழுப்புக் கல்லீரல்', 'kalleeral noi',
+      'ಹೆಪಟೈಟಿಸ್', 'ಲಿವರ್ ಕಾಯಿಲೆ', 'ಸಿರೋಸಿಸ್', 'ಫ್ಯಾಟಿ ಲಿವರ್', 'liver kaayile',
+      'হেপাটাইটিস', 'লিভারের অসুখ', 'সিরোসিস', 'ফ্যাটি লিভার',
+      'હેપેટાઇટિસ', 'હિપેટાઇટિસ', 'લિવરની બીમારી', 'સિરોસિસ', 'ફેટી લિવર',
+      'ہیپاٹائٹس', 'ہیپاٹائیٹس', 'کالا یرقان', 'جگر کی بیماری', 'سروسس', 'فیٹی لیور', 'jigar ki bimari', 'jigar ki beemaari',
+      '肝炎', '乙肝', '丙肝', '肝硬化', '脂肪肝', '肝病', '肝衰竭',
+      'viêm gan', 'xơ gan', 'gan nhiễm mỡ', 'bệnh gan', 'suy gan',
+    ],
+    clots: [
+      'ரத்த உறைவு', 'ரத்தக் கட்டி', 'ratha uraivu',
+      'ರಕ್ತ ಹೆಪ್ಪು', 'ರಕ್ತದ ಹೆಪ್ಪು',
+      'রক্ত জমাট', 'রক্তের দলা',
+      'લોહીનો ગઠ્ઠો', 'લોહીના ગઠ્ઠા', 'લોહી ગંઠા',
+      'خون کا لوتھڑا', 'خون جم', 'khoon jamna',
+      '血栓', '血块',
+      'cục máu đông', 'huyết khối',
+    ],
+    ibd: [
+      'க்ரோன்', 'கோலைட்டிஸ்', 'ಕ್ರೋನ್ಸ್', 'ಕೊಲೈಟಿಸ್', 'ক্রোন', 'কোলাইটিস', 'ક્રોહન', 'કોલાઇટિસ', 'کرونز', 'کولائٹس',
+      '克罗恩', '溃疡性结肠炎', '结肠炎', 'viêm loét đại tràng',
+    ],
+    celiac: [
+      'சீலியாக்', 'ಸೀಲಿಯಾಕ್', 'সিলিয়াক', 'સીલિયાક', 'سیلیک', '乳糜泻', 'không dung nạp gluten',
+    ],
+    glaucoma: [
+      'கிளாக்கோமா', 'கண் அழுத்த நோய்', 'ಗ್ಲಾಕೋಮಾ', 'ಗ್ಲುಕೋಮಾ', 'গ্লুকোমা', 'ઝામર', 'ગ્લુકોમા', 'zaamar',
+      'کالا موتیا', 'گلوکوما', 'kala motiya', 'kaala motiya', '青光眼', 'tăng nhãn áp', 'glôcôm', 'thiên đầu thống',
+    ],
+    osteo: [
+      'ஆஸ்டியோபோரோசிஸ்', 'எலும்பு பலவீன', 'இடுப்பு எலும்பு முறி',
+      'ಆಸ್ಟಿಯೋಪೊರೋಸಿಸ್', 'ಮೂಳೆ ದುರ್ಬಲ', 'ಸೊಂಟದ ಮೂಳೆ ಮುರಿ',
+      'অস্টিওপোরোসিস', 'হাড় দুর্বল', 'হাড় ক্ষয়', 'কোমরের হাড় ভেঙ',
+      'ઓસ્ટિયોપોરોસિસ', 'હાડકાં નબળાં', 'નબળાં હાડકાં', 'થાપાનું હાડકું તૂટ',
+      'آسٹیوپوروسس', 'ہڈیوں کی کمزوری', 'کمزور ہڈیاں', 'کولہے کی ہڈی ٹوٹ',
+      '骨质疏松', '骨松', '髋部骨折', '股骨颈骨折',
+      'loãng xương', 'gãy xương hông', 'gãy cổ xương đùi',
+    ],
+    autoimmune: [
+      'லூபஸ்', 'முடக்கு வாத', 'ருமட்டாய்டு', 'ಲೂಪಸ್', 'ರುಮಟಾಯ್ಡ್', 'লুপাস', 'রিউমাটয়েড', 'લ્યુપસ', 'રૂમેટોઇડ',
+      'لیوپس', 'رمیٹائیڈ', 'رمیٹائڈ', '红斑狼疮', '狼疮', '类风湿', '自身免疫',
+      'lupus ban đỏ', 'viêm khớp dạng thấp', 'tự miễn',
+    ],
+    substance: [
+      'குடிப்பழக்க', 'குடிகார', 'போதைப் பழக்க', 'kudikaaran',
+      'ಕುಡಿತದ ಚಟ', 'ಕುಡುಕ', 'kuduka',
+      'মদের নেশা', 'নেশাগ্রস্ত', 'মদ্যপ',
+      'દારૂની લત', 'દારૂડિય', 'daarudiyo',
+      'شراب کی لت', 'نشے کی لت', 'شرابی', 'نشئی', 'sharabi', 'nashe ki lat',
+      '酗酒', '酒鬼', '吸毒', '毒瘾', '酒瘾',
+      'nghiện rượu', 'nghiện ma túy', 'nghiện ma tuý',
+    ],
+    hearing: [
+      'செவிடு', 'காது கேளாமை', 'காது கேட்காத',
+      'ಕಿವುಡ',
+      'কানে কম শোন', 'বধির',
+      'બહેરાશ', 'બહેરા', 'બહેરું', 'ઓછું સંભળા',
+      'بہرا', 'بہری', 'بہرے', 'بہرہ پن', 'کم سنائی', 'behra',
+      '耳聋', '聋', '听力下降', '听力不好', '耳背', '助听器',
+      'điếc', 'nghe kém', 'lãng tai', 'máy trợ thính',
+    ],
   };
   const CLEX = {
     breast: ['மார்பக', 'maarbaga', 'marbaga', 'ಸ್ತನ', 'stana', 'স্তন', 'ব্রেস্ট', 'સ્તન', 'બ્રેસ્ટ', 'چھاتی', 'بریسٹ', 'chhati', 'chaati', '乳腺', '乳房', '乳癌', 'vú'],
@@ -461,9 +726,34 @@
     lung: ['நுரையீரல்', 'nuraiyeeral', 'ಶ್ವಾಸಕೋಶ', 'shwasakosha', 'ফুসফুস', 'fusfus', 'phusphus', 'ફેફસ', 'fefsa', 'پھیپھڑ', 'phephre', 'phephde', '肺', 'phổi'],
     bloodca: ['ரத்தப் புற்று', 'ரத்த புற்று', 'லுகேமியா', 'லிம்போமா', 'ರಕ್ತ ಕ್ಯಾನ್ಸರ್', 'ರಕ್ತದ ಕ್ಯಾನ್ಸರ್', 'ಬ್ಲಡ್ ಕ್ಯಾನ್ಸರ್', 'ಲ್ಯುಕೇಮಿಯಾ', 'ব্লাড ক্যান্সার', 'রক্তের ক্যান্সার', 'লিউকেমিয়া', 'লিম্ফোমা', 'બ્લડ કેન્સર', 'લોહીનું કેન્સર', 'લ્યુકેમિયા', 'بلڈ کینسر', 'خون کا کینسر', 'لیوکیمیا', 'khoon ka cancer', '白血病', '淋巴瘤', '血癌', 'ung thư máu', 'bệnh bạch cầu', 'máu trắng', 'u lympho', 'ung thư hạch'],
     skin: ['தோல்', 'ಚರ್ಮ', 'charma', 'ত্বক', 'চামড়া', 'ચામડી', 'ત્વચા', 'chamdi', 'جلد کا', 'جلد کے', 'jild', '皮肤', '黑色素瘤', 'ung thư da', 'hắc tố'],
+    thyroidca: ['தைராய்ட', 'ಥೈರಾಯ್ಡ್', 'ಥೈರಾಯಿಡ್', 'থাইরয়েড', 'થાઇરોઇડ', 'થાઈરોઈડ', 'تھائیرائیڈ', 'تھائرائڈ', '甲状腺', 'tuyến giáp'],
+    kidneyca: ['சிறுநீரக', 'கிட்னி', 'ಕಿಡ್ನಿ', 'ಮೂತ್ರಪಿಂಡ', 'কিডনি', 'বৃক্ক', 'કિડની', 'મૂત્રપિંડ', 'گردے', 'گردہ', 'کڈنی', 'gurda', '肾', 'thận'],
+    liverca: ['கல்லீரல்', 'kalleeral', 'ಲಿವರ್', 'ಯಕೃತ್', 'লিভার', 'যকৃৎ', 'যকৃত', 'લિવર', 'લીવર', 'યકૃત', 'جگر', 'لیور', 'jigar', '肝', 'ung thư gan', 'u gan'],
+    cervical: ['கர்ப்பப்பை வாய்', 'கருப்பை வாய்', 'செர்விக்ஸ்', 'ಗರ್ಭಕಂಠ', 'ಸರ್ವೈಕಲ್', 'জরায়ুমুখ', 'জরায়ুর মুখ', 'সার্ভিক্স', 'ગર્ભાશયનું મુખ', 'ગર્ભાશયના મુખ', 'ગર્ભાશય ગ્રીવા', 'સર્વાઇકલ', 'بچہ دانی کا منہ', 'بچہ دانی کے منہ', 'بچے دانی کا منہ', 'سروائیکل', '宫颈', '子宫颈', 'cổ tử cung'],
+    headneck: ['வாய்ப் புற்று', 'வாய் புற்று', 'நாக்கு', 'தொண்டை', 'ಬಾಯಿ', 'ನಾಲಿಗೆ', 'ಗಂಟಲ', 'মুখের ক্যান্সার', 'মুখগহ্বর', 'জিভ', 'গলা', 'গলার', 'મોં', 'મોઢ', 'જીભ', 'ગળા', 'ગળું', 'منہ', 'زبان کا', 'زبان کے', 'گلے', '口腔', '舌', '喉', '鼻咽', 'miệng', 'lưỡi', 'họng', 'vòm họng', 'thanh quản'],
+    esophagus: ['உணவுக் குழாய்', 'உணவுக்குழாய்', 'ಅನ್ನನಾಳ', 'খাদ্যনালি', 'খাদ্যনালী', 'અન્નનળી', 'کھانے کی نالی', 'غذائی نالی', '食道', '食管', 'thực quản'],
+    bladder: ['சிறுநீர்ப்பை', 'ಮೂತ್ರಕೋಶ', 'ಮೂತ್ರಾಶಯ', 'মূত্রথলি', 'মূত্রাশয়', 'મૂત્રાશય', 'مثانہ', 'مثانے', '膀胱', 'bàng quang'],
+    brain: ['மூளை', 'ಮೆದುಳ', 'মস্তিষ্ক', 'ব্রেন', 'મગજ', 'دماغ', 'dimagh', '脑瘤', '脑癌', '脑部', '大脑', 'não', 'u não'],
+    testicular: ['விந்தக', 'ವೃಷಣ', 'অণ্ডকোষ', 'অন্ডকোষ', 'વૃષણ', 'અંડકોષ', 'خصیہ', 'خصیے', '睾丸', 'tinh hoàn'],
+    sarcoma: ['சார்கோமா', 'எலும்பு', 'ಸಾರ್ಕೋಮಾ', 'ಮೂಳೆ', 'সারকোমা', 'হাড়', 'સાર્કોમા', 'હાડક', 'سارکوما', 'ہڈی', 'ہڈیوں', '骨癌', '肉瘤', '骨肉瘤', 'ung thư xương'],
   };
+  LEX.stroke.push('脑血栓');
   for (const e of LEXICON) if (LEX[e.cond]) add(e.words, LEX[e.cond]);
   for (const e of CANCER_LEXICON) if (CLEX[e.type]) add(e.words, CLEX[e.type]);
+  // Words that contain another listed word but mean something else: the cervix ("mouth of the uterus") is not
+  // uterine cancer, and 脑血栓 (a kind of stroke) is not a blood clot in the legs or lungs.
+  const ff = (word, phrases) => { const k = word.normalize('NFC'); FALSE_FRIENDS[k] = [...(FALSE_FRIENDS[k] || []), ...phrases.map(p => p.normalize('NFC'))]; };
+  ff('கருப்பை', ['கருப்பை வாய்']);
+  ff('জরায়ু', ['জরায়ুমুখ', 'জরায়ুর মুখ']);
+  ff('ગર્ભાશય', ['ગર્ભાશયનું મુખ', 'ગર્ભાશયના મુખ', 'ગર્ભાશય ગ્રીવા']);
+  ff('بچہ دانی', ['بچہ دانی کا منہ', 'بچہ دانی کے منہ']);
+  ff('بچے دانی', ['بچے دانی کا منہ']);
+  ff('子宫', ['子宫颈']);
+  ff('tử cung', ['cổ tử cung']);
+  ff('血栓', ['脑血栓']);
+  ff('منہ', ['بچہ دانی کا منہ', 'بچہ دانی کے منہ', 'بچے دانی کا منہ']);
+  ff('வாய் புற்று', ['கருப்பை வாய் புற்று', 'கர்ப்பப்பை வாய் புற்று']);
+  ff('வாய்ப் புற்று', ['கருப்பை வாய்ப் புற்று', 'கர்ப்பப்பை வாய்ப் புற்று']);
 
   // Mother / father. Stems are matched at the start of a word (space-separated), so Chinese
   // stems include 我 ("my") to catch the usual "我妈妈…" / "我父亲…" sentence opening.

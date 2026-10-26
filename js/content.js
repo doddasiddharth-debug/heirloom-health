@@ -488,7 +488,7 @@ const FOR_BEFORE = ['for', 'past', 'last', 'since', 'durante', 'hace', 'pichhle'
 const FOR_AFTER = ['ago', 'back', 'से', 'గా', 'పాటు', 'క్రితం', 'மாக', 'களாக', 'ಗಳಿಂದ', 'ধরে', 'আগে', 'પહેલ', 'سے', 'پہلے', 'pehle', 'pahle', 'पहले', 'atrás', 'antes'];
 const FOR_PHRASES = ['saal se', 'sal se', 'saalon se', 'saalo se', 'baras se'];
 // Words that look like an illness word but mean something else.
-const FALSE_FRIENDS = { 'दिल': ['दिलचस्प', 'दिलाना', 'दिलाया', 'दिलासा'], 'दौरे': ['दिल के दौरे', 'दौरे पर'], '胰': ['胰岛素'], '肾': ['肾上腺'], 'గర్భాశయ': ['గర్భాశయ ముఖద్వార'], 'गर्भाशय': ['गर्भाशय ग्रीवा'], 'útero': ['cuello del útero'] };
+const FALSE_FRIENDS = { 'दिल': ['दिलचस्प', 'दिलाना', 'दिलाया', 'दिलासा'], 'दौरे': ['दिल के दौरे', 'दौरे पर'], '胰': ['胰岛素'], '肾': ['肾上腺'], 'గర్భాశయ': ['గర్భాశయ ముఖద్వార'], 'गर्भाशय': ['गर्भाशय ग्रीवा'], 'útero': ['cuello del útero'], 'मुँह': ['बच्चेदानी का मुँह', 'बच्चेदानी के मुँह'], 'मुंह': ['बच्चेदानी का मुंह', 'बच्चेदानी के मुंह'] };
 const LIVING_WORDS = ['still alive', 'alive', 'still living', 'is living', 'బతికే ఉన్నారు', 'బతికున్నారు', 'ఇంకా ఉన్నారు', 'batike unnaaru', 'जीवित', 'ज़िंदा', 'जिंदा', 'zinda', 'jeevit', 'está vivo', 'está viva', 'sigue vivo', 'sigue viva'];
 const PRONOUNS = ['he', 'she', 'his', 'her', 'they', 'ఆయన', 'ఆమె', 'వారు', 'వాళ్ళు', 'वह', 'वो', 'उन्हें', 'उनको', 'उनकी', 'उनका', 'él', 'ella'];
 const BORN_WORDS = ['born', 'birth', 'పుట్టా', 'పుట్టి', 'puttaa', 'జన్మ', 'जन्म', 'पैदा', 'janm', 'nací', 'nació', 'nacimiento'];
