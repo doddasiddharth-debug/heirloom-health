@@ -57,12 +57,45 @@ function applyTour() {
     <p>${esc(step.text)}</p>
     <div class="row tour-btns">${TOUR_I ? '<button class="btn" data-tour="back">Back</button>' : ''}<button class="btn primary" data-tour="${last ? 'end' : 'next'}">${last ? 'Start my family' : TOUR_I ? 'Next' : 'Show me around'}</button></div>
   </div>`;
-  if (target) {
-    target.classList.add('tour-target');
-    target.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: innerWidth <= 860 ? 'start' : 'center' }); // on phones the card sits at the bottom
-  } else window.scrollTo({ top: 0 });
+  if (target) { target.classList.add('tour-target'); placeTour(root.firstElementChild, target); }
+  else window.scrollTo({ top: 0 });
   root.querySelector('[data-tour="next"], [data-tour="end"]:not(.link)')?.focus({ preventScroll: true });
 }
+// Put the card where it doesn't cover the highlighted part: scroll the part into the space the card leaves
+// free, and if the page can't scroll that far, move the card to the other end of the screen.
+function placeTour(card, target) {
+  const phone = innerWidth <= 860, gap = 16, H = innerHeight;
+  const navH = phone ? 88 : 0; // the tab bar along the bottom of a phone screen
+  const h = card.offsetHeight, w = card.offsetWidth;
+  const rect = () => target.getBoundingClientRect();
+  const bands = { bottom: [gap, H - navH - (phone ? 88 : 20) - h - gap], top: [gap + h + gap, H - navH - gap] };
+  const covers = r => {
+    const cardLeft = phone ? 0 : innerWidth - w - 20;
+    if (r.right < cardLeft - 8) return 0; // side by side on a wide screen
+    const [lo, hi] = bands[card.classList.contains('at-top') ? 'top' : 'bottom'];
+    return Math.max(0, Math.min(r.bottom, H) - Math.max(r.top, 0)) - Math.max(0, Math.min(r.bottom, hi) - Math.max(r.top, lo));
+  };
+  const fit = side => {
+    card.classList.toggle('at-top', side === 'top');
+    const [lo, hi] = bands[side], r = rect();
+    const room = hi - lo;
+    // Center it in the free space, or line up its top edge if it's too tall to fit.
+    window.scrollBy(0, r.height <= room ? r.top - (lo + (room - r.height) / 2) : r.top - lo);
+    return covers(rect());
+  };
+  const r0 = rect();
+  if (!phone && r0.right < innerWidth - w - 28) { // it fits beside the card
+    card.classList.remove('at-top');
+    window.scrollBy(0, r0.top - Math.max(gap, (H - r0.height) / 2));
+    return;
+  }
+  if (fit('bottom') > 0) {
+    const y = scrollY, under = covers(rect());
+    if (fit('top') >= under) { window.scrollTo(0, y); card.classList.remove('at-top'); }
+  }
+}
+let TOUR_RESIZE = 0;
+addEventListener('resize', () => { clearTimeout(TOUR_RESIZE); TOUR_RESIZE = setTimeout(() => tourOn() && applyTour(), 150); });
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-tour]'); if (!b) return;
   const a = b.dataset.tour;
