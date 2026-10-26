@@ -6,6 +6,7 @@ Most people can't answer "Does heart disease run in your family?" because nobody
 
 ## What it does
 
+- **A guided tour** that opens the first time you use the app. It walks through every screen and highlights each feature. Replay it any time from **Menu → Take the tour** or **How the app works**.
 - **Guided interviews in eleven languages:** English, Telugu, Hindi, Spanish, Tamil, Kannada, Bengali, Gujarati, Urdu, Chinese and Vietnamese. Each question appears in the relative's language with a pronunciation line, for teens who speak the language but can't read the script. The app adds follow-up questions when an answer is incomplete ("What kind of cancer?").
 - **Large tap-to-answer mode** for grandparents: one illness per screen, huge Yes / No / Don't know buttons, and number pads for ages.
 - **Question voices.** A fluent family member records each question once, and "Listen" plays their voice. Voice packs can be shared between phones.
@@ -45,6 +46,7 @@ Most people can't answer "Does heart disease run in your family?" because nobody
 | `js/stt.js`, `js/stt-worker.js` | Speech-to-text on the device (Whisper via Transformers.js) or with the server |
 | `js/legal.js` | Terms of Use and Privacy Policy |
 | `js/feedback.js` | Feedback form and the app menu |
+| `js/tour.js` | The guided tour of the app |
 | `server/` | Optional Cloudflare Worker for AI, speech-to-text and sync (see `server/README.md`) |
 | `vendor/` | jsPDF and qrcode-generator (MIT licensed), kept here so PDF and QR work offline. Transformers.js (Apache-2.0) loads from jsDelivr, pinned to 4.3.0. |
 | `js/app.js` | Screens, recordings, PDF export, event handling |

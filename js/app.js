@@ -101,6 +101,7 @@ function enter(acct, state) {
   ACCT = acct;
   S = state || loadFor(acct) || (acct.guest ? exampleState() : blankState({ name: acct.name }));
   S.example = !!acct.guest; S.pdfBusy = false; S.celebrate = null; S.tab ||= 'tree';
+  if (!S.toured) { TOUR_I = 0; S.tab = 'tree'; }
   save(); render(); window.scrollTo({ top: 0 });
   loadFiles().then(render);
   handlePending();
@@ -108,6 +109,7 @@ function enter(acct, state) {
 // Everything kept in on-device file storage for this profile.
 function loadFiles() { return Promise.all([loadClips(), loadMedia(), typeof loadVoices === 'function' ? loadVoices() : null]); }
 function signOut() {
+  TOUR_I = null;
   if (REC) REC.mr.stop();
   RECOG?.stop();
   E = null; endSession(); S = null; ACCT = null; CLIPS = []; MEDIA = []; SUGG = { key: '', list: [] };
@@ -918,14 +920,15 @@ function renderShell() {
   for (const [t, label] of Object.entries(TABS)) { const b = $('#tab-' + t); b.innerHTML = `${ICON[t]}<span>${label}</span>`; b.setAttribute('aria-selected', S.tab === t); }
   const chip = `<span class="initial">${esc((ACCT.name || '?')[0].toUpperCase())}</span><span class="acct-name">${ACCT.guest ? 'Guest' : esc(ACCT.name)}</span><button class="link" data-action="menu-open">Menu</button>`;
   $('#acct-side').innerHTML = chip;
-  $('#side-links').innerHTML = `<button class="link" data-action="feedback-open">Send feedback</button><button class="link" data-action="legal-open">Terms and privacy</button>`;
+  $('#side-links').innerHTML = `<button class="link" data-tour="start">How the app works</button><button class="link" data-action="feedback-open">Send feedback</button><button class="link" data-action="legal-open">Terms and privacy</button>`;
   $('#logo-top').innerHTML = `<div class="logo">${logo}</div><div class="acct">${chip}</div>`;
 }
 function renderBanner() {
   if (ACCT?.viewer) return `<div class="banner viewer-banner">${mascot(48)}<p><b>Family health history shared by ${esc(S.sharedBy || 'a patient')}</b> on ${fmtDate(S.sharedAt || today())}. Read-only. Nothing is saved on this device, and the report was never stored on a server.</p></div>`;
   return ACCT?.guest ? `<div class="banner">${mascot(48)}<p><b>You're exploring an example family.</b> The names and illnesses are made up, and changes here aren't yours to keep.</p><button class="btn primary" data-action="start-own">Create my profile</button></div>` : '';
 }
-function render() {
+function render() { renderApp(); applyTour(); }
+function renderApp() {
   const keep = document.activeElement?.id;
   const ts0 = $('#tree-svg'), scroll = ts0 ? [ts0.scrollLeft, ts0.scrollTop] : null;
   if (LEGAL_OPEN) {
@@ -1195,6 +1198,7 @@ async function boot() {
     const tab = hash.slice(1);
     if (['tree', 'interview', 'risks', 'doctor'].includes(tab)) S.tab = tab;
     S.pdfBusy = false; S.celebrate = null; S.modal = null;
+    if (!S.toured) TOUR_I = 0;
   }
   touchFamily();
   render();

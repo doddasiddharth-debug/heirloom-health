@@ -51,9 +51,10 @@ function githubIssueUrl(m) {
 }
 
 function menuHTML() {
-  const item = (action, title, sub) => `<button class="menu-item" data-action="${action}"><b>${title}</b><span>${sub}</span></button>`;
+  const item = (action, title, sub) => `<button class="menu-item" ${action === 'tour' ? 'data-tour="start"' : `data-action="${action}"`}><b>${title}</b><span>${sub}</span></button>`;
   return `<h2>${esc(ACCT?.guest ? 'Exploring as guest' : ACCT?.name || 'Menu')}</h2>
     <div class="menu-list">
+      ${item('tour', 'Take the tour', 'A two-minute walk through every part of the app')}
       ${item('feedback-open', 'Send feedback', 'Report a bug or share an idea')}
       ${item('stt-open', 'Speech-to-text', S.sttMode === 'server' ? 'Using the Heirloom server' : 'On this phone')}
       ${item('legal-open', 'Terms and privacy', 'What the app does with your information')}
