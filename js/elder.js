@@ -13,7 +13,7 @@ const say = (obj, lang) => obj[lang] || obj.en;
 const sayRoman = (obj, lang) => obj[lang + '_r'] || '';
 
 /* ---------- Recorded question voices ---------- */
-// Every phrase the app can speak has a key: q:<question>, f:<follow-up>, e:<elder phrase>, c:<condition>, t:<cancer type>.
+// Every phrase the app can speak has a key: q:<question>, f:<follow-up>, e:<elder phrase>, c:<condition>, t:<cancer type>, s:<family story prompt>.
 let VOICES = new Map();
 async function loadVoices() {
   VOICES.forEach(v => URL.revokeObjectURL(v.url));
@@ -27,6 +27,7 @@ function voicePhrases() {
     ['Illnesses', CONDS.map(c => ['c:' + c.id, c])],
     ['Kinds of cancer', CANCER_TYPES.map(t => ['t:' + t.id, t])],
     ['Kinds of other illnesses', Object.entries(SUBTYPES).filter(([c]) => c !== 'cancer').flatMap(([c, list]) => list.map(t => [`k:${c}:${t.id}`, t]))],
+    ...(typeof STORY_PROMPTS !== 'undefined' ? [['Family stories', STORY_PROMPTS.map(s => ['s:' + s.id, s])]] : []),
   ];
 }
 let PLAYING = null;

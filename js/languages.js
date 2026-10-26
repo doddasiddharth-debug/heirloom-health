@@ -522,6 +522,119 @@
   for (const c of CANCER_TYPES) if (KT[c.id]) put(c, KT[c.id]);
   for (const [cond, kinds] of Object.entries(STT)) for (const t of SUBTYPES[cond] || []) if (kinds[t.id]) put(t, kinds[t.id]);
 
+  /* ---------- Family stories prompts (stories.js) ---------- */
+  const ST = {
+    grew_up: {
+      ta: ['நீங்கள் எங்கே வளர்ந்தீர்கள்? நீங்கள் சிறுவயதில் இருந்தபோது அந்த ஊர் எப்படி இருந்தது?', 'Neengal enge valarndheergal? Neengal siruvayadhil irundhapodhu andha oor eppadi irundhadhu?'],
+      kn: ['ನೀವು ಎಲ್ಲಿ ಬೆಳೆದಿರಿ? ನೀವು ಚಿಕ್ಕವರಿದ್ದಾಗ ಆ ಊರು ಹೇಗಿತ್ತು?', 'Neevu elli belediri? Neevu chikkavariddaaga aa ooru hegittu?'],
+      bn: ['আপনি কোথায় বড় হয়েছেন? আপনার ছোটবেলায় জায়গাটা কেমন ছিল?', 'Aapni kothaay boro hoyechhen? Aapnaar chhotobelaay jaaygaata kemon chhilo?'],
+      gu: ['આપ ક્યાં મોટા થયા? આપ નાના હતા ત્યારે ત્યાં કેવું હતું?', 'Aap kyaan motaa thayaa? Aap naanaa hataa tyaare tyaan kevun hatun?'],
+      ur: ['آپ کہاں پلے بڑھے؟ جب آپ بچے تھے تو وہاں کیسا تھا؟', 'Aap kahaan pale barhe? Jab aap bachche the to wahaan kaisa tha?'],
+      zh: ['您是在哪里长大的？您小时候那里是什么样子？', 'Nín shì zài nǎlǐ zhǎngdà de? Nín xiǎoshíhou nàlǐ shì shénme yàngzi?'],
+      vi: 'Ông/bà lớn lên ở đâu ạ? Hồi ông/bà còn nhỏ, nơi đó như thế nào ạ?',
+    },
+    parents: {
+      ta: ['உங்கள் அப்பா அம்மாவின் பெயர்கள் என்ன? அவர்கள் எந்த ஊரைச் சேர்ந்தவர்கள்? அவர்கள் எப்படிப்பட்டவர்கள்?', 'Ungal appa ammaavin peyargal enna? Avargal endha ooraich serndhavargal? Avargal eppadippattavargal?'],
+      kn: ['ನಿಮ್ಮ ಅಪ್ಪ ಅಮ್ಮನ ಹೆಸರುಗಳೇನು? ಅವರು ಯಾವ ಊರಿನವರು? ಅವರು ಹೇಗಿದ್ದರು?', 'Nimma appa ammana hesarugalenu? Avaru yaava oorinavaru? Avaru hegiddaru?'],
+      bn: ['আপনার বাবা-মায়ের নাম কী ছিল, আর ওনারা কোথাকার মানুষ ছিলেন? ওনারা কেমন মানুষ ছিলেন?', 'Aapnaar baabaa-maayer naam ki chhilo, aar onaaraa kothaakaar maanush chhilen? Onaaraa kemon maanush chhilen?'],
+      gu: ['આપના માતા-પિતાનાં નામ શું હતાં, અને તેઓ ક્યાંના હતા? તેઓ કેવા સ્વભાવના હતા?', 'Aapnaa maataa-pitaanaan naam shun hataan, ane teo kyaannaa hataa? Teo kevaa swabhaavnaa hataa?'],
+      ur: ['آپ کے والدین کے نام کیا تھے، اور وہ کہاں کے تھے؟ وہ کیسے انسان تھے؟', 'Aap ke waalidain ke naam kya the, aur woh kahaan ke the? Woh kaise insaan the?'],
+      zh: ['您的父母叫什么名字？他们是哪里人？他们是什么样的人？', 'Nín de fùmǔ jiào shénme míngzi? Tāmen shì nǎlǐ rén? Tāmen shì shénme yàng de rén?'],
+      vi: 'Cha mẹ của ông/bà tên là gì, và quê ở đâu ạ? Các cụ là người như thế nào ạ?',
+    },
+    grandparents: {
+      ta: ['உங்கள் தாத்தா பாட்டியைப் பற்றி உங்களுக்கு என்ன நினைவிருக்கிறது? அவர்களின் பெயர்கள் என்ன, அவர்கள் எங்கே வாழ்ந்தார்கள்?', 'Ungal thaatthaa paattiyaip patri ungalukku enna ninaivirukkiradhu? Avargalin peyargal enna, avargal enge vaazhndhaargal?'],
+      kn: ['ನಿಮ್ಮ ಅಜ್ಜ ಅಜ್ಜಿಯರ ಬಗ್ಗೆ ನಿಮಗೆ ಏನು ನೆನಪಿದೆ? ಅವರ ಹೆಸರುಗಳೇನು, ಅವರು ಎಲ್ಲಿ ವಾಸವಾಗಿದ್ದರು?', 'Nimma ajja ajjiyara bagge nimage enu nenapide? Avara hesarugalenu, avaru elli vaasavaagiddaru?'],
+      bn: ['আপনার দাদু-দিদিমা, ঠাকুরদা-ঠাকুমার কথা কী মনে আছে? ওনাদের নাম কী ছিল, ওনারা কোথায় থাকতেন?', 'Aapnaar daadu-didimaa, thaakurdaa-thaakumaar kotha ki mone aachhe? Onaader naam ki chhilo, onaaraa kothaay thaakten?'],
+      gu: ['આપને આપના દાદા-દાદી અને નાના-નાની વિશે શું યાદ છે? તેમનાં નામ શું હતાં, અને તેઓ ક્યાં રહેતા હતા?', 'Aapne aapnaa daadaa-daadi ane naanaa-naani vishe shun yaad chhe? Temnaan naam shun hataan, ane teo kyaan rahetaa hataa?'],
+      ur: ['آپ کو اپنے دادا دادی اور نانا نانی کے بارے میں کیا یاد ہے؟ ان کے نام کیا تھے، اور وہ کہاں رہتے تھے؟', 'Aap ko apne daada daadi aur naana naani ke baare mein kya yaad hai? Un ke naam kya the, aur woh kahaan rehte the?'],
+      zh: ['您还记得您的爷爷奶奶、外公外婆吗？他们叫什么名字，住在哪里？', 'Nín hái jìde nín de yéye nǎinai, wàigōng wàipó ma? Tāmen jiào shénme míngzi, zhù zài nǎlǐ?'],
+      vi: 'Ông/bà còn nhớ gì về ông bà nội ngoại của mình không ạ? Các cụ tên là gì, và sống ở đâu ạ?',
+    },
+    met: {
+      ta: ['உங்கள் கணவரை/மனைவியை நீங்கள் எப்படிச் சந்தித்தீர்கள்? உங்கள் கல்யாணத்தைப் பற்றி என்ன நினைவிருக்கிறது?', 'Ungal kanavarai/manaiviyai neengal eppadich chandhitheergal? Ungal kalyaanatthaip patri enna ninaivirukkiradhu?'],
+      kn: ['ನಿಮ್ಮ ಗಂಡನನ್ನು/ಹೆಂಡತಿಯನ್ನು ನೀವು ಹೇಗೆ ಭೇಟಿಯಾದಿರಿ? ನಿಮ್ಮ ಮದುವೆಯ ಬಗ್ಗೆ ಏನು ನೆನಪಿದೆ?', 'Nimma gandanannu/hendatiyannu neevu hege bhetiyaadiri? Nimma maduveya bagge enu nenapide?'],
+      bn: ['আপনার স্বামী/স্ত্রীর সঙ্গে আপনার কীভাবে দেখা হয়েছিল? আপনার বিয়ের কথা কী মনে আছে?', 'Aapnaar shaami/strir shonge aapnaar kibhaabe dekhaa hoyechhilo? Aapnaar biyer kotha ki mone aachhe?'],
+      gu: ['આપ આપના પતિ/પત્નીને કેવી રીતે મળ્યા? આપના લગ્ન વિશે આપને શું યાદ છે?', 'Aap aapnaa pati/patnine kevi rite malyaa? Aapnaa lagna vishe aapne shun yaad chhe?'],
+      ur: ['آپ اپنے شوہر/اپنی بیوی سے کیسے ملے؟ آپ کو اپنی شادی کے بارے میں کیا یاد ہے؟', 'Aap apne shohar/apni biwi se kaise mile? Aap ko apni shaadi ke baare mein kya yaad hai?'],
+      zh: ['您和老伴是怎么认识的？您还记得你们的婚礼吗？', 'Nín hé lǎobàn shì zěnme rènshi de? Nín hái jìde nǐmen de hūnlǐ ma?'],
+      vi: 'Ông bà quen nhau như thế nào ạ? Ông/bà còn nhớ gì về đám cưới của mình không ạ?',
+    },
+    food: {
+      ta: ['எந்த உணவு உங்களுக்கு வீட்டை நினைவுபடுத்துகிறது? அதை எப்படிச் செய்வது என்று எனக்குச் சொல்வீர்களா?', 'Endha unavu ungalukku veettai ninaivupaduththugiradhu? Adhai eppadich cheivadhu endru enakkuch cholveergalaa?'],
+      kn: ['ಯಾವ ಅಡುಗೆ ನಿಮಗೆ ಮನೆಯನ್ನು ನೆನಪಿಸುತ್ತದೆ? ಅದನ್ನು ಹೇಗೆ ಮಾಡುವುದು ಎಂದು ನನಗೆ ಹೇಳುತ್ತೀರಾ?', 'Yaava aduge nimage maneyannu nenapisuttade? Adannu hege maaduvudu endu nanage heluttiraa?'],
+      bn: ['কোন খাবার খেলে আপনার বাড়ির কথা মনে পড়ে? সেটা কীভাবে রান্না করতে হয়, আমাকে বলবেন?', 'Kon khaabaar khele aapnaar baarir kotha mone pore? Seta kibhaabe raannaa korte hoy, aamaake bolben?'],
+      gu: ['કઈ વાનગી આપને ઘરની યાદ અપાવે છે? તે કેવી રીતે બનાવાય તે મને કહેશો?', 'Kai vaangi aapne gharni yaad apaave chhe? Te kevi rite banaavaay te mane kahesho?'],
+      ur: ['کون سا کھانا آپ کو گھر کی یاد دلاتا ہے؟ کیا آپ مجھے اسے بنانے کا طریقہ بتائیں گے؟', 'Kaun sa khaana aap ko ghar ki yaad dilaata hai? Kya aap mujhe use banaane ka tareeqa bataayenge?'],
+      zh: ['什么菜最让您想家？您能告诉我怎么做吗？', 'Shénme cài zuì ràng nín xiǎng jiā? Nín néng gàosu wǒ zěnme zuò ma?'],
+      vi: 'Món ăn nào làm ông/bà nhớ nhà nhất ạ? Ông/bà chỉ cháu cách nấu món đó được không ạ?',
+    },
+    festival: {
+      ta: ['சிறுவயதில் கொண்டாடிய எந்தப் பண்டிகை உங்களுக்கு அதிகம் நினைவிருக்கிறது? குடும்பம் அதை எப்படிக் கொண்டாடியது?', 'Siruvayadhil kondaadiya endhap pandigai ungalukku adhigam ninaivirukkiradhu? Kudumbam adhai eppadik kondaadiyadhu?'],
+      kn: ['ಚಿಕ್ಕಂದಿನ ಯಾವ ಹಬ್ಬ ನಿಮಗೆ ಹೆಚ್ಚು ನೆನಪಿದೆ? ಮನೆಯವರೆಲ್ಲ ಅದನ್ನು ಹೇಗೆ ಆಚರಿಸುತ್ತಿದ್ದರು?', 'Chikkandina yaava habba nimage hechchu nenapide? Maneyavarella adannu hege aacharisuttiddaru?'],
+      bn: ['ছোটবেলার কোন উৎসবের কথা আপনার সবচেয়ে বেশি মনে আছে? বাড়ির সবাই সেটা কীভাবে পালন করত?', 'Chhotobelaar kon utshober kotha aapnaar shobcheye beshi mone aachhe? Baarir shobaai seta kibhaabe paalon korto?'],
+      gu: ['નાનપણનો કયો તહેવાર આપને સૌથી વધુ યાદ છે? કુટુંબમાં બધા તે કેવી રીતે ઉજવતા?', 'Naanpanno kayo tahevaar aapne sauthi vadhu yaad chhe? Kutumbmaan badhaa te kevi rite ujavtaa?'],
+      ur: ['بچپن کا کون سا تہوار آپ کو سب سے زیادہ یاد ہے؟ گھر والے اسے کیسے مناتے تھے؟', 'Bachpan ka kaun sa tehwaar aap ko sab se zyaada yaad hai? Ghar waale use kaise manaate the?'],
+      zh: ['小时候哪个节日让您印象最深？家里人是怎么过的？', 'Xiǎoshíhou nǎge jiérì ràng nín yìnxiàng zuì shēn? Jiālǐ rén shì zěnme guò de?'],
+      vi: 'Hồi nhỏ, ông/bà nhớ nhất dịp lễ Tết nào ạ? Cả nhà mình ăn mừng như thế nào ạ?',
+    },
+    work: {
+      ta: ['நீங்கள் என்ன வேலை செய்தீர்கள்? ஒரு சாதாரண நாள் எப்படி இருக்கும்?', 'Neengal enna velai seidheergal? Oru saadhaarana naal eppadi irukkum?'],
+      kn: ['ನೀವು ಯಾವ ಕೆಲಸ ಮಾಡುತ್ತಿದ್ದಿರಿ? ಒಂದು ಸಾಮಾನ್ಯ ದಿನ ಹೇಗಿರುತ್ತಿತ್ತು?', 'Neevu yaava kelasa maaduttiddiri? Ondu saamaanya dina hegiruttittu?'],
+      bn: ['আপনি কী কাজ করতেন? সাধারণ একটা দিন কেমন কাটত?', 'Aapni ki kaaj korten? Shaadhaaron ekta din kemon kaatto?'],
+      gu: ['આપ શું કામ કરતા હતા? એક સામાન્ય દિવસ કેવો રહેતો?', 'Aap shun kaam kartaa hataa? Ek saamaanya divas kevo raheto?'],
+      ur: ['آپ کیا کام کرتے تھے؟ آپ کا ایک عام دن کیسا ہوتا تھا؟', 'Aap kya kaam karte the? Aap ka ek aam din kaisa hota tha?'],
+      zh: ['您以前做什么工作？平常的一天是怎么过的？', 'Nín yǐqián zuò shénme gōngzuò? Píngcháng de yì tiān shì zěnme guò de?'],
+      vi: 'Ngày xưa ông/bà làm nghề gì ạ? Một ngày bình thường của ông/bà như thế nào ạ?',
+    },
+    hard: {
+      ta: ['உங்கள் வாழ்க்கையில் மிகக் கஷ்டமான காலம் எது? அதைக் கடந்து வர உங்களுக்கு எது உதவியது?', 'Ungal vaazhkkaiyil migak kashtamaana kaalam edhu? Adhaik kadandhu vara ungalukku edhu udhaviyadhu?'],
+      kn: ['ನಿಮ್ಮ ಜೀವನದಲ್ಲಿ ಅತ್ಯಂತ ಕಷ್ಟದ ಸಮಯ ಯಾವುದು? ಅದನ್ನು ದಾಟಲು ನಿಮಗೆ ಏನು ಸಹಾಯ ಮಾಡಿತು?', 'Nimma jeevanadalli atyanta kashtada samaya yaavudu? Adannu daatalu nimage enu sahaaya maaditu?'],
+      bn: ['আপনার জীবনের সবচেয়ে কঠিন সময় কোনটা ছিল, আর কীসের জোরে আপনি সেটা পার হতে পেরেছিলেন?', 'Aapnaar jiboner shobcheye kothin shomoy konta chhilo, aar kisher jore aapni seta paar hote perechhilen?'],
+      gu: ['આપના જીવનનો સૌથી કઠિન સમય કયો હતો, અને તેમાંથી બહાર આવવામાં આપને શાનાથી મદદ મળી?', 'Aapnaa jivanno sauthi kathin samay kayo hato, ane temaanthi bahaar aavvaamaan aapne shaanaathi madad mali?'],
+      ur: ['آپ کی زندگی کا سب سے مشکل وقت کون سا تھا، اور کس چیز نے آپ کو اس سے نکلنے میں مدد دی؟', 'Aap ki zindagi ka sab se mushkil waqt kaun sa tha, aur kis cheez ne aap ko us se nikalne mein madad di?'],
+      zh: ['您这一生中最艰难的是什么时候？是什么帮您挺过来的？', 'Nín zhè yìshēng zhōng zuì jiānnán de shì shénme shíhou? Shì shénme bāng nín tǐng guòlái de?'],
+      vi: 'Thời gian khó khăn nhất trong đời ông/bà là lúc nào, và điều gì đã giúp ông/bà vượt qua ạ?',
+    },
+    proud: {
+      ta: ['உங்கள் வாழ்க்கையில் நீங்கள் மிகவும் பெருமைப்படும் விஷயம் எது?', 'Ungal vaazhkkaiyil neengal migavum perumaippadum vishayam edhu?'],
+      kn: ['ನಿಮ್ಮ ಜೀವನದಲ್ಲಿ ನಿಮಗೆ ಯಾವುದರ ಬಗ್ಗೆ ಹೆಚ್ಚು ಹೆಮ್ಮೆ ಇದೆ?', 'Nimma jeevanadalli nimage yaavudara bagge hechchu hemme ide?'],
+      bn: ['জীবনে কোন কথা ভেবে আপনার সবচেয়ে বেশি গর্ব হয়?', 'Jibone kon kotha bhebe aapnaar shobcheye beshi gorbo hoy?'],
+      gu: ['આપના જીવનમાં આપને સૌથી વધુ ગર્વ શાનો છે?', 'Aapnaa jivanmaan aapne sauthi vadhu garv shaano chhe?'],
+      ur: ['آپ کو اپنی زندگی میں کس بات پر سب سے زیادہ فخر ہے؟', 'Aap ko apni zindagi mein kis baat par sab se zyaada fakhr hai?'],
+      zh: ['您这一生中最自豪的是什么？', 'Nín zhè yìshēng zhōng zuì zìháo de shì shénme?'],
+      vi: 'Trong đời, ông/bà tự hào nhất về điều gì ạ?',
+    },
+    song: {
+      ta: ['சிறுவயதில் கேட்ட ஒரு பாட்டு, பழமொழி அல்லது பிரார்த்தனை உங்களுக்கு நினைவிருக்கிறதா? எனக்காக அதைப் பாடுவீர்களா அல்லது சொல்வீர்களா?', 'Siruvayadhil ketta oru paattu, pazhamozhi alladhu piraarthanai ungalukku ninaivirukkiradhaa? Enakkaaga adhaip paaduveergalaa alladhu solveergalaa?'],
+      kn: ['ಚಿಕ್ಕಂದಿನ ಯಾವುದಾದರೂ ಹಾಡು, ಗಾದೆ ಅಥವಾ ಪ್ರಾರ್ಥನೆ ನಿಮಗೆ ನೆನಪಿದೆಯೇ? ನನಗಾಗಿ ಅದನ್ನು ಹಾಡುತ್ತೀರಾ ಅಥವಾ ಹೇಳುತ್ತೀರಾ?', 'Chikkandina yaavudaadaroo haadu, gaade athavaa praarthane nimage nenapideye? Nanagaagi adannu haaduttiraa athavaa heluttiraa?'],
+      bn: ['ছোটবেলার কোনো গান, প্রবাদ বা প্রার্থনা কি আপনার মনে আছে? আমার জন্য একবার গেয়ে বা বলে শোনাবেন?', 'Chhotobelaar kono gaan, probaad baa praarthonaa ki aapnaar mone aachhe? Aamaar jonno ekbaar geye baa bole shonaaben?'],
+      gu: ['નાનપણનું કોઈ ગીત, કહેવત કે પ્રાર્થના આપને યાદ છે? મારા માટે તે ગાઈને કે બોલીને સંભળાવશો?', 'Naanpannun koi geet, kahevat ke praarthanaa aapne yaad chhe? Maaraa maate te gaaine ke boline sambhalaavsho?'],
+      ur: ['کیا آپ کو بچپن کا کوئی گیت، کہاوت یا دعا یاد ہے؟ کیا آپ اسے میرے لیے گا کر یا پڑھ کر سنائیں گے؟', 'Kya aap ko bachpan ka koi geet, kahaawat ya dua yaad hai? Kya aap use mere liye gaa kar ya parh kar sunaayenge?'],
+      zh: ['您还记得小时候的歌、老话或者祈祷词吗？能唱给我听或者说给我听吗？', 'Nín hái jìde xiǎoshíhou de gē, lǎohuà huòzhě qídǎocí ma? Néng chàng gěi wǒ tīng huòzhě shuō gěi wǒ tīng ma?'],
+      vi: 'Ông/bà còn nhớ bài hát, câu ca dao hay lời cầu nguyện nào từ hồi nhỏ không ạ? Ông/bà hát hoặc đọc cho cháu nghe được không ạ?',
+    },
+    advice: {
+      ta: ['என் வாழ்க்கைக்கு நீங்கள் எனக்கு என்ன அறிவுரை சொல்வீர்கள்?', 'En vaazhkkaikku neengal enakku enna arivurai solveergal?'],
+      kn: ['ನನ್ನ ಜೀವನಕ್ಕೆ ನೀವು ನನಗೆ ಏನು ಸಲಹೆ ಕೊಡುತ್ತೀರಿ?', 'Nanna jeevanakke neevu nanage enu salahe koduttiri?'],
+      bn: ['আমার জীবনের জন্য আপনি আমাকে কী উপদেশ দেবেন?', 'Aamaar jiboner jonno aapni aamaake ki updesh deben?'],
+      gu: ['મારા જીવન માટે આપ મને શું સલાહ આપશો?', 'Maaraa jivan maate aap mane shun salaah aapsho?'],
+      ur: ['میری زندگی کے لیے آپ مجھے کیا نصیحت کریں گے؟', 'Meri zindagi ke liye aap mujhe kya naseehat karenge?'],
+      zh: ['对我的人生，您有什么建议？', 'Duì wǒ de rénshēng, nín yǒu shénme jiànyì?'],
+      vi: 'Ông/bà có lời khuyên gì cho cuộc đời của cháu không ạ?',
+    },
+    legacy: {
+      ta: ['உங்களைப் பற்றியும் நம் குடும்பத்தைப் பற்றியும் உங்கள் பேரப்பிள்ளைகளும் கொள்ளுப்பேரப்பிள்ளைகளும் என்ன தெரிந்துகொள்ள வேண்டும் என்று நினைக்கிறீர்கள்?', 'Ungalaip patriyum nam kudumbatthaip patriyum ungal perappillaigalum kollupperappillaigalum enna therindhukolla vendum endru ninaikkireergal?'],
+      kn: ['ನಿಮ್ಮ ಮೊಮ್ಮಕ್ಕಳು ಮತ್ತು ಮರಿಮಕ್ಕಳು ನಿಮ್ಮ ಬಗ್ಗೆ ಮತ್ತು ನಮ್ಮ ಕುಟುಂಬದ ಬಗ್ಗೆ ಏನು ತಿಳಿದುಕೊಳ್ಳಬೇಕು ಎಂದು ನೀವು ಬಯಸುತ್ತೀರಿ?', 'Nimma mommakkalu mattu marimakkalu nimma bagge mattu namma kutumbada bagge enu tilidukollabeku endu neevu bayasuttiri?'],
+      bn: ['আপনার নাতি-নাতনি আর তাদের ছেলেমেয়েরা আপনার আর আমাদের পরিবারের সম্পর্কে কী জানুক বলে আপনি চান?', 'Aapnaar naati-naatni aar taader chhelemeyeraa aapnaar aar aamaader poribaarer shomporke ki jaanuk bole aapni chaan?'],
+      gu: ['આપના પૌત્ર-પૌત્રીઓ અને તેમનાં બાળકો આપના વિશે અને આપણા કુટુંબ વિશે શું જાણે એવું આપ ઇચ્છો છો?', 'Aapnaa pautra-pautrio ane temnaan baalako aapnaa vishe ane aapanaa kutumb vishe shun jaane evun aap ichchho chho?'],
+      ur: ['آپ اپنے اور ہمارے خاندان کے بارے میں اپنے پوتے پوتیوں، نواسے نواسیوں اور ان کے بچوں کو کیا بتانا چاہیں گے؟', 'Aap apne aur hamaare khaandaan ke baare mein apne pote potiyon, nawaase nawaasiyon aur un ke bachchon ko kya bataana chaahenge?'],
+      zh: ['关于您自己和我们家，您希望孙辈和曾孙辈知道些什么？', 'Guānyú nín zìjǐ hé wǒmen jiā, nín xīwàng sūnbèi hé zēngsūnbèi zhīdào xiē shénme?'],
+      vi: 'Ông/bà muốn các cháu chắt biết điều gì về ông/bà và về gia đình mình ạ?',
+    },
+  };
+  if (typeof STORY_PROMPTS !== 'undefined') for (const s of STORY_PROMPTS) if (ST[s.id]) put(s, ST[s.id]);
+
   /* ---------- Answer finder vocabulary ----------
      Latin-script words (romanized Indic/Urdu, Vietnamese) are matched as whole words.
      Other scripts are matched as substrings, so these are stems that still work with

@@ -6,11 +6,13 @@ Most people can't answer "Does heart disease run in your family?" because nobody
 
 ## What it does
 
+- **My health timeline.** What to check and when, from now into adulthood: the usual screenings for everyone, with steps moved earlier or added because of the family history (marked in gold), each with its guideline source.
 - **A guided tour** that opens the first time you use the app. It walks through every screen and highlights each feature. Replay it any time from **Menu → Take the tour** or **How the app works**.
 - **Guided interviews in eleven languages:** English, Telugu, Hindi, Spanish, Tamil, Kannada, Bengali, Gujarati, Urdu, Chinese and Vietnamese. Each question appears in the relative's language with a pronunciation line, for teens who speak the language but can't read the script. The app adds follow-up questions when an answer is incomplete ("What kind of cancer?").
 - **A thorough interview.** 23 conditions, with kinds where they matter (type 1 vs type 2 diabetes, heart attack vs heart rhythm or heart muscle problems, polycystic kidneys, hepatitis B, sickle cell and more), and 24 kinds of cancer. Answers are saved for the person, their parents, each brother and sister, and each child. Anything not on the list can be added under "Something else" with the relative's own words and an age; it shows on the tree and in the report, and notes typed during interviews are included in the doctor report too. Whole-family questions cover genetic test results, sudden deaths before 50, parents related by blood, pregnancy losses, birth differences, anesthesia reactions, tobacco and ancestry.
 - **Large tap-to-answer mode** for grandparents: one illness per screen, huge Yes / No / Don't know buttons, and number pads for ages.
 - **Question voices.** A fluent family member records each question once, and "Listen" plays their voice. Voice packs can be shared between phones.
+- **Family stories.** Twelve optional prompts, not about health, in all eleven languages: where elders grew up, how they met, their parents' and grandparents' names, recipes, festivals, songs, advice. Record their answers and type memories, then save each relative's album as one HTML file with the recordings inside that plays offline and prints. Stories stay on the device and are left out of reports, links and sync.
 - **Family sharing without accounts.** Send a relative a link; they answer on their own phone and send a link back that merges into the tree. Optional encrypted cloud sync with the server in `server/`.
 - **Ancestry-aware rules,** such as South Asian ancestry and heart disease, ancestry and diabetes testing, and BRCA and thalassemia screening.
 - **Doctor hand-off.** A checklist of questions for the next checkup, and a QR code that opens a read-only copy of the report. The report travels inside the link and is never stored on a server.
@@ -24,6 +26,7 @@ Most people can't answer "Does heart disease run in your family?" because nobody
 - **Combined answers.** Every answer remembers who said it. When relatives disagree, the app shows both answers and uses the more cautious one.
 - **My risks.** Ranks conditions as higher than average, moderate or about average, using the family-history method behind the CDC's Family Healthware tool.
 - **Doctor report.** Applies screening guidelines (colon cancer screening age, inherited breast/ovarian cancer, Lynch syndrome, early cholesterol testing, diabetes testing). Each finding names its source. Exports to PDF.
+- **Download for medical records.** The doctor report also saves a standard HL7 FHIR R4 file (`.fhir.json`) that clinic record systems can import: one family-history entry per relative with the standard relationship code (mother, paternal grandfather, maternal cousin and so on), sex, birth year, age at death, and each condition with its SNOMED CT code where one matches exactly, the youngest reported age at diagnosis, who reported it, and any disagreement. The whole-family answers are included too. A doctor opening a shared read-only link can download it as well.
 - **Who to ask next.** Suggests the relative who can fill the most important gaps.
 - **Private by design.** Everything stays on the device. Profiles with an optional PIN let siblings share a phone. Works offline once loaded, and can be installed on a phone's home screen.
 
@@ -43,11 +46,14 @@ Most people can't answer "Does heart disease run in your family?" because nobody
 | `js/elder.js` | Large tap-to-answer mode and recorded question voices |
 | `js/share.js` | Invite links, merging answers, encrypted cloud sync |
 | `js/handoff.js` | Doctor checklist, QR code, read-only doctor view, pop-up panels |
+| `js/fhir.js` | The medical-records export (HL7 FHIR R4 Bundle) and its relationship and SNOMED CT codes |
 | `js/config.js` | The address of the optional server |
 | `js/stt.js`, `js/stt-worker.js` | Speech-to-text on the device (Whisper via Transformers.js) or with the server |
 | `js/legal.js` | Terms of Use and Privacy Policy |
 | `js/feedback.js` | Feedback form and the app menu |
 | `js/tour.js` | The guided tour of the app |
+| `js/timeline.js` | My health timeline: usual screenings by age, adjusted for the family |
+| `js/stories.js` | Family stories: life-story prompts, recordings and the keepsake album |
 | `server/` | Optional Cloudflare Worker for AI, speech-to-text and sync (see `server/README.md`) |
 | `vendor/` | jsPDF and qrcode-generator (MIT licensed), kept here so PDF and QR work offline. Transformers.js (Apache-2.0) loads from jsDelivr, pinned to 4.3.0. |
 | `js/app.js` | Screens, recordings, PDF export, event handling |

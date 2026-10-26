@@ -208,7 +208,7 @@ async function startRec(pid, step) {
 function clipList(clips, showQ) {
   if (!clips.length) return '';
   return `<ul class="clips">${clips.map(c => `<li>
-    <div class="meta"><span>${showQ ? `Question ${c.step + 1} · ` : ''}${new Date(c.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}${c.secs ? ' · ' + fmtSec(c.secs) : ''}</span>
+    <div class="meta"><span>${showQ ? (typeof c.step === 'string' ? `${esc(storyClipLabel(c))} · ` : `Question ${c.step + 1} · `) : ''}${new Date(c.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}${c.secs ? ' · ' + fmtSec(c.secs) : ''}</span>
       <button class="link danger" data-action="clip-del" data-clip="${c.id}">${S.confirmClip === c.id ? 'Tap again to delete' : 'Delete'}</button></div>
     <audio controls preload="metadata" src="${c.url}"></audio>
     ${(sttSupported() || cloudOn()) && S.tab === 'interview' ? `<div class="row"><button class="btn sm" data-action="transcribe" data-clip="${c.id}" ${TRANSCRIBING ? 'disabled' : ''}>${TRANSCRIBING === c.id ? 'Turning into text…' : 'Turn into text'}</button><span class="small muted" id="stt-st-${c.id}" aria-live="polite"></span></div>` : ''}</li>`).join('')}</ul>`;
@@ -272,8 +272,8 @@ async function transcribeClip(id, confirmed = false) {
   status(server ? 'Sending to the server…' : 'Getting ready…');
   try {
     const text = server ? await transcribeWithServer(c.blob, S.iv.lang) : await transcribeOnDevice(c.blob, S.iv.lang, S.sttModel || 'base', status);
-    const key = STEPS[c.step]?.k || 'other_self';
-    (p.transcripts ||= {})[key] = [p.transcripts[key], text].filter(Boolean).join(' ').trim();
+    if (typeof c.step === 'string') { const sid = storyIdOf(c); if (sid) (p.stories ||= {})[sid] = [p.stories[sid], text].filter(Boolean).join(' ').trim(); } // a family story: add to its typed memory
+    else { const key = STEPS[c.step]?.k || 'other_self'; (p.transcripts ||= {})[key] = [p.transcripts[key], text].filter(Boolean).join(' ').trim(); }
     save(); toast(text ? 'Recording turned into text. Tap "Find answers".' : 'No speech was found in that recording.');
   } catch (e) {
     toast(server ? (e?.message || "Couldn't turn the recording into text.") : "The speech model couldn't run here. Check your internet connection for the first download, or try the server option.");
@@ -631,6 +631,7 @@ function renderInterview() {
     <div class="modes">
       <button class="mode-card" data-action="elder-start" data-pid="${W.id}"><b>Large tap-to-answer mode</b><span>Big buttons ${esc(nameOf(W))} can tap on their own, one illness at a time.</span></button>
       <button class="mode-card" data-action="voices-open"><b>Question voices</b><span>${[...VOICES.keys()].filter(k => k.startsWith(lang + '|')).length} phrases recorded in ${esc(L.label.split(' · ').pop())}. Record a real voice for "Listen".</span></button>
+      ${typeof storiesCard === 'function' ? storiesCard(W) : ''}
     </div>
     <p class="say-to">Say this to ${esc(nameOf(W))}</p>
     <div class="speaker">
@@ -681,8 +682,8 @@ function renderRisks() {
       <div><h2>${myAncestry().size ? "Your family's ancestry" : "Add your family's ancestry"}</h2>
       <p class="small muted">Some guidelines treat ancestry as a risk factor by itself, for example South Asian ancestry and heart disease. Pick all that apply. You can change it any time.</p></div>
       ${ancestryPicker()}</section>`;
-  if (!blood.length && !myAncestry().size) return head + ancCard + `<section class="card done">${mascot(90)}<h2>No blood relatives on the tree yet</h2><p class="muted" style="max-width:46ch">Add parents, grandparents and siblings, then interview them. If you were adopted, your birth family's history is what counts here; a doctor or genetic counselor can help you find out more.</p><button class="btn primary" data-action="goto-tree">Go to family tree</button></section>`;
-  return head + statTiles([['Higher than average', n('high'), '', 'rose'], ['Moderate', n('moderate'), '', 'accent'], ['About average', n('average'), '', 'leaf']]) + (myAncestry().size ? '' : ancCard) + `
+  if (!blood.length && !myAncestry().size) return head + timelineHTML() + ancCard + `<section class="card done">${mascot(90)}<h2>No blood relatives on the tree yet</h2><p class="muted" style="max-width:46ch">Add parents, grandparents and siblings, then interview them. If you were adopted, your birth family's history is what counts here; a doctor or genetic counselor can help you find out more.</p><button class="btn primary" data-action="goto-tree">Go to family tree</button></section>`;
+  return head + timelineHTML() + statTiles([['Higher than average', n('high'), '', 'rose'], ['Moderate', n('moderate'), '', 'accent'], ['About average', n('average'), '', 'leaf']]) + (myAncestry().size ? '' : ancCard) + `
     ${list.length ? `<ol class="risks">${list.map((r, i) => `<li class="risk ${r.level}">
       <span class="rank">${i + 1}</span>
       <div class="risk-body">
@@ -821,9 +822,10 @@ function renderDoctor() {
     <div class="doc-head">
       <div style="display:grid;gap:4px"><span class="eyebrow">Family health history</span><h1>${esc(nameOf(me))}${me.born ? `, born ${esc(me.born)}` : ''}</h1>
         <p class="small muted">Prepared ${fmtDate(today())}. ${interviewed.length ? `Interviews: ${interviewed.map(p => `${esc(relOf(p).toLowerCase())} (${fmtDate(p.interviewed)})`).join(', ')}.` : 'No interviews finished yet.'}</p></div>
-      <div class="row"><button class="btn primary" data-action="pdf" ${S.pdfBusy ? 'disabled' : ''}>${S.pdfBusy ? 'Making PDF…' : 'Download PDF'}</button>${ACCT.viewer ? '' : `<button class="btn" data-action="qr">Show my doctor</button><button class="btn" data-action="copy-summary">Copy as text</button>`}</div>
+      <div class="row"><button class="btn primary" data-action="pdf" ${S.pdfBusy ? 'disabled' : ''}>${S.pdfBusy ? 'Making PDF…' : 'Download PDF'}</button><button class="btn" data-action="fhir" title="A FHIR file that clinic record systems can import">Download for medical records</button>${ACCT.viewer ? '' : `<button class="btn" data-action="qr">Show my doctor</button><button class="btn" data-action="copy-summary">Copy as text</button>`}</div>
     </div>
     ${ACCT.viewer ? viewerQuestionsHTML() : checklistHTML()}
+    ${timelineHTML({ compact: true })}
     <section class="card" style="display:grid;gap:14px"><div><h2>What the guidelines say about your family</h2>
       <p class="small muted">Each card is a published screening rule applied to your blood relatives. Tap "Why" to see which relatives triggered it.</p></div>
       ${cards.length ? `<ul class="flags">${cards.map((c, i) => `<li class="${c.level}"><span class="ic">${LEVEL[c.level][0]}</span><div>
@@ -869,6 +871,7 @@ function summaryText() {
   if (risks.length) { L.push('', 'FAMILY-HISTORY RISK LEVELS (Scheuner method, CDC Family Healthware)'); risks.forEach(r => L.push(`- ${r.t.name}: ${RISK_LEVEL[r.level]}. ${r.reasons.join(' ')}`)); }
   const qs = checklist();
   if (qs.length) { L.push('', 'QUESTIONS FOR MY NEXT CHECKUP'); qs.forEach(it => L.push(`- ${it.q}`)); }
+  L.push('', 'MY HEALTH TIMELINE'); timelineLines().forEach(t => L.push(`- ${t}`));
   L.push('', 'CONDITIONS IN THE FAMILY');
   for (const p of others) for (const f of facts(p.id)) L.push(`- ${relOf(p)} (${nameOf(p)}): ${factName(f.cond, f.type)}, age ${f.age || 'unknown'}${f.disagree ? ` (reports range ${f.range})` : ''}${kin(p.id).blood ? '' : ' [not blood related]'}`);
   const dead = others.filter(p => p.living === 'no');
@@ -950,6 +953,7 @@ async function makePDF() {
 
   const qs = checklist();
   if (qs.length) { heading('Questions for my next checkup'); qs.forEach(it => text(`[ ] ${it.q}`, { size: 10 })); }
+  heading('My health timeline'); timelineLines().forEach(t => text(t, { size: 10 }));
 
   heading('Conditions in the family');
   const cols = [M, M + 160, M + 270, M + 320];
@@ -1055,7 +1059,7 @@ function renderApp() {
   if (ACCT?.viewer) { $('#main').innerHTML = renderBanner() + renderDoctor(); return; }
   if (!S) { const form = authForm() || AUTH.form; $('#main').innerHTML = renderAuth(); restoreAuthForm(form); AUTH.form = null; if (keep) document.getElementById(keep)?.focus(); return; }
   renderShell();
-  const page = S.tab === 'interview' && S.showVoices ? renderVoices : { tree: renderTree, interview: renderInterview, risks: renderRisks, doctor: renderDoctor }[S.tab] || renderTree;
+  const page = S.tab === 'interview' && S.showVoices ? renderVoices : S.tab === 'interview' && S.showStories && typeof renderStories === 'function' ? renderStories : { tree: renderTree, interview: renderInterview, risks: renderRisks, doctor: renderDoctor }[S.tab] || renderTree;
   $('#main').innerHTML = renderBanner() + page();
   const ts = $('#tree-svg');
   if (ts) {
@@ -1154,6 +1158,7 @@ document.addEventListener('click', e => {
   if (a === 'signout') return signOut();
   if (!S) return;
   if (elderAction(a, b)) return;
+  if (typeof storiesAction === 'function' && storiesAction(a, b)) return;
   const p = b.dataset.pid && byId(b.dataset.pid);
   if (a !== 'remove') S.confirmRemove = null;
   if (a !== 'wipe') S.confirmWipe = false;
@@ -1191,6 +1196,7 @@ document.addEventListener('click', e => {
     case 'del-report': noteDeleted('r', [b.dataset.rid]); dropReports(r => r.id === b.dataset.rid); save(); render(); break;
     case 'clip-del': if (S.confirmClip === b.dataset.clip) { S.confirmClip = null; removeClip(b.dataset.clip); } else { S.confirmClip = b.dataset.clip; render(); } break;
     case 'pdf': exportPDF(); break;
+    case 'fhir': exportFHIR(); break;
     case 'm-close': S.modal = null; render(); break;
     case 'menu-open': S.modal = { kind: 'menu' }; render(); break;
     case 'feedback-open': S.modal = { kind: 'feedback', type: 'bug' }; render(); $('#fb-msg')?.focus(); break;
@@ -1251,7 +1257,7 @@ document.addEventListener('click', e => {
     case 'iv-done': { const w = byId(S.iv.who); w.interviewed = today(); S.celebrate = w.id; S.sel = w.id; save(); render(); window.scrollTo({ top: 0 }); break; }
     case 'speak': speak(); break;
     case 'copy-summary': copyText(summaryText(), 'Summary copied'); break;
-    case 'backup': copyText(btoa(unescape(encodeURIComponent(JSON.stringify({ v: 2, people: S.people, rels: S.rels, reports: S.reports })))), 'Backup code copied'); break;
+    case 'backup': copyText(btoa(unescape(encodeURIComponent(JSON.stringify({ v: 2, people: S.people.map(withoutStories), rels: S.rels, reports: S.reports })))), 'Backup code copied'); break;
     case 'restore-open': S.restoreOpen = !S.restoreOpen; render(); break;
     case 'restore': try {
       const v = JSON.parse(decodeURIComponent(escape(atob($('#restore-text').value.trim()))));

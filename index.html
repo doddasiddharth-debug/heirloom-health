@@ -493,6 +493,21 @@ body.solo .app { grid-template-columns: minmax(0, 1fr); }
 .terms-box { max-height: 46vh; overflow-y: auto; border: 2px solid var(--line); border-radius: 14px; padding: 12px 16px; font-size: .92rem; }
 .terms-box h1 { font-size: 1.4rem; }
 
+.timeline-card { display: grid; gap: 10px; }
+.tl-group { font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+.timeline { list-style: none; margin: 0; padding: 0 0 0 6px; display: grid; gap: 0; }
+.timeline li { position: relative; display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; padding: 0 0 14px; }
+.timeline li::before { content: ""; position: absolute; left: 7px; top: 16px; bottom: 0; width: 2px; background: var(--line); }
+.timeline li:last-child::before { display: none; }
+.tl-dot { width: 16px; height: 16px; border-radius: 50%; border: 3px solid var(--primary); background: var(--panel); margin-top: 3px; position: relative; z-index: 1; }
+.timeline li.fam .tl-dot { border-color: var(--accent); background: var(--accent); }
+.timeline li.catch .tl-dot { border-style: dashed; }
+.timeline li > div { min-width: 0; display: grid; gap: 2px; }
+.timeline .small { margin: 0; color: var(--ink); }
+.tl-when { font-size: .78rem; font-weight: 700; color: var(--primary-dk); }
+.timeline li.fam .tl-when { color: var(--accent-dk); }
+.tl-title { display: block; }
+.tl-tag { display: inline-block; font-size: .72rem; font-weight: 700; color: var(--accent-dk); background: color-mix(in srgb, var(--accent) 18%, transparent); border-radius: 999px; padding: 1px 8px; margin-left: 4px; }
 .other-cond { padding: 12px 14px; gap: 10px; }
 .other-cond .nm { font-weight: 600; color: var(--strong); }
 .other-body { display: grid; gap: 8px; }
@@ -517,6 +532,20 @@ body.solo .app { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 860px) { .tour, .tour.center { left: 16px; right: 16px; width: auto; top: auto; transform: none; bottom: calc(88px + env(safe-area-inset-bottom, 0px)); } .tour.at-top { top: calc(16px + env(safe-area-inset-top, 0px)); bottom: auto; } }
 body.touring .content { padding-bottom: 360px; }
 @media (max-width: 860px) and (max-height: 760px) { .tour { padding: 12px 16px; gap: 7px; border-radius: 18px; } .tour h2 { font-size: 1rem; } .tour p { font-size: .88rem; line-height: 1.4; } .tour .btn { padding: 8px 18px; } .tour-hello { display: none; } }
+/* Family stories */
+.stories-top { display: grid; gap: 12px; }
+.stories-top .row { justify-content: space-between; }
+.story-card { display: grid; gap: 14px; min-width: 0; }
+.story-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-width: 0; }
+.story-head h2 { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.story-n { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--primary-soft); color: var(--primary-dk); font: 700 .9rem var(--f); flex: none; }
+.story-saved { margin-left: auto; }
+.story-card textarea { min-height: 90px; }
+.album { display: grid; gap: 14px; min-width: 0; }
+.album-item { display: grid; gap: 6px; border-top: 2px solid var(--line); padding-top: 12px; min-width: 0; }
+.album-item h3 { margin: 0; }
+.album-item p { margin: 0; overflow-wrap: anywhere; }
+.album-text { white-space: pre-wrap; }
 </style>
 </head>
 <body>
@@ -545,9 +574,11 @@ body.touring .content { padding-bottom: 360px; }
 <script src="vendor/qrcode.js" defer></script>
 <script src="js/config.js"></script>
 <script src="js/content.js"></script>
+<script src="js/stories.js"></script>
 <script src="js/languages.js"></script>
 <script src="js/family.js"></script>
 <script src="js/risk.js"></script>
+<script src="js/timeline.js"></script>
 <script src="js/layout.js"></script>
 <script src="js/extract.js"></script>
 <script src="js/legal.js"></script>
@@ -559,6 +590,7 @@ body.touring .content { padding-bottom: 360px; }
 <script src="js/stt.js"></script>
 <script src="js/feedback.js"></script>
 <script src="js/tour.js"></script>
+<script src="js/fhir.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
