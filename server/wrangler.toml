@@ -24,7 +24,7 @@ binding = "AI"
 # then paste the id it prints here.
 [[kv_namespaces]]
 binding = "FAMILY"
-id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"
+id = "fd3827f62636442597fb623d37828662"
 
 # Optional secrets (never put these in this file):
 #   npx wrangler secret put ANTHROPIC_API_KEY   use Claude instead of the free model for reading transcripts
