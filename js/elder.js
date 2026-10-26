@@ -26,6 +26,7 @@ function voicePhrases() {
     ['Tap-to-answer words', Object.entries(ELDER_TEXT).map(([k, o]) => ['e:' + k, o])],
     ['Illnesses', CONDS.map(c => ['c:' + c.id, c])],
     ['Kinds of cancer', CANCER_TYPES.map(t => ['t:' + t.id, t])],
+    ['Kinds of other illnesses', Object.entries(SUBTYPES).filter(([c]) => c !== 'cancer').flatMap(([c, list]) => list.map(t => [`k:${c}:${t.id}`, t]))],
   ];
 }
 let PLAYING = null;
@@ -120,14 +121,15 @@ function exitElder() { stopSpeaking(); E = null; render(); }
 const SECTIONS = ['self', 'mother', 'father'];
 function elderCards() {
   const cards = [{ k: 'welcome' }, { k: 'born' }];
+  const condCards = (sect, c) => [...(SUBTYPES[c.id] ? [{ k: 'ctype', sect, cond: c.id }] : []), { k: 'age', sect, cond: c.id }];
   for (const sect of SECTIONS) {
     if (sect !== 'self') cards.push({ k: 'living', sect }, { k: 'deathAge', sect });
-    for (const c of CONDS) {
-      cards.push({ k: 'cond', sect, cond: c.id });
-      if (c.id === 'cancer') cards.push({ k: 'ctype', sect, cond: c.id });
-      cards.push({ k: 'age', sect, cond: c.id });
-    }
+    for (const c of CONDS.filter(c => !c.more)) cards.push({ k: 'cond', sect, cond: c.id }, ...condCards(sect, c));
+    // The less common illnesses share one screen, so the interview doesn't get much longer.
+    cards.push({ k: 'more', sect });
+    for (const c of CONDS.filter(c => c.more)) cards.push(...condCards(sect, c));
   }
+  for (const st of STEPS) if (st.type === 'check' && st.k !== 'ancestry') cards.push({ k: 'check', id: st.k });
   cards.push({ k: 'thanks' });
   return cards;
 }
@@ -168,7 +170,9 @@ function elderListen() {
   else if (card.k === 'living') { push('e:about_' + card.sect, T['about_' + card.sect]); push('e:living_q', T.living_q); }
   else if (card.k === 'deathAge') push('e:death_age_q', T.death_age_q);
   else if (card.k === 'cond') { push('e:had_' + card.sect, T['had_' + card.sect]); push('c:' + card.cond, COND[card.cond]); }
-  else if (card.k === 'ctype') push('f:cancer_type', FOLLOW.cancer_type);
+  else if (card.k === 'ctype') card.cond === 'cancer' ? push('f:cancer_type', FOLLOW.cancer_type) : (push('c:' + card.cond, COND[card.cond]), push('f:kind', FOLLOW.kind));
+  else if (card.k === 'more') { push('e:had_' + card.sect, T['had_' + card.sect]); push('e:tap_all', T.tap_all); }
+  else if (card.k === 'check') push('q:' + card.id, Q[card.id]);
   else if (card.k === 'age') push('e:age', T.age);
   else push('e:thanks', T.thanks);
   speakSeq(items, L);
@@ -202,8 +206,14 @@ function renderElder() {
       <p class="e-cond" ${langAttrs(L)}>${esc(say(c, L))}</p>${sayRoman(c, L) ? `<p class="e-rm">${esc(sayRoman(c, L))}</p>` : ''}${L !== 'en' ? `<p class="e-en">${esc(c.en)}</p>` : ''}
       ${yn(state, 'e-cond')}`;
   } else if (card.k === 'ctype') {
-    const chosen = new Set(elderReports(t.id, 'cancer').map(r => r.type).filter(Boolean));
-    body = `${big(FOLLOW.cancer_type)}<div class="e-types">${CANCER_TYPES.map(ct => `<button class="e-type" data-action="e-ctype" data-type="${ct.id}" aria-pressed="${chosen.has(ct.id)}"><span ${langAttrs(L)}>${esc(say(ct, L))}</span>${L !== 'en' ? `<small>${esc(ct.en)}</small>` : ''}</button>`).join('')}</div>`;
+    const chosen = new Set(elderReports(t.id, card.cond).map(r => r.type).filter(Boolean));
+    body = `${card.cond === 'cancer' ? '' : `<span class="e-sect" ${langAttrs(L)}>${esc(say(COND[card.cond], L))}</span>`}${big(card.cond === 'cancer' ? FOLLOW.cancer_type : FOLLOW.kind)}<div class="e-types">${SUBTYPES[card.cond].map(ct => `<button class="e-type" data-action="e-ctype" data-type="${ct.id}" aria-pressed="${chosen.has(ct.id)}"><span ${langAttrs(L)}>${esc(say(ct, L))}</span>${L !== 'en' ? `<small>${esc(ct.en)}</small>` : ''}</button>`).join('')}</div>`;
+  } else if (card.k === 'more') {
+    const on = c => t && elderReports(t.id, c.id).length;
+    body = `<span class="e-sect" ${langAttrs(L)}>${esc(say(T['had_' + card.sect], L))}</span>${big(T.tap_all)}
+      <div class="e-types">${CONDS.filter(c => c.more).map(c => `<button class="e-type" data-action="e-more" data-cond="${c.id}" aria-pressed="${!!on(c)}"><span ${langAttrs(L)}>${esc(say(c, L))}</span>${L !== 'en' ? `<small>${esc(c.en)}</small>` : ''}</button>`).join('')}</div>`;
+  } else if (card.k === 'check') {
+    body = `<span class="e-sect" ${langAttrs(L)}>${esc(say(T.about_family, L))}</span>${big(Q[card.id])}${yn(W.checks?.[card.id]?.a || null, 'e-check')}`;
   } else if (card.k === 'age') {
     const r = elderReports(t.id, card.cond)[0];
     body = `<span class="e-sect" ${langAttrs(L)}>${esc(say(COND[card.cond], L))}</span>${big(T.age)}${numberPad('age', r?.age)}`;
@@ -235,17 +245,24 @@ function elderAction(a, b) {
       E.no ||= {}; E.unsure ||= {};
       E.no[key] = v === 'no'; E.unsure[key] = v === 'unknown';
       if (v === 'yes') { const t = elderTarget(card.sect, true); if (!elderReports(t.id, card.cond).length) addReport(t.id, card.cond, '', E.who); }
-      else { const t = elderTarget(card.sect); if (t) dropReports(r => r.pid === t.id && r.cond === card.cond && r.by === E.who); }
+      else { const t = elderTarget(card.sect), gone = r => r.pid === t?.id && r.cond === card.cond && r.by === E.who; if (t) { noteDeleted('r', S.reports.filter(gone).map(r => r.id)); dropReports(gone); } }
       save(); render(); elderAdvance(250); return true;
     }
     case 'e-ctype': {
-      const t = elderTarget(card.sect, true), type = b.dataset.type;
-      const mine = r => r.pid === t.id && r.cond === 'cancer' && r.by === E.who;
-      if (findReport(t.id, 'cancer', type, E.who)) dropReports(r => mine(r) && r.type === type);
-      else { const blank = findReport(t.id, 'cancer', '', E.who); if (blank) blank.type = type; else addReport(t.id, 'cancer', type, E.who); }
-      if (!S.reports.some(mine)) addReport(t.id, 'cancer', '', E.who);
+      const t = elderTarget(card.sect, true), type = b.dataset.type, cond = card.cond;
+      const mine = r => r.pid === t.id && r.cond === cond && r.by === E.who;
+      if (findReport(t.id, cond, type, E.who)) { const gone = r => mine(r) && r.type === type; noteDeleted('r', S.reports.filter(gone).map(r => r.id)); dropReports(gone); }
+      else { const blank = findReport(t.id, cond, '', E.who); if (blank) blank.type = type; else addReport(t.id, cond, type, E.who); }
+      if (!S.reports.some(mine)) addReport(t.id, cond, '', E.who);
       save(); render(); return true;
     }
+    case 'e-more': {
+      const t = elderTarget(card.sect, true), cond = b.dataset.cond;
+      const mine = r => r.pid === t.id && r.cond === cond && r.by === E.who;
+      if (S.reports.some(mine)) { noteDeleted('r', S.reports.filter(mine).map(r => r.id)); dropReports(mine); } else addReport(t.id, cond, '', E.who);
+      save(); render(); return true;
+    }
+    case 'e-check': { const W = byId(E.who), c = ((W.checks ||= {})[card.id] ||= {}); c.a = b.dataset.v; W.u = Date.now(); save(); render(); elderAdvance(250); return true; }
     case 'pad-decade': E.decade = b.dataset.d === '' ? null : +b.dataset.d; render(); return true;
     case 'pad-pick': {
       const n = String(b.dataset.n);

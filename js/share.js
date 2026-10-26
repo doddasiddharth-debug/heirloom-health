@@ -24,7 +24,7 @@ async function unpackData(str) {
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 const appUrl = () => location.origin + location.pathname;
-const PERSON_FIELDS = ['id', 'name', 'sex', 'born', 'living', 'deathAge', 'cause'];
+const PERSON_FIELDS = ['id', 'name', 'sex', 'born', 'living', 'deathAge', 'cause', 'checks'];
 const slim = p => Object.fromEntries(PERSON_FIELDS.map(k => [k, p[k]]));
 
 /* ---------- Checking data that arrives in a link ---------- */
@@ -40,9 +40,10 @@ function cleanPerson(p) {
   const out = {
     id: p.id, name: okText(p.name, 80), sex: ['M', 'F', 'U'].includes(p.sex) ? p.sex : 'U', born: okNum(p.born, 4),
     living: ['yes', 'no', 'unknown'].includes(p.living) ? p.living : 'unknown', deathAge: okNum(p.deathAge, 3), cause: okText(p.cause, 120),
-    notes: okText(p.notes, 4000), sibNotes: okText(p.sibNotes, 4000), parentNotes: okText(p.parentNotes, 4000), interviewed: okDate(p.interviewed),
-    transcripts: {},
+    notes: okText(p.notes, 4000), sibNotes: okText(p.sibNotes, 4000), kidNotes: okText(p.kidNotes, 4000), parentNotes: okText(p.parentNotes, 4000), interviewed: okDate(p.interviewed),
+    transcripts: {}, checks: {},
   };
+  if (p.checks && typeof p.checks === 'object') for (const [k, c] of Object.entries(p.checks)) if (CHECK[k] && c && typeof c === 'object') out.checks[k] = { a: ['yes', 'no', 'unknown'].includes(c.a) ? c.a : '', note: okText(c.note, 300) };
   if (p.transcripts && typeof p.transcripts === 'object') for (const [k, v] of Object.entries(p.transcripts)) if (/^\w{1,40}$/.test(k) && typeof v === 'string') out.transcripts[k] = v.slice(0, 20000);
   if (Array.isArray(p.ancestry)) out.ancestry = p.ancestry.filter(a => ANCESTRIES.some(x => x.id === a));
   if (typeof p.u === 'number') out.u = p.u;
@@ -50,7 +51,7 @@ function cleanPerson(p) {
 }
 function cleanReport(r) {
   if (!r || !okId(r.pid) || !COND[r.cond]) return null;
-  const type = r.cond === 'cancer' && (CTYPE[r.type] || r.type === 'other') ? r.type : '';
+  const type = subtypeOf(r.cond, r.type) || (r.cond === 'cancer' && r.type === 'other') ? r.type : '';
   const out = { pid: r.pid, cond: r.cond, type, age: okNum(r.age, 3) };
   if (okId(r.id)) out.id = r.id;
   if (okId(r.by)) out.by = r.by;
@@ -143,6 +144,7 @@ function mergeAnswers(ans) {
     for (const k of ['name', 'born', 'deathAge', 'cause']) if (p[k] && (own || !mine[k])) mine[k] = p[k];
     if (p.living && p.living !== 'unknown' && (own || mine.living === 'unknown')) mine.living = p.living;
     if (p.sex !== 'U' && (own || mine.sex === 'U')) mine.sex = p.sex;
+    for (const [k, c] of Object.entries(p.checks || {})) if (c.a && (own || !mine.checks?.[k]?.a)) (mine.checks ||= {})[k] = c;
     mine.u = Date.now();
   }
   for (const r of ans.rels) {
@@ -191,6 +193,7 @@ function mergeFamily(remote) {
       for (const k of ['name', 'born', 'deathAge', 'cause', 'notes', 'interviewed']) if (!mine[k] && p[k]) mine[k] = p[k];
       if (mine.living === 'unknown' && p.living !== 'unknown') mine.living = p.living;
       if (mine.sex === 'U' && p.sex !== 'U') mine.sex = p.sex;
+      for (const [k, c] of Object.entries(p.checks)) if (c.a && !mine.checks?.[k]?.a) (mine.checks ||= {})[k] = c;
     }
   }
   for (const r of fam.rels) r.kind === 'parent' ? linkParent(r.parent, r.child, r.bio !== false) : linkPartners(r.a, r.b);

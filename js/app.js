@@ -330,12 +330,12 @@ function reportList(reports, { editable, fact }) {
 // Condition tiles. `by` is who is answering; merged=true (family tree editor) shows everyone's answers.
 function condTiles(p, { by, pre, lang = 'en', roman = false, merged = false }) {
   const fs = facts(p.id);
-  return `<div class="conds">${CONDS.map(c => {
+  const tile = c => {
     const all = S.reports.filter(r => r.pid === p.id && r.cond === c.id), mine = all.filter(r => r.by === by);
     const on = merged ? all.length > 0 : mine.length > 0;
     const others = all.filter(r => r.by !== by);
     let extra = '';
-    if (on && c.id === 'cancer') extra = cancerExtra(p, { by, pre, lang, roman, merged });
+    if (on && SUBTYPES[c.id]) extra = kindExtra(p, c.id, { by, pre, lang, roman, merged });
     else if (on) {
       const f = fs.find(f => f.cond === c.id), r = mine[0];
       extra = `<div class="extra"><label for="${pre}-${c.id}-age">${merged ? 'Your answer: age found' : 'Age found'}</label>
@@ -346,22 +346,26 @@ function condTiles(p, { by, pre, lang = 'en', roman = false, merged = false }) {
       <input type="checkbox" class="sr" id="${pre}-${c.id}" data-pid="${p.id}" data-cond="${c.id}" data-by="${by}" data-cf="on" ${on ? 'checked' : ''}>
       <label for="${pre}-${c.id}"><span class="tick"></span><span class="nm">${langBlock(c, lang, roman)}</span></label>${extra}
     </div>`;
-  }).join('')}</div>`;
+  };
+  return `<div class="conds">${CONDS.filter(c => !c.more).map(tile).join('')}</div>
+    <h4 class="conds-more">Less common, but worth asking</h4>
+    <div class="conds">${CONDS.filter(c => c.more).map(tile).join('')}</div>`;
 }
-function cancerExtra(p, { by, pre, lang, roman, merged }) {
-  const all = S.reports.filter(r => r.pid === p.id && r.cond === 'cancer');
+// "What kind?" for conditions that come in kinds (cancer, diabetes, heart disease and others). Optional.
+function kindExtra(p, cond, { by, pre, lang, roman, merged }) {
+  const all = S.reports.filter(r => r.pid === p.id && r.cond === cond);
   const pool = merged ? all : all.filter(r => r.by === by);
   const chosen = new Set(pool.map(r => r.type).filter(Boolean));
-  const chips = CANCER_TYPES.map(t => `<button type="button" class="chip-t" data-action="ctype" data-pid="${p.id}" data-type="${t.id}" data-by="${by}" aria-pressed="${chosen.has(t.id)}">${lang === 'en' ? esc(t.en) : `<span ${langAttrs(lang)}>${esc(t[lang] || t.en)}</span>${roman && t[lang + '_r'] ? ` <i>${esc(t[lang + '_r'])}</i>` : ''}`}</button>`).join('');
-  const fs = facts(p.id).filter(f => f.cond === 'cancer');
+  const chips = SUBTYPES[cond].map(t => `<button type="button" class="chip-t" data-action="ctype" data-pid="${p.id}" data-cond="${cond}" data-type="${t.id}" data-by="${by}" aria-pressed="${chosen.has(t.id)}">${lang === 'en' ? esc(t.en) : `<span ${langAttrs(lang)}>${esc(t[lang] || t.en)}</span>${roman && t[lang + '_r'] ? `<small>${esc(t[lang + '_r'])}</small>` : ''}<small>${esc(t.en)}</small>`}</button>`).join('');
+  const fs = facts(p.id).filter(f => f.cond === cond);
   const rows = fs.map(f => {
-    const mine = S.reports.find(r => r.pid === p.id && r.cond === 'cancer' && r.type === f.type && r.by === by);
-    const id = `${pre}-cancer-${f.type || 'unk'}-age`;
-    return `<div class="ca-row"><span class="ca-name">${esc(factName('cancer', f.type))}</span>
-      <input type="number" inputmode="numeric" id="${id}" aria-label="Age ${esc(factName('cancer', f.type))} was found" placeholder="${!mine?.age && f.age ? f.age : 'Age'}" data-pid="${p.id}" data-cond="cancer" data-type="${f.type}" data-by="${by}" data-cf="age" value="${esc(mine?.age || '')}">
+    const mine = S.reports.find(r => r.pid === p.id && r.cond === cond && r.type === f.type && r.by === by);
+    const id = `${pre}-${cond}-${f.type || 'unk'}-age`;
+    return `<div class="ca-row"><span class="ca-name">${esc(factName(cond, f.type))}</span>
+      <input type="number" inputmode="numeric" id="${id}" aria-label="Age ${esc(factName(cond, f.type))} was found" placeholder="${!mine?.age && f.age ? f.age : 'Age'}" data-pid="${p.id}" data-cond="${cond}" data-type="${f.type}" data-by="${by}" data-cf="age" value="${esc(mine?.age || '')}">
       ${reportList(merged ? f.reports : f.reports.filter(r => r.by !== by), { editable: merged, fact: f })}</div>`;
   }).join('');
-  return `<div class="extra ca"><span class="ca-q">What kind?</span><div class="chips">${chips}</div>${rows}</div>`;
+  return `<div class="extra ca"><span class="ca-q">What kind?${cond === 'cancer' ? '' : ' <span class="muted small">(skip if they aren\'t sure)</span>'}</span><div class="chips">${chips}</div>${rows}</div>`;
 }
 function vitalFields(p, pre) {
   const seg = ['yes', 'no', 'unknown'].map(v => `<button type="button" class="pill-btn" data-pid="${p.id}" data-living="${v}" aria-pressed="${p.living === v}">${{ yes: 'Living', no: 'Passed away', unknown: "Don't know" }[v]}</button>`).join('');
@@ -569,14 +573,28 @@ function renderInterview() {
   else if (st.type === 'conds' || st.type === 'vital') {
     if (target) ans = `<h3>Saving ${esc(nameOf(W))}'s answers about ${relName(target)}</h3>` + (st.type === 'conds' ? condTiles(target, { by: W.id, pre: 'iv-' + st.k, lang, roman: S.iv.roman }) : vitalFields(target, 'iv-' + st.k)) + followUps(W, target, st, lang, S.iv.roman);
     else ans = `<p class="muted">${esc(nameOf(W))}'s ${st.who} isn't on the tree yet.</p><button class="btn primary" data-action="add-parent" data-kind="${st.who}" data-pid="${W.id}">Add ${esc(nameOf(W))}'s ${st.who} to the tree</button>`;
-  } else if (st.type === 'siblings') {
-    const sibs = siblingsOf(W.id).map(byId);
-    ans = `<label class="f">What they said<textarea id="iv-sib" data-pid="${W.id}" data-f="sibNotes">${esc(W.sibNotes)}</textarea></label>
-      <div style="display:grid;gap:10px"><h3>${esc(nameOf(W))}'s brothers and sisters on the tree</h3>
-        <div class="pills">${sibs.length ? sibs.map(s => `<button class="pill-btn" data-action="goto" data-pid="${s.id}">${esc(nameOf(s))}</button>`).join('') : '<span class="muted small">None yet.</span>'}</div>
-        <div class="row"><input type="text" id="iv-newsib" placeholder="Name" style="max-width:200px">
-        <select id="iv-newsex" style="max-width:140px"><option value="F">Sister</option><option value="M">Brother</option></select>
-        <button class="btn sm" data-action="iv-addsib" data-pid="${W.id}">Add to tree</button></div></div>`;
+  } else if (st.type === 'siblings' || st.type === 'children') {
+    // Pick a brother, sister or child to save what they had, the same way as for parents.
+    const kids = st.type === 'children';
+    const list = (kids ? childLinks(W.id).map(l => l.id) : siblingsOf(W.id)).map(byId).filter(Boolean);
+    const pick = list.find(x => x.id === S.iv.pick) || list[0];
+    const field = kids ? 'kidNotes' : 'sibNotes';
+    ans = `<label class="f">What they said<textarea id="iv-${st.k}-notes" data-pid="${W.id}" data-f="${field}">${esc(W[field])}</textarea></label>
+      <div style="display:grid;gap:10px"><h3>${esc(nameOf(W))}'s ${kids ? 'children' : 'brothers and sisters'} on the tree</h3>
+        <div class="pills">${list.length ? list.map(x => `<button class="pill-btn" data-action="iv-pick" data-id="${x.id}" aria-pressed="${x === pick}">${esc(nameOf(x))}</button>`).join('') : '<span class="muted small">None yet.</span>'}</div>
+        <div class="row"><input type="text" id="iv-newsib" placeholder="Name" aria-label="Name" style="max-width:200px">
+        <select id="iv-newsex" aria-label="${kids ? 'Son or daughter' : 'Brother or sister'}" style="max-width:140px">${kids ? '<option value="F">Daughter</option><option value="M">Son</option>' : '<option value="F">Sister</option><option value="M">Brother</option>'}</select>
+        <button class="btn sm" data-action="${kids ? 'iv-addkid' : 'iv-addsib'}" data-pid="${W.id}">Add to tree</button></div></div>
+      ${pick ? `<div style="display:grid;gap:14px"><h3>Saving ${esc(nameOf(W))}'s answers about ${relName(pick)}</h3>${vitalFields(pick, 'iv-' + st.k)}${condTiles(pick, { by: W.id, pre: 'iv-' + st.k, lang, roman: S.iv.roman })}</div>` : ''}`;
+  } else if (st.type === 'check') {
+    // A question about the whole family, saved with the person who answered.
+    const c = W.checks?.[st.k] || {};
+    const seg = ['yes', 'no', 'unknown'].map(v => `<button type="button" class="pill-btn" data-action="chk" data-k="${st.k}" data-v="${v}" data-pid="${W.id}" aria-pressed="${c.a === v}">${{ yes: 'Yes', no: 'No', unknown: "Don't know" }[v]}</button>`).join('');
+    ans = st.k === 'ancestry'
+      ? `<div style="display:grid;gap:10px"><span class="lbl">Your family's ancestry</span>${ancestryPicker()}</div>
+        <label class="f">What they said<input type="text" id="iv-chk-note" data-pid="${W.id}" data-chk="${st.k}" value="${esc(c.note || '')}" placeholder="e.g. Andhra Pradesh, India"></label>`
+      : `<div class="seg" role="group" aria-label="Answer">${seg}</div>
+        ${c.a === 'yes' ? `<label class="f">Who was it, and what happened?<input type="text" id="iv-chk-note" data-pid="${W.id}" data-chk="${st.k}" value="${esc(c.note || '')}" placeholder="${esc(CHECK_HINT[st.k] || '')}"></label>` : ''}`;
   } else if (st.type === 'closing') ans = `<p class="muted">Say thank you, then tap Finish to save the interview.</p>`;
 
   const sayRoman = lang !== 'en' && S.iv.roman && q[lang + '_r'];
@@ -622,6 +640,15 @@ function ancestryPicker() {
 }
 
 /* ---------- My risks tab ---------- */
+const CHECK_HINT = {
+  genetic: 'e.g. Aunt Rani, BRCA1 change found in 2019',
+  sudden: 'e.g. Uncle Ravi died in his sleep at 34',
+  related: 'e.g. my parents were first cousins',
+  pregnancy: 'e.g. my mother lost two babies before I was born',
+  birth: 'e.g. my brother was born with a hole in the heart',
+  anesthesia: 'e.g. my father got a very high fever during surgery',
+  tobacco: 'e.g. my father smoked for 30 years',
+};
 const RISK_LEVEL = { high: 'Higher than average', moderate: 'Moderate', average: 'About average' };
 function renderRisks() {
   const me = byId(SELF), list = familyRisk(), blood = bloodRelatives();
@@ -765,7 +792,7 @@ function renderDoctor() {
   const rows = CONDS.map(c => {
     const list = others.flatMap(p => facts(p.id).filter(f => f.cond === c.id).map(f => ({ p, f })));
     if (!list.length) return '';
-    return `<tr class="grp"><td colspan="4">${esc(c.en)}</td></tr>` + list.map(({ p, f }) => `<tr${kin(p.id).blood ? '' : ' class="nb"'}><td>${esc(relOf(p))}<br><span class="small muted">${esc(nameOf(p))}</span></td><td>${c.id === 'cancer' ? esc(factName('cancer', f.type)) + '<br>' : ''}<span class="small muted">${sideLabel(p)}</span></td><td class="n">${esc(f.age || '?')}${f.disagree ? '<span class="dis" title="People disagree">*</span>' : ''}</td><td class="small">${f.reports.map(r => `${esc(reporterName(r.by))}${r.age ? ' ' + esc(r.age) : ''}${r.said ? ` (“${esc(r.said)}”)` : ''}`).join('<br>')}</td></tr>`).join('');
+    return `<tr class="grp"><td colspan="4">${esc(c.en)}</td></tr>` + list.map(({ p, f }) => `<tr${kin(p.id).blood ? '' : ' class="nb"'}><td>${esc(relOf(p))}<br><span class="small muted">${esc(nameOf(p))}</span></td><td>${f.type || c.id === 'cancer' ? esc(factName(c.id, f.type)) + '<br>' : ''}<span class="small muted">${sideLabel(p)}</span></td><td class="n">${esc(f.age || '?')}${f.disagree ? '<span class="dis" title="People disagree">*</span>' : ''}</td><td class="small">${f.reports.map(r => `${esc(reporterName(r.by))}${r.age ? ' ' + esc(r.age) : ''}${r.said ? ` (“${esc(r.said)}”)` : ''}`).join('<br>')}</td></tr>`).join('');
   }).join('');
   const dead = others.filter(p => p.living === 'no');
   const interviewed = others.filter(p => p.interviewed);
@@ -788,8 +815,19 @@ function renderDoctor() {
     </section>
     ${dead.length ? `<section class="card" style="display:grid;gap:10px"><h2>Relatives who have died</h2><div class="tbl-wrap"><table><thead><tr><th>Relative</th><th>Age at death</th><th>Cause</th></tr></thead><tbody>
       ${dead.map(p => `<tr><td>${esc(relOf(p))}<br><span class="small muted">${esc(nameOf(p))}</span></td><td class="n">${esc(p.deathAge || '?')}</td><td>${esc(p.cause || 'Unknown')}</td></tr>`).join('')}</tbody></table></div></section>` : ''}
+    ${(fa => fa.length ? `<section class="card" style="display:grid;gap:10px"><h2>Other family history</h2><div class="tbl-wrap"><table><thead><tr><th>Question</th><th>Answer</th><th>Said by</th></tr></thead><tbody>
+      ${fa.map(x => `<tr><td>${esc(x.q)}</td><td>${esc([x.answer, x.note].filter(Boolean).join('. '))}</td><td>${esc(x.by)}</td></tr>`).join('')}</tbody></table></div></section>` : '')(familyAnswers())}
     <section class="card tree-card"><div class="hd"><h2>Pedigree</h2></div><div class="tree-scroll">${treeSVG({ interactive: false, hl: 'any' })}</div>${keyHTML()}</section>
     ${refs.length ? `<section class="card" style="display:grid;gap:8px"><h2>Sources</h2><ol class="refs">${refs.map(s => `<li id="ref-${s}">${esc(SOURCES[s].full)} <a href="${SOURCES[s].url}" target="_blank" rel="noopener">Link</a></li>`).join('')}</ol></section>` : ''}`;
+}
+// Answers to the whole-family questions (genetic tests, sudden deaths and so on), with who gave them.
+function familyAnswers() {
+  const out = [];
+  for (const c of FAMILY_CHECKS) for (const p of S.people) {
+    const a = p.checks?.[c.id];
+    if (a && (a.a === 'yes' || a.note)) out.push({ q: c.en, by: reporterName(p.id), answer: a.a === 'yes' ? 'Yes' : a.a === 'no' ? 'No' : a.a === 'unknown' ? "Doesn't know" : '', note: a.note || '' });
+  }
+  return out;
 }
 function summaryText() {
   const me = byId(SELF), cards = guidelineCards(), others = S.people.filter(p => p.id !== SELF);
@@ -802,6 +840,8 @@ function summaryText() {
   L.push('', 'CONDITIONS IN THE FAMILY');
   for (const p of others) for (const f of facts(p.id)) L.push(`- ${relOf(p)} (${nameOf(p)}): ${factName(f.cond, f.type)}, age ${f.age || 'unknown'}${f.disagree ? ` (reports range ${f.range})` : ''}${kin(p.id).blood ? '' : ' [not blood related]'}`);
   const dead = others.filter(p => p.living === 'no');
+  const fa = familyAnswers();
+  if (fa.length) { L.push('', 'OTHER FAMILY HISTORY'); fa.forEach(x => L.push(`- ${x.q}: ${[x.answer, x.note].filter(Boolean).join('. ')} (${x.by})`)); }
   if (dead.length) { L.push('', 'RELATIVES WHO HAVE DIED'); dead.forEach(p => L.push(`- ${relOf(p)} (${nameOf(p)}): age ${p.deathAge || 'unknown'}, ${p.cause || 'cause unknown'}`)); }
   return L.join('\n');
 }
@@ -891,12 +931,14 @@ async function makePDF() {
     const list = others.flatMap(p => facts(p.id).filter(f => f.cond === c.id).map(f => ({ p, f })));
     if (!list.length) continue; any = true;
     need(32); doc.setFillColor(241, 240, 247); doc.roundedRect(M, y, CW, 17, 4, 4, 'F'); row([c.en], { bold: true });
-    list.forEach(({ p, f }) => row([`${relOf(p)} (${nameOf(p)})${c.id === 'cancer' ? ' - ' + factName('cancer', f.type) : ''}`, sideLabel(p), (f.age || '?') + (f.disagree ? '*' : ''), f.reports.map(r => `${reporterName(r.by)}${r.age ? ' ' + r.age : ''}`).join(', ')], { color: kin(p.id).blood ? INK : MUTED }));
+    list.forEach(({ p, f }) => row([`${relOf(p)} (${nameOf(p)})${f.type || c.id === 'cancer' ? ' - ' + factName(c.id, f.type) : ''}`, sideLabel(p), (f.age || '?') + (f.disagree ? '*' : ''), f.reports.map(r => `${reporterName(r.by)}${r.age ? ' ' + r.age : ''}`).join(', ')], { color: kin(p.id).blood ? INK : MUTED }));
   }
   if (!any) text('None recorded yet.', { color: MUTED });
   else text('* family members gave different ages; the youngest is used. Grey rows are not blood relatives.', { size: 8.5, color: MUTED });
 
   const dead = others.filter(p => p.living === 'no');
+  const fa = familyAnswers();
+  if (fa.length) { heading('Other family history'); fa.forEach(x => text(`${x.q}: ${[x.answer, x.note].filter(Boolean).join('. ')} (${x.by})`)); }
   if (dead.length) { heading('Relatives who have died'); dead.forEach(p => text(`${relOf(p)} (${nameOf(p)}): age ${p.deathAge || 'unknown'}, ${p.cause || 'cause unknown'}`)); }
 
   const img = await pedigreePNG();
@@ -1031,6 +1073,7 @@ document.addEventListener('input', e => {
   if (t.id === 'fb-email' && S?.modal) { S.modal.email = t.value; return; }
   if (!p) return;
   if (d.tr) { (p.transcripts ||= {})[d.tr] = t.value; save(); return; }
+  if (d.chk) { ((p.checks ||= {})[d.chk] ||= {}).note = t.value; p.u = Date.now(); save(); return; }
   if (d.f && t.type !== 'checkbox' && t.type !== 'file' && t.tagName !== 'SELECT') { p[d.f] = t.value; p.u = Date.now(); save(); refreshTree(); }
   else if (d.cf === 'age') { addReport(p.id, d.cond, d.type, d.by, { age: t.value }); save(); refreshTree(); }
 });
@@ -1092,11 +1135,11 @@ document.addEventListener('click', e => {
     }
     case 'sugg-skip': SUGG.list.splice(+b.dataset.i, 1); render(); break;
     case 'ctype': {
-      const { pid, type, by } = b.dataset;
-      const mine = r => r.pid === pid && r.cond === 'cancer' && r.by === by;
-      if (findReport(pid, 'cancer', type, by)) dropReports(r => mine(r) && r.type === type);
-      else { const blank = findReport(pid, 'cancer', '', by); if (blank) blank.type = type; else addReport(pid, 'cancer', type, by); }
-      if (!S.reports.some(mine)) addReport(pid, 'cancer', '', by);
+      const { pid, type, by } = b.dataset, cond = b.dataset.cond || 'cancer';
+      const mine = r => r.pid === pid && r.cond === cond && r.by === by;
+      if (findReport(pid, cond, type, by)) { const gone = r => mine(r) && r.type === type; noteDeleted('r', S.reports.filter(gone).map(r => r.id)); dropReports(gone); }
+      else { const blank = findReport(pid, cond, '', by); if (blank) blank.type = type; else addReport(pid, cond, type, by); }
+      if (!S.reports.some(mine)) addReport(pid, cond, '', by);
       save(); render(); break;
     }
     case 'del-report': noteDeleted('r', [b.dataset.rid]); dropReports(r => r.id === b.dataset.rid); save(); render(); break;
@@ -1152,7 +1195,13 @@ document.addEventListener('click', e => {
     case 'see-report': S.celebrate = null; S.iv.step = 0; setTab('doctor'); break;
     case 'iv-prev': S.iv.step--; save(); render(); break;
     case 'iv-next': S.iv.step++; save(); render(); window.scrollTo({ top: 0 }); break;
-    case 'iv-addsib': { const name = $('#iv-newsib').value.trim(); if (!name) { toast('Type a name first'); $('#iv-newsib').focus(); break; } addRelative('sibling', p.id, { name, sex: $('#iv-newsex').value }); save(); render(); toast(`${name} added to the tree`); break; }
+    case 'iv-addsib': case 'iv-addkid': {
+      const name = $('#iv-newsib').value.trim(); if (!name) { toast('Type a name first'); $('#iv-newsib').focus(); break; }
+      const np = addRelative(a === 'iv-addkid' ? 'child' : 'sibling', p.id, { name, sex: $('#iv-newsex').value });
+      S.iv.pick = np.id; save(); render(); toast(`${name} added to the tree`); break;
+    }
+    case 'iv-pick': S.iv.pick = b.dataset.id; save(); render(); break;
+    case 'chk': { const c = ((p.checks ||= {})[b.dataset.k] ||= {}); c.a = c.a === b.dataset.v ? '' : b.dataset.v; p.u = Date.now(); save(); render(); if (c.a === 'yes') $('#iv-chk-note')?.focus(); break; }
     case 'iv-done': { const w = byId(S.iv.who); w.interviewed = today(); S.celebrate = w.id; S.sel = w.id; save(); render(); window.scrollTo({ top: 0 }); break; }
     case 'speak': speak(); break;
     case 'copy-summary': copyText(summaryText(), 'Summary copied'); break;
