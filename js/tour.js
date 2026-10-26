@@ -81,10 +81,13 @@ function applyTour() {
 // free, and if the page can't scroll that far, move the card to the other end of the screen.
 function placeTour(card, target) {
   const phone = innerWidth <= 860, gap = 16, H = innerHeight;
-  const navH = phone ? 88 : 0; // the tab bar along the bottom of a phone screen
+  // On phones the tab bar runs along the bottom; measure it so the card always sits just above it.
+  const navTop = phone ? document.querySelector('.side')?.getBoundingClientRect().top : null;
+  const navH = phone && navTop ? Math.max(0, H - navTop) : 0;
+  card.style.bottom = phone ? `${navH + 10}px` : '';
   const h = card.offsetHeight, w = card.offsetWidth;
   const rect = () => target.getBoundingClientRect();
-  const bands = { bottom: [gap, H - navH - (phone ? 88 : 20) - h - gap], top: [gap + h + gap, H - navH - gap] };
+  const bands = { bottom: [gap, H - (phone ? navH + 10 : 20) - h - gap], top: [gap + h + gap, H - navH - gap] };
   const covers = r => {
     const cardLeft = phone ? 0 : innerWidth - w - 20;
     if (r.right < cardLeft - 8) return 0; // side by side on a wide screen
