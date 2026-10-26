@@ -1,10 +1,13 @@
 // Heirloom Health server (Cloudflare Worker).
 //
 //   POST /api/extract      { text, people: [{role, name}], conditions: [...], cancerTypes: [...] }
-//                          -> { facts: [...] }  Claude reads an interview transcript and returns health facts.
+//                          -> { facts: [...] }  An AI model reads an interview transcript and returns health facts.
 //   POST /api/transcribe   multipart form: file (audio), lang  -> { text }  speech-to-text.
 //   GET/PUT /api/family/:id  an encrypted copy of a family. The key never reaches this server.
+//   POST /api/feedback     { kind, message, email?, info? }  a bug report or idea from the app.
 //
+// Free by default: the AI routes use Cloudflare Workers AI (open models, free daily allowance).
+// If you add an ANTHROPIC_API_KEY or OPENAI_API_KEY secret, those routes use Claude or OpenAI instead.
 // Nothing sent to /api/extract or /api/transcribe is stored.
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -22,6 +25,7 @@ export default {
     try {
       if (url.pathname === '/api/extract' && request.method === 'POST') return withCors(await extract(request, env), cors);
       if (url.pathname === '/api/transcribe' && request.method === 'POST') return withCors(await transcribe(request, env), cors);
+      if (url.pathname === '/api/feedback' && request.method === 'POST') return withCors(await feedback(request, env), cors);
       const fam = url.pathname.match(/^\/api\/family\/([A-Za-z0-9_-]{16,80})$/);
       if (fam) return withCors(await family(request, env, fam[1]), cors);
       return withCors(json({ error: 'Not found' }, 404), cors);
@@ -59,7 +63,7 @@ const FACTS_SCHEMA = (conditions, cancerTypes, roles) => ({
 });
 
 async function extract(request, env) {
-  if (!env.ANTHROPIC_API_KEY) return json({ error: 'AI answer-finding is not set up on this server yet.' }, 503);
+  if (!env.ANTHROPIC_API_KEY && !env.AI) return json({ error: 'AI answer-finding is not set up on this server yet.' }, 503);
   if (!(await allow(request, env, 'ai'))) return json({ error: 'Too many requests. Try again in an hour.' }, 429);
   const body = await request.json().catch(() => null);
   const text = String(body?.text || '').slice(0, MAX_TEXT);
@@ -89,6 +93,9 @@ Transcript:
 ${text}
 """`;
 
+  const schema = FACTS_SCHEMA(conditions, cancerTypes, people.map(p => p.role));
+  if (!env.ANTHROPIC_API_KEY) return extractFree(env, prompt, schema);
+
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
   let response;
   try {
@@ -99,7 +106,7 @@ ${text}
       fallbacks: 'default',
       output_config: {
         effort: 'low',
-        format: { type: 'json_schema', schema: FACTS_SCHEMA(conditions, cancerTypes, people.map(p => p.role)) },
+        format: { type: 'json_schema', schema },
       },
       messages: [{ role: 'user', content: prompt }],
     });
@@ -118,15 +125,50 @@ ${text}
   return json({ facts: Array.isArray(parsed.facts) ? parsed.facts : [] });
 }
 
+// Free path: an open model on Cloudflare Workers AI, asked for JSON that matches the same schema.
+async function extractFree(env, prompt, schema) {
+  let out;
+  try {
+    out = await env.AI.run(env.EXTRACT_MODEL || '@cf/google/gemma-4-26b-a4b-it', {
+      messages: [{ role: 'user', content: prompt + '\n\nReply with JSON only.' }],
+      response_format: { type: 'json_schema', json_schema: { name: 'health_facts', schema, strict: true } },
+      chat_template_kwargs: { enable_thinking: false },
+      max_tokens: 4000,
+    });
+  } catch (err) {
+    console.error(err);
+    return json({ error: 'The free AI service is busy or used up for today. Try again later, or use the built-in word list.' }, 503);
+  }
+  const text = out?.choices?.[0]?.message?.content ?? out?.response ?? '';
+  let parsed;
+  try { parsed = typeof text === 'string' ? JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, '')) : text; } catch { return json({ error: 'The AI answer was not readable.' }, 502); }
+  return json({ facts: Array.isArray(parsed?.facts) ? parsed.facts : [] });
+}
+
 /* ---------- Speech to text ---------- */
 async function transcribe(request, env) {
-  if (!env.OPENAI_API_KEY) return json({ error: 'Speech-to-text is not set up on this server yet.' }, 503);
+  if (!env.OPENAI_API_KEY && !env.AI) return json({ error: 'Speech-to-text is not set up on this server yet.' }, 503);
   if (!(await allow(request, env, 'ai'))) return json({ error: 'Too many requests. Try again in an hour.' }, 429);
   const form = await request.formData().catch(() => null);
   const file = form?.get('file');
   if (!file || typeof file === 'string') return json({ error: 'No recording was sent.' }, 400);
   if (file.size > MAX_AUDIO) return json({ error: 'That recording is too long. Keep each answer under a few minutes.' }, 413);
   const lang = String(form.get('lang') || '').slice(0, 5);
+  if (!env.OPENAI_API_KEY) {
+    // Free path: Whisper on Cloudflare Workers AI. The app sends 16 kHz WAV, which it accepts as base64.
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    try {
+      const out = await env.AI.run(env.TRANSCRIBE_MODEL_FREE || '@cf/openai/whisper-large-v3-turbo', {
+        audio: btoa(bin), task: 'transcribe', vad_filter: true, ...(/^[a-z]{2}$/.test(lang) ? { language: lang } : {}),
+      });
+      return json({ text: String(out?.text || '').trim() });
+    } catch (err) {
+      console.error(err);
+      return json({ error: 'The free speech service is busy or used up for today. Try on-device speech-to-text instead.' }, 503);
+    }
+  }
   const up = new FormData();
   up.append('file', file, file.name || 'answer.webm');
   up.append('model', env.TRANSCRIBE_MODEL || 'whisper-1');
@@ -135,6 +177,36 @@ async function transcribe(request, env) {
   if (!res.ok) return json({ error: res.status === 429 ? 'The speech service is busy. Try again in a minute.' : 'The speech service could not read that recording.' }, res.status === 429 ? 429 : 502);
   const data = await res.json();
   return json({ text: String(data.text || '') });
+}
+
+/* ---------- Feedback: bug reports and ideas ---------- */
+// Saved in KV (list them with: npx wrangler kv key list --binding FAMILY --prefix feedback:).
+// With GITHUB_TOKEN and GITHUB_REPO set, each one also becomes a GitHub issue.
+const KINDS = { bug: 'Bug', idea: 'Idea', translation: 'Translation fix', other: 'Other' };
+async function feedback(request, env) {
+  if (!env.FAMILY) return json({ error: 'Feedback is not set up on this server yet.' }, 503);
+  const body = await request.json().catch(() => null);
+  if (body?.website) return json({ ok: true }); // filled only by spam bots
+  const kind = KINDS[body?.kind] ? body.kind : 'other';
+  const message = String(body?.message || '').trim().slice(0, 4000);
+  const email = String(body?.email || '').trim().slice(0, 200);
+  const info = String(body?.info || '').slice(0, 600);
+  if (message.length < 5) return json({ error: 'Please write a little more.' }, 400);
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "That email address doesn't look right." }, 400);
+  if (!(await allow(request, env, 'feedback', 10))) return json({ error: 'Thanks! You have sent a lot today. Try again tomorrow.' }, 429);
+  const at = new Date().toISOString();
+  const id = `feedback:${at}:${crypto.randomUUID().slice(0, 8)}`;
+  await env.FAMILY.put(id, JSON.stringify({ kind, message, email, info, at }), { expirationTtl: 60 * 60 * 24 * 365 });
+  if (env.GITHUB_TOKEN && env.GITHUB_REPO) {
+    const title = `${KINDS[kind]}: ${message.split('\n')[0].slice(0, 70)}`;
+    const issue = `${message}\n\n---\nSent from the app on ${at}.${info ? `\nDevice: ${info}` : ''}${email ? '\nThe sender left an email address (kept private in the feedback store).' : ''}`;
+    await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/issues`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${env.GITHUB_TOKEN}`, accept: 'application/vnd.github+json', 'user-agent': 'heirloom-health-server' },
+      body: JSON.stringify({ title, body: issue, labels: ['from-app', kind] }),
+    }).catch(err => console.error(err));
+  }
+  return json({ ok: true });
 }
 
 /* ---------- Encrypted family sync ---------- */

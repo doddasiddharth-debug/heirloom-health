@@ -1,14 +1,15 @@
 # Heirloom Health server
 
-A small Cloudflare Worker that adds three optional features to the app:
+A small Cloudflare Worker that adds four optional features to the app. **It is free by default:** the AI features use Cloudflare Workers AI, which runs open models (Whisper for speech, Gemma for reading transcripts) with a free daily allowance. No AI company keys or credit card are needed.
 
-| Feature | What it uses | Rough cost |
+| Feature | Free default | Optional paid upgrade |
 |---|---|---|
-| **Find with AI** on the website: reads a typed or dictated transcript and suggests answers | Anthropic API (Claude) | A few cents per transcript |
-| **Transcribe** a recording into text, in any of the app's languages | OpenAI speech-to-text | About a cent per minute of audio |
-| **Sync with family**: keep one family up to date on several phones | Cloudflare KV storage | Free tier is plenty |
+| **Find with AI**: reads a transcript and suggests answers | Gemma 4 on Workers AI | Claude (add `ANTHROPIC_API_KEY`), better with mixed-language speech |
+| **Turn into text** with the server | Whisper large-v3-turbo on Workers AI | OpenAI (add `OPENAI_API_KEY`) |
+| **Sync with family**, encrypted | Cloudflare KV | (none needed) |
+| **Send feedback** from the app | Saved in Cloudflare KV | Also opened as GitHub issues (add `GITHUB_TOKEN`) |
 
-Without the server, the app still works fully on each device. Check current prices on each provider's pricing page before you start.
+The app can also turn recordings into text **on the phone itself** with no server at all (Menu, then Speech-to-text). Check Cloudflare's pricing page for the current free allowance; if it runs out for the day, the app falls back to the built-in word list and on-device speech-to-text.
 
 ## Privacy
 
@@ -16,19 +17,27 @@ Without the server, the app still works fully on each device. Check current pric
 - **Family sync** uploads only data encrypted on the phone (AES-GCM). The key lives in the share link after the `#`, which browsers never send to a server, so the server stores data it cannot read.
 - The app asks the user for permission before it sends anything to the AI helper.
 
-## Set it up (about 15 minutes)
+## Set it up (about 10 minutes, free)
 
-You need: a free [Cloudflare](https://dash.cloudflare.com/sign-up) account, an API key from the [Anthropic Console](https://console.anthropic.com/), and, for speech-to-text, an API key from [OpenAI](https://platform.openai.com/). Set a monthly spending limit on both AI accounts.
+You need a free [Cloudflare](https://dash.cloudflare.com/sign-up) account.
 
 ```bash
 cd server
 npm install
 npx wrangler login                               # opens a browser to sign in to Cloudflare
 npx wrangler kv namespace create FAMILY          # copy the id it prints into wrangler.toml
-npx wrangler secret put ANTHROPIC_API_KEY        # paste your Anthropic key
-npx wrangler secret put OPENAI_API_KEY           # paste your OpenAI key (skip if you don't want speech-to-text)
 npx wrangler deploy                              # prints your server address, e.g. https://heirloom-health.<you>.workers.dev
 ```
+
+Optional upgrades (each costs money per use; set a spending limit with the provider):
+
+```bash
+npx wrangler secret put ANTHROPIC_API_KEY        # Claude for reading transcripts
+npx wrangler secret put OPENAI_API_KEY           # OpenAI for speech-to-text
+npx wrangler secret put GITHUB_TOKEN             # fine-grained token with "Issues: write" on this repo, to file feedback as issues
+```
+
+To read feedback without GitHub: `npx wrangler kv key list --binding FAMILY --prefix feedback:` and `npx wrangler kv key get --binding FAMILY "<key>"`.
 
 Then connect the app to it:
 
@@ -46,6 +55,6 @@ In another terminal, serve the app with `python3 -m http.server 8000` from the m
 
 ## Limits built in
 
-- 40 AI requests per hour per visitor, 120 syncs per hour.
+- 40 AI requests per hour per visitor, 120 syncs per hour, 10 feedback messages per hour.
 - Transcripts up to 8,000 characters; recordings up to 10 MB; families up to 900 KB.
 - Only the websites listed in `ALLOWED_ORIGINS` can call the server.

@@ -8,15 +8,25 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 # Websites allowed to call this server (comma-separated).
 ALLOWED_ORIGINS = "https://doddasiddharth-debug.github.io,http://localhost:8000"
-# OpenAI speech-to-text model.
+# Free models on Cloudflare Workers AI (used unless you add the paid keys below).
+EXTRACT_MODEL = "@cf/google/gemma-4-26b-a4b-it"
+TRANSCRIBE_MODEL_FREE = "@cf/openai/whisper-large-v3-turbo"
+# OpenAI speech-to-text model (only used if OPENAI_API_KEY is set).
 TRANSCRIBE_MODEL = "whisper-1"
+# Turn feedback into GitHub issues in this repository (also needs the GITHUB_TOKEN secret).
+GITHUB_REPO = "doddasiddharth-debug/heirloom-health"
 
-# Encrypted family copies. Create it with:  npx wrangler kv namespace create FAMILY
+# Cloudflare Workers AI: free open models for speech-to-text and reading transcripts.
+[ai]
+binding = "AI"
+
+# Encrypted family copies, feedback and rate-limit counters. Create it with:  npx wrangler kv namespace create FAMILY
 # then paste the id it prints here.
 [[kv_namespaces]]
 binding = "FAMILY"
 id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"
 
-# Secrets (never put these in this file):
-#   npx wrangler secret put ANTHROPIC_API_KEY
-#   npx wrangler secret put OPENAI_API_KEY
+# Optional secrets (never put these in this file):
+#   npx wrangler secret put ANTHROPIC_API_KEY   use Claude instead of the free model for reading transcripts
+#   npx wrangler secret put OPENAI_API_KEY      use OpenAI instead of the free model for speech-to-text
+#   npx wrangler secret put GITHUB_TOKEN        a fine-grained token with "Issues: write" on GITHUB_REPO
