@@ -23,13 +23,15 @@ async function hashPin(pin, salt) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${salt}:${pin}`));
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
-async function createAccount({ name, pin }) {
+async function createAccount({ name, pin, terms }) {
   const salt = randomHex(16);
-  const acct = { id: 'acct-' + randomHex(6), name, salt, pinHash: pin ? await hashPin(pin, salt) : null, created: new Date().toISOString().slice(0, 10) };
+  const acct = { id: 'acct-' + randomHex(6), name, salt, pinHash: pin ? await hashPin(pin, salt) : null, created: new Date().toISOString().slice(0, 10), terms };
   store.set(ACCOUNTS_KEY, [...listAccounts(), acct]);
   return acct;
 }
 async function checkPin(acct, pin) { return !acct.pinHash || (await hashPin(pin, acct.salt)) === acct.pinHash; }
+// Record that a profile agreed to the current terms.
+function agreeTerms(id, version) { store.set(ACCOUNTS_KEY, listAccounts().map(a => a.id === id ? { ...a, terms: version } : a)); }
 function deleteAccount(id) { store.set(ACCOUNTS_KEY, listAccounts().filter(a => a.id !== id)); store.del(dataKey(id)); }
 
 // "Stay signed in" keeps the session in localStorage; otherwise it ends when the tab closes.

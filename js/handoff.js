@@ -107,7 +107,10 @@ function renderModal() {
       <p>${m.what === 'audio' ? "This recording is sent to Heirloom's server and on to OpenAI's speech-to-text service to turn it into words." : "This text is sent to Heirloom's server and on to Anthropic's Claude to find the health answers in it."} Neither keeps it after answering. Nothing is saved until you confirm the answers.</p>
       <p class="small muted">Only continue if the person you interviewed is okay with this.</p>
       <div class="row"><button class="btn primary" data-action="m-consent">Allow</button><button class="btn" data-action="m-close">Cancel</button></div>`;
-  } else if (m.kind === 'cloud') {
+  } else if (m.kind === 'feedback') body = feedbackHTML(m);
+  else if (m.kind === 'menu') body = menuHTML();
+  else if (m.kind === 'stt') body = sttChooserHTML(m.clip);
+  else if (m.kind === 'cloud') {
     const qr = S.sync ? qrSVG(cloudLink()) : null;
     body = `<h2>Sync with family</h2>
       ${S.sync ? `<p class="small">Anyone who opens this link sees and adds to this family on their own phone. The family is locked with a key that only exists in the link, so the server can't read it. ${S.sync.last ? `Last synced ${new Date(S.sync.last).toLocaleString()}.` : ''}</p>

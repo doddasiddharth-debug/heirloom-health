@@ -63,7 +63,7 @@ function renderContribStart() {
       <p class="muted">${esc(inv.from || 'Your family')} is putting together a family health history for their doctor and asked for your help. It takes about five minutes, and you can skip anything.</p></div>
     <span class="lbl">Choose your language</span>
     <div class="lang-grid">${LANGS.map(l => `<button class="lang-btn" data-action="contrib-lang" data-lang="${l.id}"><span ${langAttrs(l.id)}>${esc(l.label.split(' · ')[0])}</span><small>${esc(l.label.split(' · ').pop())}</small></button>`).join('')}</div>
-    <p class="fine">Your answers stay on this phone until you choose to send them back.</p>
+    <p class="fine">Your answers stay on this phone until you choose to send them back. By continuing you agree to the ${termsLink()}.</p>
   </div></div>`;
 }
 async function contribAnswersLink() {

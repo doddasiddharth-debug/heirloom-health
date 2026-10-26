@@ -2,4 +2,8 @@
 // 'https://heirloom-health.your-name.workers.dev'.
 // Leave it empty to run with no server: everything still works on the device,
 // except AI answer-finding on the website, speech-to-text, and cloud sync.
-window.CONFIG = { apiBase: '' };
+window.CONFIG = {
+  apiBase: '',
+  // GitHub repository for feedback issues when there is no server.
+  repo: 'doddasiddharth-debug/heirloom-health',
+};

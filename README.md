@@ -13,6 +13,9 @@ Most people can't answer "Does heart disease run in your family?" because nobody
 - **Ancestry-aware rules,** such as South Asian ancestry and heart disease, ancestry and diabetes testing, and BRCA and thalassemia screening.
 - **Doctor hand-off.** A checklist of questions for the next checkup, and a QR code that opens a read-only copy of the report. The report travels inside the link and is never stored on a server.
 - **Photos and documents** for each relative, kept on the device.
+- **Free speech-to-text** on the phone itself (Whisper running in the browser, private, works offline after one download), or with the free server.
+- **Terms of Use and Privacy Policy** in plain language, agreed to when a profile is created.
+- **Send feedback**: bug reports and ideas go to the server (or a GitHub issue).
 - **Recording and answer finding.** Record each answer. Type or dictate what was said, and the app suggests answers to confirm. It maps everyday words to medical terms ("sugar" / షుగర్ / शुगर → diabetes) and notices when someone says "no".
 - **A real family graph.** Grandparents, great-grandparents, cousins, half-siblings, step-parents and adoption. The app works out each relationship ("First cousin, Dad's side") and how closely related each person is. Relatives who aren't blood related are left out of the risk rules.
 - **Automatic pedigree layout** for any family shape, using standard medical symbols.
@@ -39,8 +42,11 @@ Most people can't answer "Does heart disease run in your family?" because nobody
 | `js/share.js` | Invite links, merging answers, encrypted cloud sync |
 | `js/handoff.js` | Doctor checklist, QR code, read-only doctor view, pop-up panels |
 | `js/config.js` | The address of the optional server |
+| `js/stt.js`, `js/stt-worker.js` | Speech-to-text on the device (Whisper via Transformers.js) or with the server |
+| `js/legal.js` | Terms of Use and Privacy Policy |
+| `js/feedback.js` | Feedback form and the app menu |
 | `server/` | Optional Cloudflare Worker for AI, speech-to-text and sync (see `server/README.md`) |
-| `vendor/` | jsPDF and qrcode-generator (MIT licensed), kept here so PDF and QR work offline |
+| `vendor/` | jsPDF and qrcode-generator (MIT licensed), kept here so PDF and QR work offline. Transformers.js (Apache-2.0) loads from jsDelivr, pinned to 4.3.0. |
 | `js/app.js` | Screens, recordings, PDF export, event handling |
 | `sw.js` | Offline support |
 

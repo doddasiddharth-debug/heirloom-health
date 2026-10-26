@@ -193,7 +193,7 @@ function clipList(clips, showQ) {
     <div class="meta"><span>${showQ ? `Question ${c.step + 1} · ` : ''}${new Date(c.created).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}${c.secs ? ' · ' + fmtSec(c.secs) : ''}</span>
       <button class="link danger" data-action="clip-del" data-clip="${c.id}">${S.confirmClip === c.id ? 'Tap again to delete' : 'Delete'}</button></div>
     <audio controls preload="metadata" src="${c.url}"></audio>
-    ${cloudOn() && S.tab === 'interview' ? `<button class="btn sm" data-action="transcribe" data-clip="${c.id}" ${TRANSCRIBING ? 'disabled' : ''}>${TRANSCRIBING === c.id ? 'Turning into text…' : 'Turn into text'}</button>` : ''}</li>`).join('')}</ul>`;
+    ${(sttSupported() || cloudOn()) && S.tab === 'interview' ? `<div class="row"><button class="btn sm" data-action="transcribe" data-clip="${c.id}" ${TRANSCRIBING ? 'disabled' : ''}>${TRANSCRIBING === c.id ? 'Turning into text…' : 'Turn into text'}</button><span class="small muted" id="stt-st-${c.id}" aria-live="polite"></span></div>` : ''}</li>`).join('')}</ul>`;
 }
 
 /* ---------- Live captions and the answer finder ---------- */
@@ -242,17 +242,25 @@ function needsConsent(what, then) {
   S.modal = { kind: 'ai-consent', what, then }; render(); return true;
 }
 let TRANSCRIBING = null;
-async function transcribeClip(id) {
+// Turn a recording into text: on this device (default) or with the Heirloom server, as chosen in the menu.
+async function transcribeClip(id, confirmed = false) {
   const c = CLIPS.find(x => x.id === id), p = c && byId(c.pid);
-  if (!c || !p) return;
-  if (needsConsent('audio', { action: 'transcribe', id })) return;
+  if (!c || !p || TRANSCRIBING) return;
+  if (!S.sttMode && !confirmed) { S.modal = { kind: 'stt', clip: id }; render(); return; }
+  const server = S.sttMode === 'server' && cloudOn();
+  if (server && needsConsent('audio', { action: 'transcribe', id })) return;
   TRANSCRIBING = id; render();
+  const status = t => { const el = document.getElementById('stt-st-' + id); if (el) el.textContent = t; };
+  status(server ? 'Sending to the server…' : 'Getting ready…');
   try {
-    const text = await serverTranscribe(c.blob, S.iv.lang);
+    const text = server ? await transcribeWithServer(c.blob, S.iv.lang) : await transcribeOnDevice(c.blob, S.iv.lang, S.sttModel || 'base', status);
     const key = STEPS[c.step]?.k || 'other_self';
     (p.transcripts ||= {})[key] = [p.transcripts[key], text].filter(Boolean).join(' ').trim();
     save(); toast(text ? 'Recording turned into text. Tap "Find answers".' : 'No speech was found in that recording.');
-  } catch (e) { toast(e?.message || "Couldn't turn the recording into text."); }
+  } catch (e) {
+    toast(server ? (e?.message || "Couldn't turn the recording into text.") : "The speech model couldn't run here. Check your internet connection for the first download, or try the server option.");
+    console.error(e);
+  }
   TRANSCRIBING = null; render();
 }
 async function runFinder(useAI) {
@@ -633,6 +641,14 @@ function renderRisks() {
 /* ---------- Sign-in page ---------- */
 function renderAuth() {
   const accts = listAccounts();
+  if (AUTH.agree) {
+    const a = accts.find(x => x.id === AUTH.agree.id);
+    return `<div class="auth"><div class="auth-card" style="max-width:560px">
+      <div class="auth-head">${mascot(72)}<h1>We updated our terms</h1><p class="muted">Hi ${esc(a?.name || '')}! Please read the updated Terms of Use and Privacy Policy before you continue.</p></div>
+      <div class="terms-box">${legalHTML()}</div>
+      <div class="row"><button class="btn primary" data-action="auth-agree">I agree</button><button class="btn" data-action="auth-agree-cancel">Not now</button></div>
+    </div></div>`;
+  }
   if (!accts.length) AUTH.mode = 'create';
   if (!AUTH.pick || !accts.some(a => a.id === AUTH.pick)) AUTH.pick = accts[0]?.id || null;
   const pick = accts.find(a => a.id === AUTH.pick);
@@ -666,12 +682,14 @@ function renderAuth() {
         <p class="small muted">The PIN is optional. Use one if you share this phone or computer.</p>
         ${legacy ? `<label class="check"><input type="checkbox" id="auth-legacy" checked> Keep the family already saved on this device</label>` : ''}
         <label class="check"><input type="checkbox" id="auth-remember" checked> Stay signed in on this device</label>
+        <label class="check"><input type="checkbox" id="auth-terms"> <span>I have read and agree to the ${termsLink()}</span></label>
         <button class="btn primary wide" type="submit">Create profile</button>
       `}
       <p class="auth-err" id="auth-err" role="alert"></p>
     </form>
     <div class="or"><span>or</span></div>
     <button class="btn wide" data-action="auth-guest">Explore the example family</button>
+    <p class="small muted" style="text-align:center">By using Heirloom Health you agree to the ${termsLink()}.</p>
     <p class="fine">Profiles and answers stay on this device; nothing is uploaded. The PIN keeps others on a shared device out of your family. It is not a cloud account, so clearing this browser's data erases it. Copy a backup code from the Family tree page to be safe.</p>
   </div></div>`;
 }
@@ -682,8 +700,9 @@ async function signUp() {
   if (pin && !/^\d{4,8}$/.test(pin)) return authErr('A PIN is 4 to 8 numbers.');
   if (pin !== pin2) return authErr("The two PINs don't match.");
   if (listAccounts().some(a => a.name.toLowerCase() === name.toLowerCase())) return authErr('That name is already used on this device. Try adding your last initial.');
+  if (!$('#auth-terms').checked) return authErr('Please read and agree to the Terms and Privacy Policy.');
   let acct;
-  try { acct = await createAccount({ name, pin }); } catch { return authErr("This browser can't create a secure PIN here. Try without a PIN, or use another browser."); }
+  try { acct = await createAccount({ name, pin, terms: TERMS_VERSION }); } catch { return authErr("This browser can't create a secure PIN here. Try without a PIN, or use another browser."); }
   if (!listAccounts().some(a => a.id === acct.id)) return authErr("This browser isn't letting heirloom save. Try a regular (not private) window.");
   startSession(acct.id, $('#auth-remember').checked);
   const me = { name, born: $('#auth-born').value.trim(), sex: $('#auth-sex').value };
@@ -699,6 +718,7 @@ async function signIn() {
   let ok = false;
   try { ok = await checkPin(acct, $('#auth-pin')?.value.trim() || ''); } catch { return authErr("This browser can't check PINs here. Try another browser."); }
   if (!ok) { notePinMiss(); $('#auth-pin').value = ''; return authErr("That PIN isn't right. Try again."); }
+  if (acct.terms !== TERMS_VERSION) { AUTH.agree = { id: acct.id, remember: $('#auth-remember').checked }; render(); window.scrollTo({ top: 0 }); return; }
   startSession(acct.id, $('#auth-remember').checked);
   enter(acct);
   toast(`Welcome back, ${acct.name}!`);
@@ -896,8 +916,9 @@ function renderShell() {
   $('#logo-side').innerHTML = logo;
   $('#logo-top').innerHTML = `<div class="logo">${logo}</div>`;
   for (const [t, label] of Object.entries(TABS)) { const b = $('#tab-' + t); b.innerHTML = `${ICON[t]}<span>${label}</span>`; b.setAttribute('aria-selected', S.tab === t); }
-  const chip = `<span class="initial">${esc((ACCT.name || '?')[0].toUpperCase())}</span><span class="acct-name">${ACCT.guest ? 'Guest' : esc(ACCT.name)}</span><button class="link" data-action="signout">${ACCT.guest ? 'Exit' : 'Sign out'}</button>`;
+  const chip = `<span class="initial">${esc((ACCT.name || '?')[0].toUpperCase())}</span><span class="acct-name">${ACCT.guest ? 'Guest' : esc(ACCT.name)}</span><button class="link" data-action="menu-open">Menu</button>`;
   $('#acct-side').innerHTML = chip;
+  $('#side-links').innerHTML = `<button class="link" data-action="feedback-open">Send feedback</button><button class="link" data-action="legal-open">Terms and privacy</button>`;
   $('#logo-top').innerHTML = `<div class="logo">${logo}</div><div class="acct">${chip}</div>`;
 }
 function renderBanner() {
@@ -907,6 +928,10 @@ function renderBanner() {
 function render() {
   const keep = document.activeElement?.id;
   const ts0 = $('#tree-svg'), scroll = ts0 ? [ts0.scrollLeft, ts0.scrollTop] : null;
+  if (LEGAL_OPEN) {
+    document.body.classList.add('solo'); document.body.classList.remove('elder-on');
+    $('#modal-root').innerHTML = ''; $('#main').innerHTML = renderLegal(); return;
+  }
   document.body.classList.toggle('signed-out', !S);
   document.body.classList.toggle('elder-on', !!E);
   document.body.classList.toggle('solo', !!(ACCT?.viewer || ACCT?.contributor));
@@ -966,6 +991,8 @@ async function copyText(text, label) {
 /* ---------- Events ---------- */
 document.addEventListener('input', e => {
   const t = e.target, d = t.dataset, p = d.pid && byId(d.pid);
+  if (t.id === 'fb-msg' && S?.modal) { S.modal.draft = t.value; return; }
+  if (t.id === 'fb-email' && S?.modal) { S.modal.email = t.value; return; }
   if (!p) return;
   if (d.tr) { (p.transcripts ||= {})[d.tr] = t.value; save(); return; }
   if (d.f && t.type !== 'checkbox' && t.type !== 'file' && t.tagName !== 'SELECT') { p[d.f] = t.value; save(); refreshTree(); }
@@ -973,6 +1000,8 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   const t = e.target, d = t.dataset;
+  if (t.id === 'fb-info' && S?.modal) { S.modal.noInfo = !t.checked; return; }
+  if (d.sttMode != null) { S.sttMode = t.value; save(); render(); return; }
   if (d.ask) { (S.asked ||= {})[d.ask] = t.checked; save(); render(); return; }
   if (d.voiceLang != null) { S.voiceLang = t.value; render(); return; }
   if (d.voiceImport) { const f = t.files?.[0]; if (f) importVoicePack(f); t.value = ''; return; }
@@ -999,6 +1028,8 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-action]'); if (!b) return;
   if (b.classList.contains('modal-back') && e.target.closest('.modal')) return; // a click inside the panel isn't a click on the backdrop
   const a = b.dataset.action;
+  if (a === 'legal-open') { LEGAL_OPEN = true; render(); window.scrollTo({ top: 0 }); return; }
+  if (a === 'legal-close') { LEGAL_OPEN = false; render(); window.scrollTo({ top: 0 }); return; }
   if (a.startsWith('auth-')) return authAction(a, b);
   if (a === 'signout') return signOut();
   if (!S) return;
@@ -1036,10 +1067,19 @@ document.addEventListener('click', e => {
     case 'clip-del': if (S.confirmClip === b.dataset.clip) { S.confirmClip = null; removeClip(b.dataset.clip); } else { S.confirmClip = b.dataset.clip; render(); } break;
     case 'pdf': exportPDF(); break;
     case 'm-close': S.modal = null; render(); break;
+    case 'menu-open': S.modal = { kind: 'menu' }; render(); break;
+    case 'feedback-open': S.modal = { kind: 'feedback', type: 'bug' }; render(); $('#fb-msg')?.focus(); break;
+    case 'fb-type': S.modal.type = b.dataset.type; render(); break;
+    case 'fb-send': sendFeedback(); break;
+    case 'fb-copy': copyText(feedbackText(S.modal), 'Message copied'); break;
+    case 'fb-github': if ((S.modal.draft || '').trim().length < 5) { $('#fb-err').textContent = 'Please write a little more.'; break; } window.open(githubIssueUrl(S.modal), '_blank', 'noopener'); break;
+    case 'stt-open': S.modal = { kind: 'stt' }; render(); break;
+    case 'stt-model': S.sttModel = b.dataset.model; S.sttMode = 'device'; save(); render(); break;
+    case 'stt-save': { const clip = b.dataset.clip; S.sttMode ||= 'device'; S.sttModel ||= 'base'; S.modal = null; save(); render(); if (clip) transcribeClip(clip, true); else toast('Speech-to-text setting saved'); break; }
     case 'm-share': shareLink(b.dataset.url, b.dataset.title, b.dataset.text); break;
     case 'm-copy': copyText(b.dataset.url, 'Link copied'); break;
     case 'm-merge': { const n = mergeAnswers(S.modal.data); S.modal = null; save(); render(); if (n >= 0) toast(`Added ${n} answer${n === 1 ? '' : 's'}`); break; }
-    case 'm-consent': { const then = S.modal?.then; S.aiConsent = true; S.modal = null; save(); render(); if (then?.action === 'find-ai') runFinder(true); if (then?.action === 'transcribe') transcribeClip(then.id); break; }
+    case 'm-consent': { const then = S.modal?.then; S.aiConsent = true; S.modal = null; save(); render(); if (then?.action === 'find-ai') runFinder(true); if (then?.action === 'transcribe') transcribeClip(then.id, true); break; }
     case 'transcribe': transcribeClip(b.dataset.clip); break;
     case 'invite': inviteLink(p.id).then(url => { S.modal = { kind: 'invite', pid: p.id, url }; save(); render(); }); break;
     case 'qr': reportLink().then(url => { S.modal = { kind: 'qr', url }; render(); }); break;
@@ -1095,6 +1135,12 @@ function authAction(a, b) {
   else if (a === 'auth-forgot') { AUTH.forgot = !AUTH.forgot; render(); }
   else if (a === 'auth-delete') { const name = listAccounts().find(x => x.id === AUTH.pick)?.name; deleteAccount(AUTH.pick); AUTH = { mode: listAccounts().length ? 'signin' : 'create', pick: null, forgot: false }; render(); toast(`${name}'s profile was deleted from this device`); }
   else if (a === 'auth-guest') { startSession('guest', false); enter(GUEST); }
+  else if (a === 'auth-agree') {
+    const { id, remember } = AUTH.agree, acct = listAccounts().find(x => x.id === id);
+    agreeTerms(id, TERMS_VERSION); AUTH.agree = null;
+    startSession(id, remember); enter({ ...acct, terms: TERMS_VERSION }); toast(`Welcome back, ${acct.name}!`);
+  }
+  else if (a === 'auth-agree-cancel') { AUTH.agree = null; render(); }
 }
 document.addEventListener('submit', e => {
   if (e.target.id !== 'auth-form') return;
@@ -1123,6 +1169,7 @@ function speak() {
 async function boot() {
   const hash = location.hash || '';
   AUTH = { mode: listAccounts().length ? 'signin' : 'create', pick: listAccounts()[0]?.id || null, forgot: false };
+  if (hash === '#terms') LEGAL_OPEN = true;
   const link = hash.match(/^#(join|answers|report|sync)=(.+)$/);
   if (link?.[1] === 'report') {
     try { ACCT = { id: 'viewer', name: 'Doctor view', guest: true, viewer: true }; S = viewerState(await unpackData(link[2])); }
