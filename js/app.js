@@ -87,8 +87,9 @@ function migrateV1(v) {
 let ACCT = null, S = null;
 let AUTH = { mode: 'signin', pick: null, forgot: false };
 function loadFor(acct) {
-  // The example family always starts fresh; only whether the tour was seen is remembered.
-  if (acct.guest && !acct.contributor && !acct.viewer) { const ex = exampleState(); ex.toured = store.get('heirloom-guest-toured', false); return ex; }
+  // The example family always starts fresh. Its tour starts when someone chooses to explore it (see auth-guest),
+  // not on every reload.
+  if (acct.guest && !acct.contributor && !acct.viewer) { const ex = exampleState(); ex.toured = true; return ex; }
   try { const v = JSON.parse(localStorage.getItem(dataKey(acct.id))); if (v?.v === 2 && Array.isArray(v.people)) return v; } catch {}
   return null;
 }
@@ -102,7 +103,7 @@ function save() {
   touchFamily();
   if (!S || !ACCT || ACCT.viewer) return;
   // Changes to the example family aren't kept, so it is always the same for the next visitor.
-  if (ACCT.guest && !ACCT.contributor) { store.set('heirloom-guest-toured', !!S.toured); return; }
+  if (ACCT.guest && !ACCT.contributor) return;
   try { localStorage.setItem(dataKey(ACCT.id), JSON.stringify(S)); } catch {}
 }
 function enter(acct, state) {
@@ -1289,7 +1290,7 @@ function authAction(a, b) {
   else if (a === 'auth-forgot') { AUTH.forgot = !AUTH.forgot; AUTH.confirmDel = false; render(); }
   else if (a === 'auth-delete' && !AUTH.confirmDel) { AUTH.confirmDel = true; render(); }
   else if (a === 'auth-delete') { deleteFilesOf(AUTH.pick); const name = listAccounts().find(x => x.id === AUTH.pick)?.name; deleteAccount(AUTH.pick); AUTH = { mode: listAccounts().length ? 'signin' : 'create', pick: null, forgot: false }; render(); toast(`${name}'s profile was deleted from this device`); }
-  else if (a === 'auth-guest') { startSession('guest', false); enter(GUEST); }
+  else if (a === 'auth-guest') { startSession('guest', false); enter(GUEST); startTour(); }
   else if (a === 'auth-agree') {
     const { id, remember } = AUTH.agree, acct = listAccounts().find(x => x.id === id);
     agreeTerms(id, TERMS_VERSION); AUTH.agree = null;
