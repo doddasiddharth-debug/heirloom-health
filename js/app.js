@@ -151,6 +151,7 @@ const ICON = {
   doctor: `<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="5" y="5" width="24" height="27" rx="4" fill="#E0546A"/><rect x="11" y="2" width="12" height="7" rx="2.5" fill="#A93448"/><rect x="9" y="11" width="16" height="17" rx="2" fill="#fff"/><path d="M17 14.5v10M12 19.5h10" stroke="#E0546A" stroke-width="3.4" stroke-linecap="round"/></svg>`,
   risks: `<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><path d="M4.5 25a12.5 12.5 0 0 1 4.6-9.7" stroke="#2E9E62" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M12.8 13.3a12.5 12.5 0 0 1 8.4 0" stroke="#F5A524" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M24.9 15.3a12.5 12.5 0 0 1 4.6 9.7" stroke="#E0546A" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M17 25l6-8" stroke="#1E1D33" stroke-width="3" stroke-linecap="round"/><circle cx="17" cy="25" r="3" fill="#1E1D33"/></svg>`,
   speaker: `<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>`,
+  send: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>',
   mic: `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2" width="8" height="13" rx="4" fill="currentColor"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>`,
   bulb: `<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" fill="var(--accent)"/><rect x="8.5" y="18.5" width="7" height="3" rx="1.5" fill="var(--accent-dk)"/></svg>`,
   spark: `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.2 6.3L20.5 10l-6.3 2.2L12 18.5l-2.2-6.3L3.5 10l6.3-1.7z" fill="currentColor"/><circle cx="19" cy="19" r="2.2" fill="currentColor"/></svg>`,
@@ -428,7 +429,7 @@ function nextAskHTML(limit = 3, compact = false) {
       <span class="rank">${n + 1}</span>
       <div class="ask-body"><b>${esc(nameOf(I))}</b> <span class="muted small">${esc(relOf(I))}${I.interviewed ? ' · interviewed before' : ''}</span>
         <ul>${items.slice(0, compact ? 2 : 3).map(({ T, gaps }) => `<li>${T.id === I.id ? 'Their own health' : esc(nameOf(T)) + ` <span class="muted">(${esc(shortOf(T))})</span>`}: ${esc(gaps.slice(0, 2).join(', '))}</li>`).join('')}</ul></div>
-      <button class="btn sm" data-action="interview" data-pid="${I.id}">Interview</button></li>`).join('')}</ol>
+      <div class="ask-btns"><button class="btn sm" data-action="interview" data-pid="${I.id}">Interview</button><button class="btn sm" data-action="invite" data-pid="${I.id}">Send a link</button></div></li>`).join('')}</ol>
   </section>`;
 }
 
@@ -442,7 +443,8 @@ function renderTree() {
   const hasMom = !!motherOf(p.id, false), hasDad = !!fatherOf(p.id, false);
   return `
   <div style="display:grid;gap:6px"><h1>${me.name ? esc(me.name) + "'s family" : 'Your family'}</h1>
-    <p class="muted">Tap anyone on the tree to fill in what you know, or to add their relatives.</p></div>
+    <p class="muted">Tap anyone on the tree to fill in what you know, or to add their relatives.</p>
+    <div class="row"><button class="btn primary sm" data-action="invite-pick">${ICON.send}Invite a relative to answer</button><span class="small muted">They answer on their own phone, in their language.</span></div></div>
   ${statTiles([['Blood relatives', known, `/ ${blood.length}`, 'accent'], ['Interviews', S.people.filter(x => x.interviewed).length, '', 'primary'], ['Recordings', CLIPS.length, '', 'iris']])}
   <div class="family">
     <section class="card tree-card" aria-label="Pedigree chart">
@@ -631,6 +633,7 @@ function renderInterview() {
     <div class="modes">
       <button class="mode-card" data-action="elder-start" data-pid="${W.id}"><b>Large tap-to-answer mode</b><span>Big buttons ${esc(nameOf(W))} can tap on their own, one illness at a time.</span></button>
       <button class="mode-card" data-action="voices-open"><b>Question voices</b><span>${[...VOICES.keys()].filter(k => k.startsWith(lang + '|')).length} phrases recorded in ${esc(L.label.split(' · ').pop())}. Record a real voice for "Listen".</span></button>
+      <button class="mode-card" data-action="invite" data-pid="${W.id}"><b>Send ${esc(nameOf(W))} a link</b><span>Far away? They answer on their own phone, in their language. No sign-up.</span></button>
       ${typeof storiesCard === 'function' ? storiesCard(W) : ''}
     </div>
     <p class="say-to">Say this to ${esc(nameOf(W))}</p>
@@ -1216,6 +1219,7 @@ document.addEventListener('click', e => {
     case 'qr': reportLink().then(url => { S.modal = { kind: 'qr', url }; render(); }); break;
     case 'ask-add': { const v = $('#ask-new').value.trim(); if (!v) { toast('Type a question first'); break; } (S.myQuestions ||= []).push(v); save(); render(); break; }
     case 'ask-del': S.myQuestions.splice(+b.dataset.i, 1); save(); render(); break;
+    case 'invite-pick': S.modal = { kind: 'invite-pick' }; render(); break;
     case 'cloud-open': S.modal = { kind: 'cloud' }; render(); break;
     case 'cloud-start': startCloud().then(render); break;
     case 'cloud-sync': cloudSync(); break;

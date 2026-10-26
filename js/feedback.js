@@ -56,6 +56,7 @@ function menuHTML() {
     <div class="menu-list">
       ${item('tour', 'Take the tour', 'A two-minute walk through every part of the app')}
       ${item('feedback-open', 'Send feedback', 'Report a bug or share an idea')}
+      ${item('invite-pick', 'Invite a relative', 'Send a link so they can answer on their own phone')}
       ${item('stt-open', 'Speech-to-text', S.sttMode === 'server' ? 'Using the Heirloom server' : 'On this phone')}
       ${item('legal-open', 'Terms and privacy', 'What the app does with your information')}
       ${item('signout', ACCT?.guest ? 'Exit the example' : 'Sign out', ACCT?.guest ? 'Back to the sign-in page' : 'Your family stays saved on this device')}

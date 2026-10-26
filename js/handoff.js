@@ -124,7 +124,18 @@ function renderModal() {
   } else if (m.kind === 'feedback') body = feedbackHTML(m);
   else if (m.kind === 'menu') body = menuHTML();
   else if (m.kind === 'stt') body = sttChooserHTML(m.clip);
-  else if (m.kind === 'cloud-join') {
+  else if (m.kind === 'invite-pick') {
+    // Everyone who could answer: living (or unknown) relatives, closest blood relatives first.
+    const rank = p => (kin(p.id).blood ? 0 : 100) + (kin(p.id).degree || 9);
+    const list = S.people.filter(p => p.id !== SELF && p.living !== 'no')
+      .sort((a, b) => rank(a) - rank(b));
+    body = `<h2>Invite a relative to answer</h2>
+      <p class="small muted">Pick who to send a link to. They open it on their own phone, choose their language, and tap their answers in large print. No sign-up. When they finish, they send a link back and their answers are added to your tree.</p>
+      ${list.length ? `<ul class="invite-list">${list.map(p => `<li><span><b>${esc(nameOf(p))}</b><br><span class="small muted">${esc(relOf(p))}${p.interviewed ? ' · interviewed' : ''}</span></span>
+        <button class="btn sm primary" data-action="invite" data-pid="${p.id}">Send link</button></li>`).join('')}</ul>`
+        : '<p class="small">Add relatives to your family tree first, then invite them here.</p>'}
+      ${ACCT?.guest ? '<p class="fine">This is the example family. To add real answers, create your own profile first.</p>' : ''}`;
+  } else if (m.kind === 'cloud-join') {
     const empty = S.people.length <= 7 && !S.reports.length;
     body = `<h2>Open a shared family?</h2>
       <p class="small">This link syncs a family with this profile. Everything in it is combined with the family that's open now${S.sync ? ', and this profile stops syncing with its current link' : ''}.</p>

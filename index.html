@@ -279,7 +279,10 @@ svg .faint { stroke: var(--muted); stroke-dasharray: 4 3; }
 .rank { width: 30px; height: 30px; border-radius: 50%; background: var(--primary); color: var(--on); display: grid; place-items: center; font: 800 .95rem var(--f-display); }
 .ask-body b { color: var(--strong); font-weight: 600; }
 .ask-body ul { margin: 4px 0 0; padding-left: 18px; font-size: .88rem; }
-@media (max-width: 520px) { .asks > li { grid-template-columns: auto minmax(0, 1fr); } .asks .btn { grid-column: 2; justify-self: start; } }
+@media (max-width: 520px) { .asks > li { grid-template-columns: auto minmax(0, 1fr); } .asks .ask-btns { grid-column: 2; justify-self: start; } }
+.ask-btns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.invite-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; max-height: 50vh; overflow-y: auto; }
+.invite-list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--soft); border-radius: 12px; padding: 10px 12px; }
 .flags li.act { border-color: var(--rose); background: var(--rose-soft); }
 .flags li.act .ic { background: var(--rose); }
 .flags li.act .lv { color: var(--rose-dk); }
