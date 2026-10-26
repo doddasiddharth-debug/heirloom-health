@@ -1,71 +1,81 @@
-# Heirloom Health: demo video script (follows the in-app tour)
+# Heirloom Health: demo video script (under 3 minutes)
 
-About 3 minutes. The app's own guided tour walks through every screen, so you tap **Next** and talk over it in your own words. Don't read the tour card aloud; viewers can read it. Your voice should add the *why*.
+Covers every required item for the Congressional App Challenge video:
+
+| Required | Where |
+|---|---|
+| Name of each participant | Part 1 |
+| Name of the app | Part 1 |
+| Purpose in one clear sentence | Part 1 |
+| Target audience | Part 2 |
+| Tools and coding languages | Part 3 |
+| Functionality | Part 4 (follows the in-app tour) |
+
+Fill in everything in **[brackets]**. Target: about 2:50, so you have a little room under the 3-minute limit.
 
 ## Before you record
-- Open **https://doddasiddharth-debug.github.io/heirloom-health/demo.html** in Chrome (the app inside an iPhone frame). Press **F** for full screen, then **H** to hide the buttons.
-- Use a **private/incognito window** so the app starts fresh. Tap **Explore the example family**: the tour starts by itself. (In a normal window, use **Menu → Take the tour**.)
-- Record with **Cmd + Shift + 5** → Record Entire Screen → Options → Microphone. Put your face bubble beside the phone if you like (QuickTime → New Movie Recording → Float on Top).
-- Optional but powerful: a 10–15 second real clip of you asking a grandparent or parent a question with the app (with their permission), to drop in at Part 3.
-- Record one part at a time and join them in iMovie or CapCut. Add captions.
+- Open **https://doddasiddharth-debug.github.io/heirloom-health/demo.html** in a **private/incognito** Chrome window (the app in an iPhone frame). Press **F** for full screen, then **H** to hide the buttons.
+- Record with **Cmd + Shift + 5** → Record Entire Screen → Options → Microphone.
+- Film Parts 1–3 with your face on camera (QuickTime → New Movie Recording), and Part 4 as a screen recording. Join them in iMovie or CapCut, and add captions.
+- Show text on screen for the required items (your name, app name, purpose, audience, tools). Judges skim, so on-screen text guarantees they don't miss anything.
 
 ---
 
-## Part 1 · The hook (0:00–0:20) · before the tour
-**On screen:** You on camera, or the app's sign-in screen with the logo.
+## Part 1 · Who and what (0:00–0:20)
+**On screen:** You on camera. Title text: **[Your full name] · Heirloom Health**, then the logo.
 
-> "Does heart disease run in your family? Diabetes? Cancer? Most people can't answer. In a 2024 CDC survey, 95% of adults said family health history matters, but only about 15% had ever collected theirs, often because the relatives who knew have passed away, or nobody knew what to ask. I built Heirloom Health to fix that. Here's a sample family I set up to show how it works."
+> "Hi, I'm **[your full name]**, and this is **Heirloom Health**.
+> Heirloom Health helps teenagers interview their grandparents and relatives, in the family's own language, to build a family medical history they can share with their doctor."
 
-**Tap:** Explore the example family. The tour opens.
+*(That second sentence is your one-sentence purpose. Put it on screen as text too.)*
 
-## Part 2 · The family tree (0:20–1:00) · tour steps 1–8
-| Tour step | Do this | Say |
+## Part 2 · Why, and who it's for (0:20–0:45)
+**On screen:** You on camera, or a family photo. Then text: **For: teens and their families, especially multilingual and immigrant families.**
+
+> "Family history is one of the strongest clues doctors have, but in a 2024 CDC survey only about 15% of adults had ever collected theirs, often because relatives had passed away or they didn't know what to ask.
+> Heirloom Health is made for **teenagers**, about 13 to 18, and their **families**, especially immigrant families where grandparents speak another language. It also helps **doctors**, who get a clear, guideline-based report."
+
+## Part 3 · How I built it (0:45–1:05)
+**On screen:** Text list of the tools while you talk.
+
+> "I built it as a web app that works on any phone and can be installed on the home screen. It's written in **JavaScript, HTML and CSS**. It's hosted on **GitHub Pages**, with a free **Cloudflare Workers** server for the optional AI features. Speech-to-text uses OpenAI's open **Whisper** model, which can run right on the phone, and PDFs are made with **jsPDF**. I used **Claude Code**, an AI coding assistant, to help write and test the code, and I designed, tested and directed every feature."
+
+*(Edit the last sentence so it matches your AI disclosure answer.)*
+
+## Part 4 · The app, following the built-in tour (1:05–2:45)
+**Tap:** Explore the example family. The tour starts. Say once: *"This is a sample family I set up for the demo."* Then tap **Next** through the tour and talk over it. Don't read the cards aloud.
+
+| Tour step | Do | Say (short) |
 |---|---|---|
-| 1 Welcome | Tap **Show me around** | "The app has a built-in tour, so let me use it to walk you through." |
-| 2 Your family tree | Drag the tree a little | "Every answer builds a medical family tree using the same symbols doctors use. Gold means a health condition, and a line through a symbol means that person has died." |
-| 3 Spot patterns | Tap **Heart disease** in the filter, then **Next** | "I can shade everyone who had one illness, and patterns jump out, like heart disease on Dad's side." |
-| 4 Add relatives | Next | "I can add anyone: grandparents, cousins, half-siblings, step-parents, and the app works out how they're related to me." |
-| 5 Photos and documents | Next | "Photos and old medical documents stay right on the phone." |
-| 6 Who to ask next | Next | "It even tells me who to interview next, based on what's still missing." |
-| 7 Invite relatives | Next | "Relatives who live far away can answer on their own phone from a link, in their own language, no sign-up." |
-| 8 Back up and sync | Next | "And I can back it up, or sync it across my family's phones, encrypted." |
+| 1 Welcome | Show me around | "The app has a built-in tour, so I'll use it." |
+| 2 Family tree | Drag the tree | "Every answer builds a medical family tree with the symbols doctors use." |
+| 3 Spot patterns | Tap **Heart disease** | "One tap shows who had an illness, so patterns jump out." |
+| 4–6 Relatives, photos, who to ask next | Next ×3, briefly | "I can add anyone, attach photos and documents, and it suggests who to interview next." |
+| 7 Invite | Next | "Relatives far away can answer on their own phone from a link." |
+| 8 Backup | Next (no voice) | |
+| 9 Their language | Next | "Questions come in 11 languages, with a pronunciation line, so I can ask in Telugu even though I can't read it." *(change to your language)* |
+| 10 Listen | Tap the speaker | "Or the app reads it aloud." |
+| 11 Question voices | Next (no voice) | |
+| 12–13 Record and find answers | Next ×2 | "I record the answer, turn it into text, and the app finds the health answers. It knows 'sugar' means diabetes. I confirm each one." |
+| 14 Large tap-to-answer | Next | "Grandparents can answer on their own with big buttons." |
+| 15 Family stories | Next | "And it saves their life stories as a keepsake." |
+| 16 Ancestry | Next (no voice) | |
+| 17 Health timeline | Scroll slowly | "Then it shows what this means for me: a health timeline. Gold steps are earlier because of my family, like a cholesterol test now." |
+| 18 Risk ranking | Next | "And what I'm most at risk for." |
+| 19 Guidelines | Tap **Why** on a card | "The doctor report uses real screening guidelines, and every recommendation names its source." |
+| 20 Checkup questions | Next (no voice) | |
+| 21 Hand to doctor | Tap **Show my doctor**, close | "I can give my doctor a PDF, a QR code, or a file their medical record system can import." |
+| 22 Menu | Start my family | "And everything stays private on my phone unless I choose to share it." |
 
-## Part 3 · The interview (1:00–1:45) · tour steps 9–15
-| Tour step | Do this | Say |
-|---|---|---|
-| 9 Interview in their language | Next | "This is the heart of the app. The questions come in 11 languages: here, Telugu, my family's language, with a pronunciation line, so I can ask even though I can't read the script." *(Change to your family's language and reading ability.)* |
-| 10 Listen | Tap the **speaker** button, let it play a second, then **Next** | "Or the app can read it aloud." |
-| 11 Question voices | Next | "A family member can record each question once, so grandparents hear a familiar voice." |
-| **Real clip (optional)** | Cut to your 10–15 s clip of asking a relative a question | *(Let the real moment speak; no voiceover needed.)* |
-| 12 Record the answers | Next | "I record the answer, with permission, and the app can turn the recording into text." |
-| 13 Find answers | Next | "Then it finds the health answers for me. It knows that 'sugar' means diabetes and notices when someone says no. I confirm each one." |
-| 14 Large tap-to-answer | Next | "Grandparents can also answer on their own with big buttons, one question at a time." |
-| 15 Family stories | Next | "And beyond health, the app saves their life stories as a keepsake. That's the 'heirloom' part." |
+## Part 5 · Close (2:45–2:55)
+**On screen:** Logo and **doddasiddharth-debug.github.io/heirloom-health**
 
-## Part 4 · What it means for me (1:45–2:25) · tour steps 16–18
-| Tour step | Do this | Say |
-|---|---|---|
-| 16 Your ancestry | Next | "Ancestry matters too. South Asian ancestry, for example, raises heart disease risk on its own." |
-| 17 My health timeline | Scroll the timeline slowly, then **Next** | "Here's what it all means for me: a personal health timeline. The gold steps are earlier or extra because of my family, like a cholesterol test now, instead of waiting." |
-| 18 What am I most at risk for? | Next | "And it ranks what I'm most at risk for, using the same method behind the CDC's Family Healthware tool." |
-
-## Part 5 · Handing it to the doctor (2:25–2:50) · tour steps 19–22
-| Tour step | Do this | Say |
-|---|---|---|
-| 19 What the guidelines say | Tap **Why** on one card, then **Next** | "The doctor report applies real screening guidelines, from the US Preventive Services Task Force and others, and every recommendation names its source." |
-| 20 Questions for your next checkup | Next | "It writes my questions for my next checkup." |
-| 21 Hand it to your doctor | Tap **Show my doctor** to show the QR code, close it, then **Next** | "And I can give my doctor a PDF, a QR code, or a file their medical record system can import." |
-| 22 Menu, profiles and privacy | Tap **Start my family** | "Everything stays private on my phone unless I choose to share it." |
-
-## Part 6 · Close (2:50–3:00)
-**On screen:** The logo (your cover image) and the web address.
-
-> "Heirloom Health: ask your elders now, and hand your doctor a family tree later. Thank you."
+> "Heirloom Health: ask your elders now, and hand your doctor a family tree later. Thank you!"
 
 ---
 
-## Tips
-- **Pace:** The narration is about 430 words, roughly 3 minutes. If you run long, shorten steps 4, 5, 8 and 11 to a quick "Next" with no voiceover.
-- **Pause on visuals:** Let the tree, the timeline and the QR code stay on screen 2–3 seconds each. They're the most memorable shots.
-- **Re-takes are easy:** Tap **Back** in the tour to redo a step without starting over.
-- **Upload:** YouTube, **Public** or **Unlisted**, with a link that starts with `https`.
+## Timing tips
+- The narration is about 450 words. At a calm pace that's about 2:50.
+- If you run over, cut first: the "no voice" steps (just tap Next quickly), then steps 4–6, then the stories line.
+- Keep Parts 1–3 tight. Judges want to see the app working.
+- Upload to YouTube as **Public** or **Unlisted**, with a link that starts with `https`.
