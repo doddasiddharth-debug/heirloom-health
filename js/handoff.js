@@ -51,7 +51,7 @@ function checklist() {
 }
 function checklistHTML(readOnly = false) {
   const items = checklist(), asked = S.asked || {};
-  return `<section class="card" style="display:grid;gap:12px">
+  return `<section class="card checklist-card" style="display:grid;gap:12px">
     <div><h2>Questions for my next checkup</h2><p class="small muted">Made from your family's results. ${readOnly ? '' : 'Tick them off at the appointment, or add your own.'}</p></div>
     ${items.length ? `<ul class="asks-list">${items.map(it => `<li class="${asked[it.id] ? 'done' : ''}">
       <label class="check"><input type="checkbox" data-ask="${it.id}" ${asked[it.id] ? 'checked' : ''} ${readOnly ? 'disabled' : ''}><span>${esc(it.q)}</span></label>
