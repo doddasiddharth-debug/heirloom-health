@@ -214,6 +214,8 @@ const LEXICON = [
 const CANCER_LEXICON = [
   { type: 'breast', words: ['breast', 'రొమ్ము', 'rommu', 'స్తన', 'स्तन', 'ब्रेस्ट', 'de mama', 'seno'] },
   { type: 'ovarian', words: ['ovary', 'ovarian', 'అండాశయ', 'andaashaya', 'अंडाशय', 'ovario'] },
+  { type: 'smallbowel', words: ['small intestine', 'small bowel', 'duodenum', 'duodenal', 'చిన్నప్రేగు', 'chinnapregu', 'छोटी आंत', 'chhoti aant', 'intestino delgado', 'duodeno'] },
+  { type: 'urinary', words: ['ureter', 'ureteral', 'renal pelvis', 'urothelial', 'మూత్ర నాళ', 'mootra naala', 'मूत्र नली', 'mootra nali', 'uréter', 'pelvis renal'] },
   { type: 'colorectal', words: ['colon', 'bowel', 'rectal', 'rectum', 'colorectal', 'పెద్దప్రేగు', 'peddapregu', 'आंत', 'कोलन', 'colorrectal', 'recto'] },
   { type: 'uterine', words: ['uterus', 'uterine', 'womb', 'endometrial', 'గర్భాశయ', 'garbhaashaya', 'गर्भाशय', 'útero', 'endometrio'] },
   { type: 'prostate', words: ['prostate', 'ప్రోస్టేట్', 'प्रोस्टेट', 'próstata'] },
@@ -223,22 +225,54 @@ const CANCER_LEXICON = [
   { type: 'bloodca', words: ['leukemia', 'leukaemia', 'lymphoma', 'blood cancer', 'రక్త క్యాన్సర్', 'ब्लड कैंसर', 'leucemia', 'linfoma'] },
   { type: 'skin', words: ['melanoma', 'skin', 'చర్మ', 'त्वचा', 'piel'] },
 ];
-const DEATH_WORDS = ['died', 'passed away', 'passed on', 'death', 'చనిపోయ', 'కాలం చేశ', 'కాలం చేస', 'పోయారు', 'chanipoy', 'kaalam chesa', 'गुजर', 'देहांत', 'मृत्यु', 'मौत', 'guzar', 'dehaant', 'murió', 'falleció', 'muerte'];
-const NEG_WORDS = ['no', 'not', 'never', "didn't", "doesn't", 'లేదు', 'లేవు', 'ledu', 'levu', 'नहीं', 'नही', 'nahin', 'nahi', 'nunca'];
+// Bare गुजर / పోయారు are left out: "गुजरात" and "హైదరాబాద్ పోయారు" (went to Hyderabad) are not deaths.
+const DEATH_WORDS = ['died', 'passed away', 'passed on', 'death', 'చనిపోయ', 'కాలం చేశ', 'కాలం చేస', 'మరణించ', 'కన్నుమూశ', 'chanipoy', 'kaalam chesa', 'गुजर ग', 'गुज़र ग', 'गुजर चुके', 'गुज़र चुके', 'चल बस', 'देहांत', 'मृत्यु', 'मौत', 'guzar', 'dehaant', 'murió', 'falleció', 'muerte'];
+const NEG_WORDS = ['no', 'not', 'never', "didn't", "doesn't", "don't", "isn't", "wasn't", "weren't", "aren't", "hasn't", "haven't", "hadn't", "won't", 'didnt', 'doesnt', 'dont', 'wasnt', 'hasnt', 'havent', 'nobody', 'none', 'without', 'లేదు', 'లేవు', 'ledu', 'levu', 'नहीं', 'नही', 'nahin', 'nahi', 'nunca', 'sin', 'nadie', 'ninguno', 'ninguna', 'ningún', 'jamás', 'tampoco'];
+// The "no" words said BEFORE the illness ("no diabetes", "没有糖尿病", "không bị"). All other NEG_WORDS
+// (లేదు, नहीं, இல்லை, নেই…) come after it, so they only count right after the illness word.
+const NEG_BEFORE = NEG_WORDS.slice(0, NEG_WORDS.indexOf('లేదు')).concat(['nunca', 'sin', 'nadie', 'ninguno', 'ninguna', 'ningún', 'jamás', 'tampoco', '没', '不是', '从来没', '从没', 'không', 'chưa', 'chẳng']);
+// A "no" before these does not reach the illness after them ("no problems until he got diabetes").
+const NEG_STOPS = ['until', 'till', 'before', 'after', 'when', 'then', 'later', 'since', 'because', 'hasta', 'antes', 'después', 'luego', 'cuando', 'porque', 'entonces', '后来', '然后', '直到', '以后', '之后', 'sau đó', 'cho đến'];
+// "But" words end one part of a sentence (like a comma).
+const BUT_WORDS = ['but', 'however', 'although', 'though', 'pero', 'sino', 'aunque', 'lekin', 'magar', 'kaani', 'kani', 'aanaal', 'aadare', 'kintu', 'parantu', 'nhưng', 'लेकिन', 'मगर', 'परंतु', 'కానీ', 'ஆனால்', 'ಆದರೆ', 'কিন্তু', 'પરંતુ', 'لیکن', 'مگر', '但', '可是', '不过', '然而'];
+// "And" words can start a part about someone else ("my mom has asthma and my dad has diabetes").
+const AND_WORDS = ['and', 'y', 'aur', 'और', 'మరియు', 'மற்றும்', 'ಮತ್ತು', 'এবং', 'અને', 'اور', 'và'];
 // Words that tell us a sentence is about the speaker's mother or father.
 const KIN_WORDS = {
-  mother: { stems: ['mother', 'mom', 'mum', 'amma', 'అమ్మ', 'माँ', 'मां', 'माता', 'mamá', 'madre'], not: ['ammamma', 'అమ్మమ్మ', 'అమ్మాయి'] },
-  father: { stems: ['father', 'dad', 'nanna', 'naanna', 'నాన్న', 'पिता', 'पापा', 'papá', 'padre'], not: ['nanamma', 'నానమ్మ'] },
+  mother: { stems: ['mother', 'mom', 'mum', 'amma', 'అమ్మ', 'माँ', 'मां', 'माता', 'mamá', 'madre'], not: ['ammamma', 'అమ్మమ్మ', 'అమ్మాయి', 'mother-in-law', 'मांग', 'माँग', 'मांस', 'माँस'] },
+  father: { stems: ['father', 'dad', 'nanna', 'naanna', 'నాన్న', 'पिता', 'पापा', 'papá', 'padre'], not: ['nanamma', 'నానమ్మ', 'father-in-law'] },
+  // Relatives the finder cannot place (grandparents, aunts, in-laws…): what is said about them is left out.
+  other: { stems: [
+    'grandm', 'grandf', 'grandpa', 'granny', 'grandparent', 'great-grand', 'nana', 'uncle', 'aunt', 'brother', 'sister', 'sibling', 'cousin', 'nephew', 'niece',
+    'daughter', 'son-in-law', 'husband', 'wife', 'stepm', 'stepf', 'stepd', 'mother-in-law', 'father-in-law', 'children', 'my child', 'kids', 'grandson', 'granddaughter',
+    'abuel', 'bisabuel', 'tío', 'tía', 'tio', 'tia', 'herman', 'primos', 'primas', 'mi primo', 'mi prima', 'su primo', 'su prima', 'hijo', 'hija', 'esposo', 'esposa', 'marido', 'sobrin', 'suegr', 'cuñad', 'niet', 'padrastro', 'madrastra',
+    'అమ్మమ్మ', 'నానమ్మ', 'తాతయ్య', 'తాతగారు', 'తాతకి', 'తాతకు', 'అన్నయ్య', 'అక్కయ్య', 'అక్కకి', 'అక్కకు', 'తమ్ముడు', 'తమ్ముడి', 'చెల్లెలు', 'చెల్లెలి', 'చెల్లికి', 'మామయ్య', 'బాబాయ్', 'బాబాయి', 'పిన్ని', 'అత్తయ్య', 'పెద్దనాన్న', 'చిన్నాన్న', 'పెద్దమ్మ', 'చిన్నమ్మ', 'కొడుకు', 'కూతురు', 'భర్త', 'భార్య', 'మనవడు', 'మనవరాలు',
+    'ammamma', 'nanamma', 'thatha', 'tatayya', 'annayya', 'akkayya', 'tammudu', 'chelli', 'mamayya', 'babai', 'pinni',
+    'दादी', 'दादा', 'नानी', 'नाना', 'भाई', 'भैया', 'बहन', 'दीदी', 'चाचा', 'चाची', 'मामा', 'मामी', 'बुआ', 'मौसी', 'मौसा', 'ताऊ', 'ताई', 'बेटा', 'बेटी', 'बेटे', 'पति', 'पत्नी', 'ससुर', 'सास', 'पोता', 'पोती',
+    'dadi', 'dada', 'nani', 'bhai', 'bhaiya', 'behen', 'bahan', 'didi', 'chacha', 'chachi', 'mausi', 'beti', 'patni', 'sasur', 'saas', 'mamu', 'mamoo', 'khala', 'phuphi', 'phupho', 'shohar', 'biwi',
+    'பாட்டி', 'தாத்தா', 'அண்ணன்', 'அண்ணா', 'அக்கா', 'தம்பி', 'தங்கை', 'தங்கச்சி', 'மாமா', 'அத்தை', 'சித்தி', 'சித்தப்பா', 'பெரியப்பா', 'பெரியம்மா', 'அம்மாச்சி', 'அம்மம்மா', 'அப்பாயி', 'அப்பாத்தா', 'தாய்மாமா', 'மகன்', 'மகள்', 'கணவர்', 'மனைவி', 'paati', 'thaatha', 'annan', 'thambi', 'thangai', 'chithi', 'chithappa', 'periyappa', 'periyamma',
+    'ಅಜ್ಜಿ', 'ಅಜ್ಜ', 'ಅಣ್ಣ', 'ಅಕ್ಕ', 'ತಂಗಿ', 'ಮಾವ', 'ಅತ್ತೆ', 'ಚಿಕ್ಕಪ್ಪ', 'ದೊಡ್ಡಪ್ಪ', 'ಚಿಕ್ಕಮ್ಮ', 'ದೊಡ್ಡಮ್ಮ', 'ಅಮ್ಮಮ್ಮ', 'ಮಗಳು', 'ಹೆಂಡತಿ', 'ajji', 'ajja', 'tangi', 'chikkappa', 'doddappa',
+    'দাদু', 'ঠাকুমা', 'ঠাকুরমা', 'ঠাকুরদা', 'দিদিমা', 'নানি', 'মামা', 'মামী', 'মামি', 'মাসি', 'মাসী', 'কাকা', 'কাকু', 'কাকিমা', 'পিসি', 'দাদা', 'দিদি', 'ভাই', 'বোন', 'ছেলে', 'মেয়ে', 'স্বামী', 'স্ত্রী', 'মাতামহ',
+    'દાદા', 'દાદી', 'ભાઈ', 'બહેન', 'કાકા', 'કાકી', 'મામા', 'મામી', 'માસી', 'ફઈ', 'ફોઈ', 'દીકરો', 'દીકરી', 'પતિ', 'પત્ની', 'માતામહ',
+    'دادی', 'دادا', 'نانی', 'نانا', 'بھائی', 'بہن', 'چچا', 'چچی', 'ماموں', 'مامی', 'خالہ', 'پھوپھی', 'بیٹا', 'بیٹی', 'شوہر', 'بیوی',
+    '奶奶', '爷爷', '外婆', '外公', '姥姥', '姥爷', '祖母', '祖父', '外祖', '哥哥', '姐姐', '弟弟', '妹妹', '我哥', '我姐', '我弟', '我妹', '叔叔', '阿姨', '舅舅', '姑姑', '伯伯', '伯父', '伯母', '婶婶', '儿子', '女儿', '丈夫', '老公', '妻子', '老婆', '婆婆', '公公', '岳父', '岳母', '孙子', '孙女',
+    'ông nội', 'ông ngoại', 'bà nội', 'bà ngoại', 'anh trai', 'chị gái', 'em trai', 'em gái', 'con trai', 'con gái', 'dì',
+  ], not: ['ছেলেবেলা'] },
 };
+// Words a parent word takes when it names someone else's relative: "mom's dad", "माँ के पिता", "el papá de mi mamá".
+const KIN_OF = ['के', 'की', 'का', 'ke', 'ki', 'ka', 'کے', 'کی', 'کا', 'వాళ్ళ', 'de'];
+const KIN_OF_ENDS = ["'s", 'ের', 'ின்', 'ના', 'ની', 'નો', 'గారి'];
+// "I / me" words: a part of a sentence that starts with one is about the person being interviewed.
+const SELF_WORDS = ['i', "i'm", "i've", "i'd", 'me', 'myself', 'yo', 'mujhe', 'mujhko', 'maine', 'मुझे', 'मुझको', 'मैंने', 'मैं', 'నేను', 'నాకు', 'nenu', 'naaku', 'naku', 'எனக்கு', 'நான்', 'enakku', 'ನನಗೆ', 'ನಾನು', 'nanage', 'আমি', 'আমাকে', 'મને', 'હું', 'مجھے', '我', 'tôi'];
 // Spoken numbers (tens) for ages; "forties" style ranges map to the middle.
 const NUM_WORDS = {
-  thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90,
-  thirties: 35, forties: 45, fifties: 55, sixties: 65, seventies: 75, eighties: 85,
-  'ముప్పై': 30, 'నలభై': 40, 'యాభై': 50, 'అరవై': 60, 'డెబ్బై': 70, 'ఎనభై': 80, 'తొంభై': 90,
+  twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90,
+  twenties: 25, thirties: 35, forties: 45, fifties: 55, sixties: 65, seventies: 75, eighties: 85,
+  'ఇరవై': 20, iravai: 20, 'ముప్పై': 30, 'నలభై': 40, 'యాభై': 50, 'అరవై': 60, 'డెబ్బై': 70, 'ఎనభై': 80, 'తొంభై': 90,
   muppai: 30, nalabhai: 40, yaabhai: 50, yabhai: 50, aravai: 60, debbai: 70, enabhai: 80,
-  'तीस': 30, 'चालीस': 40, 'पचास': 50, 'साठ': 60, 'सत्तर': 70, 'अस्सी': 80, 'नब्बे': 90,
-  tees: 30, chaalis: 40, chalis: 40, pachaas: 50, pachas: 50, saath: 60, sattar: 70, assi: 80,
-  treinta: 30, cuarenta: 40, cincuenta: 50, sesenta: 60, setenta: 70, ochenta: 80, noventa: 90,
+  'बीस': 20, 'तीस': 30, 'चालीस': 40, 'पचास': 50, 'साठ': 60, 'सत्तर': 70, 'अस्सी': 80, 'नब्बे': 90,
+  bees: 20, tees: 30, chaalis: 40, chalis: 40, pachaas: 50, pachas: 50, saath: 60, sattar: 70, assi: 80,
+  veinte: 20, treinta: 30, cuarenta: 40, cincuenta: 50, sesenta: 60, setenta: 70, ochenta: 80, noventa: 90,
   '二十': 20, '三十': 30, '四十': 40, '五十': 50, '六十': 60, '七十': 70, '八十': 80, '九十': 90,
 };
 
@@ -250,7 +284,22 @@ const NUM_UNITS = {
   uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9,
   '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
 };
-const NUM_TEENS = { ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, veinte: 20, 'ఇరవై': 20, iravai: 20, 'बीस': 20, bees: 20 };
+const NUM_TEENS = { ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19,
+  veintiuno: 21, veintiún: 21, veintidós: 22, veintidos: 22, veintitrés: 23, veintitres: 23, veinticuatro: 24, veinticinco: 25, veintiséis: 26, veintiseis: 26, veintisiete: 27, veintiocho: 28, veintinueve: 29 };
+// Number words that are also everyday words count only before these ("saath" is 60, and also "with").
+const NUM_NEEDS = { saath: /^[\s-]*(?:saal|sal|baras|varsh|years?|ki\s+(?:umar|umr|age))/ };
+// A number right after these is a label, not an age ("type 2 diabetes", "stage 3"), and so is one before 型/期 ("2型").
+const NUM_LABELS = ['type', 'stage', 'grade', 'class', 'tipo', 'etapa', 'estadio', 'grado', 'fase', 'टाइप', 'स्टेज', 'టైప్', 'స్టేజ్', 'டைப்', 'ಟೈಪ್', 'টাইপ', 'ટાઇપ', 'ٹائپ', 'loại', 'giai đoạn'];
+const NUM_LABELS_AFTER = ['型', '期'];
+// "For ten years", "10 saal se", "10 సంవత్సరాలుగా", "hace 10 años": how long, not how old.
+const YEAR_UNITS = ['years', 'year', 'yrs', 'yr', 'saal', 'sal', 'baras', 'साल', 'वर्ष', 'సంవత్సరా', 'ఏళ్ళ', 'ఏళ్ల', 'ఏండ్ల', 'வருட', 'வருஷ', 'ஆண்டு', 'ವರ್ಷ', 'বছর', 'વર્ષ', 'سال', 'años', 'anos'];
+const YEARS_LONG = ['年', 'năm']; // Chinese and Vietnamese say ages with 岁 / tuổi, so "十年" / "10 năm" is always a duration.
+const FOR_BEFORE = ['for', 'past', 'last', 'since', 'durante', 'hace', 'pichhle', 'pichle', 'पिछले'];
+// Said right after the years word, or as its ending (సంవత్సరాలు+గా).
+const FOR_AFTER = ['ago', 'back', 'से', 'గా', 'పాటు', 'క్రితం', 'மாக', 'களாக', 'ಗಳಿಂದ', 'ধরে', 'আগে', 'પહેલ', 'سے', 'پہلے', 'pehle', 'pahle', 'पहले', 'atrás', 'antes'];
+const FOR_PHRASES = ['saal se', 'sal se', 'saalon se', 'saalo se', 'baras se'];
+// Words that look like an illness word but mean something else.
+const FALSE_FRIENDS = { 'दिल': ['दिलचस्प', 'दिलाना', 'दिलाया', 'दिलासा'], 'दौरे': ['दिल के दौरे', 'दौरे पर'], '胰': ['胰岛素'], '肾': ['肾上腺'] };
 const LIVING_WORDS = ['still alive', 'alive', 'still living', 'is living', 'బతికే ఉన్నారు', 'బతికున్నారు', 'ఇంకా ఉన్నారు', 'batike unnaaru', 'जीवित', 'ज़िंदा', 'जिंदा', 'zinda', 'jeevit', 'está vivo', 'está viva', 'sigue vivo', 'sigue viva'];
 const PRONOUNS = ['he', 'she', 'his', 'her', 'they', 'ఆయన', 'ఆమె', 'వారు', 'వాళ్ళు', 'वह', 'वो', 'उन्हें', 'उनको', 'उनकी', 'उनका', 'él', 'ella'];
 const BORN_WORDS = ['born', 'birth', 'పుట్టా', 'పుట్టి', 'puttaa', 'జన్మ', 'जन्म', 'पैदा', 'janm', 'nací', 'nació', 'nacimiento'];
