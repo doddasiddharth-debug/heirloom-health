@@ -4,6 +4,8 @@ name = "heirloom-health"
 main = "worker.js"
 compatibility_date = "2025-09-01"
 compatibility_flags = ["nodejs_compat"]
+# Give the Worker its free https://heirloom-health.<account>.workers.dev address.
+workers_dev = true
 
 [vars]
 # Websites allowed to call this server (comma-separated).
