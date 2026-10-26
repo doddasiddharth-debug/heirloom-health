@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heirloom Health · Phone demo</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="icons/icon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600&display=swap" rel="stylesheet">
+<!--
+  Phone demo: the real app inside an iPhone frame, for screen-recording a demo video on a computer.
+  Open heirloom-health.org/demo.html, press F (or the Full screen button), then record with Cmd + Shift + 5.
+  Keys: H hides the controls, T toggles tap circles, B changes the background, R reloads the app.
+-->
+<style>
+  :root { --bg: #FFF6E2; --bg2: #F9D99A; --ink: #1E1D33; --teal: #0E7C86; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body { font-family: Lexend, system-ui, sans-serif; color: var(--ink); background: radial-gradient(circle at 50% 45%, var(--bg) 0%, var(--bg2) 120%); overflow: hidden; display: grid; place-items: center; }
+  body.bg-white { --bg: #ffffff; --bg2: #eef2f3; }
+  body.bg-teal { --bg: #DDF1F2; --bg2: #7cc3c8; }
+  body.bg-dark { --bg: #2b2a40; --bg2: #121120; }
+  body.bg-green { background: #00b140; }
+
+  /* The phone is drawn at real iPhone size (390 x 844 screen) and scaled to fit the window. */
+  .stage { transform-origin: center center; }
+  .phone { position: relative; width: 430px; height: 884px; border-radius: 68px; padding: 20px; background: linear-gradient(145deg, #3a3a40, #1b1b20 40%, #2c2c33); box-shadow: 0 0 0 2px #0d0d10, 0 40px 90px rgba(20, 18, 40, .35), inset 0 0 0 2px #55555d; }
+  .phone::before, .phone::after { content: ""; position: absolute; width: 4px; border-radius: 3px; background: #2a2a30; }
+  .phone::before { left: -4px; top: 170px; height: 64px; box-shadow: 0 90px 0 #2a2a30; }
+  .phone::after { right: -4px; top: 210px; height: 100px; }
+  .screen { position: relative; width: 390px; height: 844px; border-radius: 50px; overflow: hidden; background: #fff; }
+  .status { position: absolute; inset: 0 0 auto 0; height: 50px; z-index: 3; display: flex; justify-content: space-between; align-items: center; padding: 0 30px 0 36px; font: 600 16px/1 -apple-system, system-ui, sans-serif; color: #111; pointer-events: none; background: #fff; }
+  .status .icons { display: flex; gap: 6px; align-items: center; }
+  .island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 122px; height: 35px; border-radius: 20px; background: #000; z-index: 4; pointer-events: none; }
+  iframe { position: absolute; left: 0; top: 50px; width: 390px; height: 794px; border: 0; background: #fff; }
+  .home { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 134px; height: 5px; border-radius: 3px; background: #111; z-index: 3; pointer-events: none; opacity: .85; }
+
+  .tap { position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: rgba(14, 124, 134, .28); border: 2px solid rgba(14, 124, 134, .65); pointer-events: none; z-index: 5; animation: tap .45s ease-out forwards; }
+  @keyframes tap { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.25); opacity: 0; } }
+  .cursor { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; background: rgba(30, 29, 51, .16); border: 2px solid rgba(30, 29, 51, .35); pointer-events: none; z-index: 5; display: none; }
+
+  .bar { position: fixed; left: 16px; top: 16px; display: flex; flex-wrap: wrap; max-width: calc(50vw - 260px); min-width: 150px; gap: 8px; align-items: center; background: rgba(255, 255, 255, .92); border: 1px solid #e4e2ee; border-radius: 18px; padding: 8px 10px; box-shadow: 0 8px 24px rgba(0, 0, 0, .12); z-index: 10; font-size: 13px; }
+  .bar button { font: 600 13px Lexend, system-ui, sans-serif; border: 1px solid #d9d7e6; background: #fff; color: var(--ink); border-radius: 999px; padding: 7px 12px; cursor: pointer; }
+  .bar button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .bar .hint { color: #6e6c86; padding: 0 6px; font-size: 12px; }
+  body.clean .bar { display: none; }
+</style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="phone">
+      <div class="screen" id="screen">
+        <div class="status"><span id="clock">9:41</span><span class="icons">
+          <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1" fill="#111"/><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="#111"/><rect x="10" y="3" width="3" height="9" rx="1" fill="#111"/><rect x="15" y="0" width="3" height="12" rx="1" fill="#111"/></svg>
+          <svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true"><path d="M8 11.5 5.6 9a3.4 3.4 0 0 1 4.8 0zM3.4 6.8a6.6 6.6 0 0 1 9.2 0l-1.4 1.4a4.6 4.6 0 0 0-6.4 0zM1.2 4.6a9.7 9.7 0 0 1 13.6 0l-1.4 1.4a7.7 7.7 0 0 0-10.8 0z" fill="#111"/></svg>
+          <svg width="27" height="13" viewBox="0 0 27 13" aria-hidden="true"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="#111" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2" fill="#111"/><rect x="24.5" y="4.5" width="2" height="4" rx="1" fill="#111" opacity=".4"/></svg>
+        </span></div>
+        <div class="island"></div>
+        <iframe id="app" src="./" title="Heirloom Health"></iframe>
+        <div class="cursor" id="cursor"></div>
+        <div class="home"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bar" id="bar">
+    <button id="b-full" title="Full screen (F)">Full screen</button>
+    <button id="b-taps" aria-pressed="true" title="Show taps (T)">Tap circles</button>
+    <button id="b-bg" title="Background (B)">Background</button>
+    <button id="b-reload" title="Reload the app (R)">Reload app</button>
+    <button id="b-hide" title="Hide these buttons (H)">Hide</button>
+    <span class="hint">H hides/shows these · F full screen</span>
+  </div>
+
+<script>
+  'use strict';
+  const stage = document.getElementById('stage'), screen = document.getElementById('screen'), app = document.getElementById('app'), cursor = document.getElementById('cursor');
+  let taps = true;
+  const BGS = ['', 'bg-white', 'bg-teal', 'bg-dark', 'bg-green'];
+  let bg = 0;
+
+  // Scale the phone to fit the window, with a little room around it.
+  function fit() {
+    const s = Math.min((innerHeight - 40) / 884, (innerWidth - 40) / 430, 1.4);
+    stage.style.transform = `scale(${s})`;
+  }
+  addEventListener('resize', fit); fit();
+
+  // Tap circles and a soft finger-sized cursor, drawn over the app (same site, so the frame's events can be read).
+  function hook() {
+    let doc;
+    try { doc = app.contentDocument; } catch { return; }
+    if (!doc) return;
+    const style = doc.createElement('style');
+    style.textContent = 'html, body, * { cursor: none !important; } ::-webkit-scrollbar { display: none; } html { scrollbar-width: none; }';
+    doc.head.appendChild(style);
+    doc.addEventListener('keydown', onKey);
+    const where = e => ({ x: e.clientX, y: e.clientY + 50 }); // the app starts below the 50px status bar
+    doc.addEventListener('pointermove', e => { if (!taps) return; const p = where(e); cursor.style.display = 'block'; cursor.style.left = p.x + 'px'; cursor.style.top = p.y + 'px'; });
+    doc.addEventListener('pointerleave', () => { cursor.style.display = 'none'; });
+    doc.addEventListener('pointerdown', e => {
+      if (!taps) return;
+      const p = where(e), t = document.createElement('div');
+      t.className = 'tap'; t.style.left = p.x + 'px'; t.style.top = p.y + 'px';
+      screen.appendChild(t); setTimeout(() => t.remove(), 500);
+    }, true);
+  }
+  app.addEventListener('load', hook);
+
+  function toggleTaps() { taps = !taps; document.getElementById('b-taps').setAttribute('aria-pressed', taps); if (!taps) cursor.style.display = 'none'; }
+  function nextBg() { document.body.classList.remove(...BGS.filter(Boolean)); bg = (bg + 1) % BGS.length; if (BGS[bg]) document.body.classList.add(BGS[bg]); }
+  function full() { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.(); }
+  document.getElementById('b-full').onclick = full;
+  document.getElementById('b-taps').onclick = toggleTaps;
+  document.getElementById('b-bg').onclick = nextBg;
+  document.getElementById('b-reload').onclick = () => app.contentWindow.location.reload();
+  document.getElementById('b-hide').onclick = () => document.body.classList.add('clean');
+  // Shortcuts work anywhere, except while typing in one of the app's text boxes.
+  function onKey(e) {
+    if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, textarea, select, [contenteditable]')) return;
+    const k = e.key.toLowerCase();
+    if (k === 'h') document.body.classList.toggle('clean');
+    else if (k === 't') toggleTaps();
+    else if (k === 'b') nextBg();
+    else if (k === 'f') full();
+    else if (k === 'r') app.contentWindow.location.reload();
+  }
+  addEventListener('keydown', onKey);
+</script>
+</body>
+</html>
