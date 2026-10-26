@@ -9,7 +9,7 @@ workers_dev = true
 
 [vars]
 # Websites allowed to call this server (comma-separated).
-ALLOWED_ORIGINS = "https://doddasiddharth-debug.github.io,http://localhost:8000"
+ALLOWED_ORIGINS = "https://heirloom-health.org,https://www.heirloom-health.org,https://doddasiddharth-debug.github.io,http://localhost:8000"
 # Free models on Cloudflare Workers AI (used unless you add the paid keys below).
 EXTRACT_MODEL = "@cf/google/gemma-4-26b-a4b-it"
 TRANSCRIBE_MODEL_FREE = "@cf/openai/whisper-large-v3-turbo"
