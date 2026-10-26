@@ -150,10 +150,7 @@ function fhirFamilyMember(p, patientRef, when) {
   if (reporters.length) notes.push(`Conditions reported by: ${reporters.map(fhirReporter).join('; ')}.`);
   const causeHits = p.living === 'no' ? fhirCauseFacts(p.cause, fs) : new Set();
   if (p.living === 'no' && fhirText(p.cause)) notes.push(`Cause of death as reported by the family: ${fhirText(p.cause)}.${causeHits.size ? '' : ' It does not match a condition recorded for this relative.'}`);
-  for (const [key, label] of [['notes', 'Interview notes'], ['parentNotes', 'About their parents'], ['sibNotes', 'About their brothers and sisters'], ['kidNotes', 'About their children']]) {
-    const t = fhirText(p[key]);
-    if (t) notes.push(`${label}: ${t}`);
-  }
+  for (const [label, text] of personNotes(p)) { const t = fhirText(text); if (t) notes.push(`${label === 'Notes' ? 'Interview notes' : label}: ${t}`); }
   res.note = notes.map(text => ({ text }));
 
   const conds = fs.map(f => {
@@ -171,7 +168,7 @@ function fhirFamilyMember(p, patientRef, when) {
 }
 
 // People who are only empty placeholders on the chart (no name, no details) are left out.
-const fhirHasInfo = p => fhirText(p.name) || fhirYear(p.born) || p.living !== 'unknown' || facts(p.id).length || fhirText(p.notes) || fhirText(p.cause);
+const fhirHasInfo = p => fhirText(p.name) || fhirYear(p.born) || p.living !== 'unknown' || facts(p.id).length || personNotes(p).length || fhirText(p.cause);
 
 function fhirBundle() {
   const me = byId(SELF), when = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -194,7 +191,7 @@ function fhirBundle() {
   }
   const anc = (me.ancestry || []).map(id => (typeof ANCESTRIES !== 'undefined' ? ANCESTRIES.find(a => a.id === id)?.en : null) || id);
   if (anc.length) entries.push(entry(obs('Family ancestry', anc.join(', '), 'Self-reported by the patient.')));
-  const myNotes = fhirText(me.notes);
+  const myNotes = fhirText(personNotes(me).map(([label, t]) => label === 'Notes' ? t : `${label}: ${t}`).join('\n'));
   if (myNotes) entries.push(entry(obs('Family history interview notes', myNotes, `Written by ${fhirReporter(SELF)}.`)));
 
   return { resourceType: 'Bundle', id: fhirUuid(), meta: { lastUpdated: when }, type: 'collection', timestamp: when, entry: entries };

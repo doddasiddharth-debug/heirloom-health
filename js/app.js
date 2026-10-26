@@ -480,9 +480,7 @@ function renderTree() {
       <div style="display:grid;gap:10px"><div><h3>Health conditions</h3><p class="small muted">Everything family members told you is combined here. Your own answer is saved as "You".</p></div>
       ${condTiles(p, { by: SELF, pre: 'ed', merged: true })}</div>
       <label class="f">Notes<textarea id="ed-notes" data-pid="${p.id}" data-f="notes" placeholder="Surgeries, medicines, where they grew up">${esc(p.notes)}</textarea></label>
-      ${p.parentNotes ? `<p class="small"><b>About their parents:</b> ${esc(p.parentNotes)}</p>` : ''}
-      ${p.sibNotes ? `<p class="small"><b>About their siblings:</b> ${esc(p.sibNotes)}</p>` : ''}
-      ${p.kidNotes ? `<p class="small"><b>About their children:</b> ${esc(p.kidNotes)}</p>` : ''}
+      ${personNotes(p).filter(([label]) => label !== 'Notes').map(([label, t]) => `<p class="small" style="white-space:pre-wrap"><b>${esc(label)}:</b> ${esc(t)}</p>`).join('')}
       ${CLIPS.some(c => c.pid === p.id) ? `<div style="display:grid;gap:8px"><h3>Interview recordings</h3>${clipList(CLIPS.filter(c => c.pid === p.id), true)}</div>` : ''}
       ${mediaHTML(p)}
       <div style="display:grid;gap:10px"><h3>Add ${p.id === SELF ? 'your' : esc(nameOf(p)) + "'s"} relatives</h3>
@@ -592,7 +590,7 @@ function renderInterview() {
   const relName = t => `${esc(nameOf(t))} <span class="muted">· ${esc(relOf(t))}</span>`;
   if (st.type === 'intro') ans = `<p class="muted">When they say yes, tap Continue.</p>`;
   else if (st.type === 'born') ans = `<label class="f">Year ${esc(nameOf(W))} was born<input type="number" inputmode="numeric" id="iv-born" data-pid="${W.id}" data-f="born" value="${esc(W.born)}" placeholder="e.g. 1953"></label>`;
-  else if (st.type === 'notes') ans = `<label class="f">What they said<textarea id="iv-notes" data-pid="${W.id}" data-f="notes">${esc(W.notes)}</textarea></label>`;
+  else if (st.type === 'notes') ans = `<p class="muted">Write their answer in "What did they say?" below, or record it.</p>`;
   else if (st.type === 'conds' || st.type === 'vital') {
     if (target) ans = `<h3>Saving ${esc(nameOf(W))}'s answers about ${relName(target)}</h3>` + (st.type === 'conds' ? condTiles(target, { by: W.id, pre: 'iv-' + st.k, lang, roman: S.iv.roman }) : vitalFields(target, 'iv-' + st.k)) + followUps(W, target, st, lang, S.iv.roman);
     else ans = `<p class="muted">${esc(nameOf(W))}'s ${st.who} isn't on the tree yet.</p><button class="btn primary" data-action="add-parent" data-kind="${st.who}" data-pid="${W.id}">Add ${esc(nameOf(W))}'s ${st.who} to the tree</button>`;
@@ -601,9 +599,7 @@ function renderInterview() {
     const kids = st.type === 'children';
     const list = (kids ? childLinks(W.id).map(l => l.id) : siblingsOf(W.id)).map(byId).filter(Boolean);
     const pick = list.find(x => x.id === S.iv.pick) || list[0];
-    const field = kids ? 'kidNotes' : 'sibNotes';
-    ans = `<label class="f">What they said<textarea id="iv-${st.k}-notes" data-pid="${W.id}" data-f="${field}">${esc(W[field])}</textarea></label>
-      <div style="display:grid;gap:10px"><h3>${esc(nameOf(W))}'s ${kids ? 'children' : 'brothers and sisters'} on the tree</h3>
+    ans = `<div style="display:grid;gap:10px"><h3>${esc(nameOf(W))}'s ${kids ? 'children' : 'brothers and sisters'} on the tree</h3>
         <div class="pills">${list.length ? list.map(x => `<button class="pill-btn" data-action="iv-pick" data-id="${x.id}" aria-pressed="${x === pick}">${esc(nameOf(x))}</button>`).join('') : '<span class="muted small">None yet.</span>'}</div>
         <div class="row"><input type="text" id="iv-newsib" placeholder="Name" aria-label="Name" style="max-width:200px">
         <select id="iv-newsex" aria-label="${kids ? 'Son or daughter' : 'Brother or sister'}" style="max-width:140px">${kids ? '<option value="F">Daughter</option><option value="M">Son</option>' : '<option value="F">Sister</option><option value="M">Brother</option>'}</select>
@@ -614,8 +610,7 @@ function renderInterview() {
     const c = W.checks?.[st.k] || {};
     const seg = ['yes', 'no', 'unknown'].map(v => `<button type="button" class="pill-btn" data-action="chk" data-k="${st.k}" data-v="${v}" data-pid="${W.id}" aria-pressed="${c.a === v}">${{ yes: 'Yes', no: 'No', unknown: "Don't know" }[v]}</button>`).join('');
     ans = st.k === 'ancestry'
-      ? `<div style="display:grid;gap:10px"><span class="lbl">Your family's ancestry</span>${ancestryPicker()}</div>
-        <label class="f">What they said<input type="text" id="iv-chk-note" data-pid="${W.id}" data-chk="${st.k}" value="${esc(c.note || '')}" placeholder="e.g. Andhra Pradesh, India"></label>`
+      ? `<div style="display:grid;gap:10px"><span class="lbl">Your family's ancestry</span>${ancestryPicker()}</div>`
       : `<div class="seg" role="group" aria-label="Answer">${seg}</div>
         ${c.a === 'yes' ? `<label class="f">Who was it, and what happened?<input type="text" id="iv-chk-note" data-pid="${W.id}" data-chk="${st.k}" value="${esc(c.note || '')}" placeholder="${esc(CHECK_HINT[st.k] || '')}"></label>` : ''}`;
   } else if (st.type === 'closing') ans = `<p class="muted">Say thank you, then tap Finish to save the interview.</p>`;
@@ -857,14 +852,23 @@ function familyAnswers() {
   }
   return out;
 }
+// Free-text notes about a person: the Notes box on their card, plus what they said in the interview steps
+// that have no checkboxes (other health problems, siblings, children, ancestry). Older profiles kept some of
+// these in separate fields, so both places are read.
+const NOTE_PARTS = [
+  ['Notes', p => [p.notes]],
+  ['Other health problems, surgeries and medicines', p => [p.transcripts?.other_self]],
+  ['About their parents', p => [p.parentNotes]],
+  ['About their brothers and sisters', p => [p.sibNotes, p.transcripts?.siblings]],
+  ['About their children', p => [p.kidNotes, p.transcripts?.children]],
+  ['Where the family comes from', p => [p.transcripts?.ancestry, p.checks?.ancestry?.note]],
+];
+function personNotes(p) {
+  return NOTE_PARTS.map(([label, get]) => [label, [...new Set(get(p).map(t => (t || '').trim()).filter(Boolean))].join('\n')]).filter(([, t]) => t);
+}
 // Free-text notes typed during interviews, so nothing that didn't fit a box is lost.
 function interviewNotes() {
-  const out = [];
-  for (const p of S.people) for (const [k, label] of [['notes', 'Notes'], ['parentNotes', 'About their parents'], ['sibNotes', 'About their brothers and sisters'], ['kidNotes', 'About their children']]) {
-    const t = (p[k] || '').trim();
-    if (t) out.push({ who: p.id === SELF ? 'You' : `${relOf(p)} (${nameOf(p)})`, label, text: t });
-  }
-  return out;
+  return S.people.flatMap(p => personNotes(p).map(([label, text]) => ({ who: p.id === SELF ? 'You' : `${relOf(p)} (${nameOf(p)})`, label, text })));
 }
 function summaryText() {
   const me = byId(SELF), cards = guidelineCards(), others = S.people.filter(p => p.id !== SELF);
