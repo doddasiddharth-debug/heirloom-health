@@ -19,8 +19,15 @@ function parentLinks(id) { return S.rels.filter(r => r.kind === 'parent' && r.ch
 function bioParents(id) { return parentLinks(id).filter(l => l.bio).map(l => l.id); }
 function childLinks(id) { return S.rels.filter(r => r.kind === 'parent' && r.parent === id).map(r => ({ id: r.child, bio: r.bio !== false })); }
 function partnersOf(id) { return S.rels.filter(r => r.kind === 'partner' && (r.a === id || r.b === id)).map(r => r.a === id ? r.b : r.a); }
-function motherOf(id, bioOnly = true) { return (bioOnly ? bioParents(id) : parentLinks(id).map(l => l.id)).map(byId).find(p => p?.sex === 'F'); }
-function fatherOf(id, bioOnly = true) { return (bioOnly ? bioParents(id) : parentLinks(id).map(l => l.id)).map(byId).find(p => p?.sex === 'M'); }
+// A parent whose sex is not set fills whichever of the mother/father roles is still empty (mother first).
+function parentRoles(id, bioOnly = true) {
+  const ps = (bioOnly ? bioParents(id) : parentLinks(id).map(l => l.id)).map(byId).filter(Boolean);
+  let mom = ps.find(p => p.sex === 'F'), dad = ps.find(p => p.sex === 'M');
+  for (const p of ps.filter(p => p.sex !== 'F' && p.sex !== 'M')) { if (!mom) mom = p; else if (!dad) dad = p; }
+  return { mom, dad };
+}
+function motherOf(id, bioOnly = true) { return parentRoles(id, bioOnly).mom; }
+function fatherOf(id, bioOnly = true) { return parentRoles(id, bioOnly).dad; }
 function siblingsOf(id) {
   const mine = parentLinks(id).map(l => l.id);
   const out = new Set();
@@ -37,7 +44,11 @@ function linkPartners(a, b) {
 /* ---------- Adding and removing relatives ---------- */
 // Make sure `id` has a mother and a father on the tree (blank placeholders if needed), so siblings have somewhere to attach.
 function ensureParents(id) {
-  let mom = motherOf(id, false), dad = fatherOf(id, false);
+  let { mom, dad } = parentRoles(id, false);
+  // Any other parent already on the chart (e.g. two mothers) fills the empty role before a placeholder is made.
+  const spare = parentLinks(id).map(l => byId(l.id)).filter(p => p && p !== mom && p !== dad);
+  if (!mom && spare.length) mom = spare.shift();
+  if (!dad && spare.length) dad = spare.shift();
   if (!mom) { mom = newPerson({ sex: 'F' }); S.people.push(mom); linkParent(mom.id, id); }
   if (!dad) { dad = newPerson({ sex: 'M' }); S.people.push(dad); linkParent(dad.id, id); }
   linkPartners(dad.id, mom.id);
@@ -149,7 +160,7 @@ function pathLabel(id) {
     const s = steps[i], p = byId(s.id), nx = steps[i + 1];
     if (s.step === 'up' && nx?.step === 'down') {
       const q = byId(nx.id), from = i ? steps[i - 1].id : SELF;
-      words.push((firstDegreePair(from, q.id) ? '' : 'half-') + sexWord(q, 'sister', 'brother', 'sibling'));
+      words.push((!nx.bio ? 'adopted ' : !s.bio ? 'adoptive ' : firstDegreePair(from, q.id) ? '' : 'half-') + sexWord(q, 'sister', 'brother', 'sibling'));
       i++; continue;
     }
     if (s.step === 'up') words.push((s.bio ? '' : 'adoptive ') + sexWord(p, 'mom', 'dad', 'parent'));
@@ -183,10 +194,13 @@ function computeKin(id) {
     const adopted = parentLinks(id).some(l => l.id === SELF && !l.bio) || parentLinks(SELF).some(l => l.id === id && !l.bio);
     return { blood: false, degree: null, label: short || 'Relative by marriage', short: short || 'Relative', side: sideOf(id, null, null), adopted };
   }
-  const c = common[0], dS = aS.get(c), dX = aX.get(c), full = common.length >= 2;
+  const c = common[0], dS = aS.get(c), dX = aX.get(c);
   const lineal = dS === 0 || dX === 0;
+  // Full when the two lines meet at a couple, or at one parent whose children have no different known other parents.
+  const below = (anc, d) => [...anc].filter(([a, n]) => n === d - 1 && bioParents(a).includes(c)).map(([a]) => a);
+  const full = common.length >= 2 || (!lineal && below(aS, dS).some(a => below(aX, dX).some(b => a !== b && fullSiblings(a, b))));
   const degree = lineal ? dS + dX : (full ? dS + dX - 1 : dS + dX);
-  const side = sideOf(id, c, dS);
+  const side = sideOf(id, c, dS, lineal || full);
   const sideAdj = side === 'paternal' ? 'Paternal ' : side === 'maternal' ? 'Maternal ' : '';
   const sideSuffix = side === 'paternal' ? " (Dad's side)" : side === 'maternal' ? " (Mom's side)" : '';
   const half = full ? '' : 'Half-';
@@ -198,14 +212,16 @@ function computeKin(id) {
   else if (dS === 1) label = greats(dX - 2) + sexWord(p, 'niece', 'nephew', 'niece or nephew');
   else {
     const n = Math.min(dS, dX) - 1, removed = Math.abs(dS - dX);
-    label = `${full ? '' : 'Half '}${ORD[n] || n + 'th'} cousin${removed ? ' ' + (TIMES[removed] || removed + ' times') + ' removed' : ''}${sideSuffix}`;
+    label = `${full ? '' : 'half '}${(ORD[n] || n + 'th').toLowerCase()} cousin${removed ? ' ' + (TIMES[removed] || removed + ' times') + ' removed' : ''}${sideSuffix}`;
   }
   label = label[0].toUpperCase() + label.slice(1);
   return { blood: true, degree, label, short: short || label, side, dS, dX, full };
 }
 // Which side of your family `id` is on: the parent of yours that the connection runs through.
-function sideOf(id, commonAncestor, dS) {
+function sideOf(id, commonAncestor, dS, full = true) {
   if (dS === 0) return null;
+  // Half-siblings (and their children) are on the side of the one parent you share.
+  if (commonAncestor != null && dS === 1 && !full) { const sx = byId(commonAncestor)?.sex; return sx === 'F' ? 'maternal' : sx === 'M' ? 'paternal' : null; }
   if (commonAncestor != null && dS >= 2) {
     for (const par of bioParents(SELF)) {
       const a = bioAncestors(par);
@@ -226,5 +242,15 @@ const isFirstDegree = p => kin(p.id).blood && kin(p.id).degree === 1;
 function firstDegreePair(a, b) {
   const pa = bioParents(a), pb = bioParents(b);
   if (pa.includes(b) || pb.includes(a)) return true;
-  return pa.length === 2 && pb.length === 2 && pa.every(x => pb.includes(x));
+  return a !== b && fullSiblings(a, b);
+}
+// Siblings sharing a birth parent are full siblings unless each has a different known other parent.
+// A missing or deleted parent is "unknown", not "different". (Half-siblings added with addRelative
+// always get the shared parent's other partner, or a placeholder, as their second parent.)
+function fullSiblings(a, b) {
+  const pa = bioParents(a), pb = bioParents(b), shared = pa.filter(x => pb.includes(x));
+  if (!shared.length) return false;
+  if (shared.length >= 2) return true;
+  const oa = parentLinks(a).map(l => l.id).filter(x => !shared.includes(x)), ob = parentLinks(b).map(l => l.id).filter(x => !shared.includes(x));
+  return !(oa.some(x => !ob.includes(x)) && ob.some(x => !oa.includes(x)));
 }

@@ -16,6 +16,7 @@ const sayRoman = (obj, lang) => obj[lang + '_r'] || '';
 // Every phrase the app can speak has a key: q:<question>, f:<follow-up>, e:<elder phrase>, c:<condition>, t:<cancer type>.
 let VOICES = new Map();
 async function loadVoices() {
+  VOICES.forEach(v => URL.revokeObjectURL(v.url));
   try { VOICES = new Map((await IDB.all('voices')).map(v => [v.id, { ...v, url: URL.createObjectURL(v.blob) }])); } catch { VOICES = new Map(); }
 }
 function voicePhrases() {
@@ -145,7 +146,13 @@ function elderSkip(card) {
   if (card.k === 'age' || card.k === 'ctype') return !t || !elderReports(t.id, card.cond).length;
   return false;
 }
+// After an answer, move on once, even if a shaky finger taps twice.
+function elderAdvance(ms) {
+  if (!E || E.moveT) return;
+  E.moveT = setTimeout(() => { if (E) { E.moveT = null; elderMove(1); } }, ms);
+}
 function elderMove(dir) {
+  if (E?.moveT) { clearTimeout(E.moveT); E.moveT = null; }
   const cards = elderCards();
   let i = E.i + dir;
   while (i > 0 && i < cards.length - 1 && elderSkip(cards[i])) i += dir;
@@ -222,14 +229,14 @@ function elderAction(a, b) {
     case 'elder-prev': elderMove(-1); return true;
     case 'elder-listen': elderListen(); return true;
     case 'elder-exit': exitElder(); return true;
-    case 'e-living': { const t = elderTarget(card.sect, true); t.living = b.dataset.v; save(); setTimeout(() => elderMove(1), 250); render(); return true; }
+    case 'e-living': { const t = elderTarget(card.sect, true); t.living = b.dataset.v; save(); elderAdvance(250); render(); return true; }
     case 'e-cond': {
       const v = b.dataset.v, key = `${card.sect}|${card.cond}`;
       E.no ||= {}; E.unsure ||= {};
       E.no[key] = v === 'no'; E.unsure[key] = v === 'unknown';
       if (v === 'yes') { const t = elderTarget(card.sect, true); if (!elderReports(t.id, card.cond).length) addReport(t.id, card.cond, '', E.who); }
       else { const t = elderTarget(card.sect); if (t) dropReports(r => r.pid === t.id && r.cond === card.cond && r.by === E.who); }
-      save(); render(); setTimeout(() => elderMove(1), 250); return true;
+      save(); render(); elderAdvance(250); return true;
     }
     case 'e-ctype': {
       const t = elderTarget(card.sect, true), type = b.dataset.type;
@@ -245,7 +252,7 @@ function elderAction(a, b) {
       if (card.k === 'born') byId(E.who).born = n;
       else if (card.k === 'deathAge') elderTarget(card.sect, true).deathAge = n;
       else if (card.k === 'age') { const t = elderTarget(card.sect, true); const rs = elderReports(t.id, card.cond); (rs.length ? rs : [addReport(t.id, card.cond, '', E.who)]).forEach(r => { r.age = n; }); }
-      save(); setTimeout(() => elderMove(1), 200); render(); return true;
+      save(); elderAdvance(200); render(); return true;
     }
   }
   return false;

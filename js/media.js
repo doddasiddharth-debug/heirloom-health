@@ -4,6 +4,7 @@
 
 let MEDIA = [];
 async function loadMedia() {
+  MEDIA.forEach(m => URL.revokeObjectURL(m.url));
   try { MEDIA = (await IDB.all('media')).filter(m => m.acct === ACCT?.id).map(m => ({ ...m, url: URL.createObjectURL(m.blob) })); }
   catch { MEDIA = []; }
 }

@@ -55,6 +55,6 @@ In another terminal, serve the app with `python3 -m http.server 8000` from the m
 
 ## Limits built in
 
-- 40 AI requests per hour per visitor, 120 syncs per hour, 10 feedback messages per hour.
+- Per visitor: 20 AI, speech-to-text or sync requests a minute, and 3 feedback messages a minute. These use Cloudflare's free rate limiter (the `[[ratelimits]]` entries in `wrangler.toml`), so they don't use up the free plan's 1,000 KV writes a day. Without those entries the server falls back to rougher hourly counters in KV.
 - Transcripts up to 8,000 characters; recordings up to 10 MB; families up to 900 KB.
 - Only the websites listed in `ALLOWED_ORIGINS` can call the server.

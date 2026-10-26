@@ -28,6 +28,17 @@ binding = "AI"
 binding = "FAMILY"
 id = "fd3827f62636442597fb623d37828662"
 
+# Per-visitor limits (free, and they don't use up KV writes). The period is in seconds and must be 10 or 60.
+[[ratelimits]]
+name = "LIMITER"        # AI, speech-to-text and sync: 20 requests a minute
+namespace_id = "1001"
+simple = { limit = 20, period = 60 }
+
+[[ratelimits]]
+name = "FEEDBACK_LIMITER"  # feedback: 3 a minute
+namespace_id = "1002"
+simple = { limit = 3, period = 60 }
+
 # Optional secrets (never put these in this file):
 #   npx wrangler secret put ANTHROPIC_API_KEY   use Claude instead of the free model for reading transcripts
 #   npx wrangler secret put OPENAI_API_KEY      use OpenAI instead of the free model for speech-to-text

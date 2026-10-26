@@ -61,7 +61,9 @@ async function reportLink() {
   return `${appUrl()}#report=${await packData(data)}`;
 }
 function viewerState(rep) {
-  const people = rep.people.map(p => newPerson({ ...p }));
+  const clean = cleanFamily(rep);
+  const people = clean.people.map(p => newPerson({ ...p }));
+  rep = { ...rep, rels: clean.rels, reports: clean.reports.map(r => ({ by: '', ...r })), at: okDate(rep.at) || today(), from: okText(rep.from, 80), questions: (Array.isArray(rep.questions) ? rep.questions : []).filter(q => typeof q === 'string').slice(0, 40).map(q => q.slice(0, 300)) };
   for (const [id, d] of rep.interviewed || []) { const p = people.find(x => x.id === id); if (p) p.interviewed = d; }
   return { v: 2, example: false, people, rels: rep.rels, reports: rep.reports.map(r => ({ said: '', at: rep.at, ...r })), sel: SELF, hl: 'any', tab: 'doctor', iv: { who: '', step: 0, lang: 'en' }, myQuestions: [], viewerQuestions: rep.questions || [], sharedAt: rep.at, sharedBy: rep.from };
 }
@@ -110,13 +112,19 @@ function renderModal() {
   } else if (m.kind === 'feedback') body = feedbackHTML(m);
   else if (m.kind === 'menu') body = menuHTML();
   else if (m.kind === 'stt') body = sttChooserHTML(m.clip);
-  else if (m.kind === 'cloud') {
+  else if (m.kind === 'cloud-join') {
+    const empty = S.people.length <= 7 && !S.reports.length;
+    body = `<h2>Open a shared family?</h2>
+      <p class="small">This link syncs a family with this profile. Everything in it is combined with the family that's open now${S.sync ? ', and this profile stops syncing with its current link' : ''}.</p>
+      ${empty ? '' : `<p class="small"><b>This profile already has a family.</b> Only continue if the link is for this same family. For a different family, create a new profile first, then open the link again.</p>`}
+      <div class="row"><button class="btn primary" data-action="cloud-join">Combine and sync</button><button class="btn" data-action="m-close">Cancel</button></div>`;
+  } else if (m.kind === 'cloud') {
     const qr = S.sync ? qrSVG(cloudLink()) : null;
     body = `<h2>Sync with family</h2>
       ${S.sync ? `<p class="small">Anyone who opens this link sees and adds to this family on their own phone. The family is locked with a key that only exists in the link, so the server can't read it. ${S.sync.last ? `Last synced ${new Date(S.sync.last).toLocaleString()}.` : ''}</p>
         ${qr ? `<div class="qr">${qr}</div>` : ''}${linkBox(cloudLink())}
         <div class="row"><button class="btn primary" data-action="cloud-sync">Sync now</button><button class="btn" data-action="m-copy" data-url="${esc(cloudLink())}">Copy link</button><button class="btn danger" data-action="cloud-off">Stop syncing</button></div>`
-      : `<p class="small">Keep one family up to date across several phones, for example yours and a cousin's. Everything is encrypted on the phone before it's uploaded.</p><div class="row"><button class="btn primary" data-action="cloud-start">Turn on sync</button></div>`}`;
+      : `<p class="small">Keep this family up to date on more than one phone or tablet, for example yours and a parent's, all working on <b>your</b> family tree. Everything is encrypted on the phone before it's uploaded.</p><div class="row"><button class="btn primary" data-action="cloud-start">Turn on sync</button></div>`}`;
   }
   return `<div class="modal-back" data-action="m-close"><div class="modal" role="dialog" aria-modal="true" data-stop="1"><button class="modal-x link" data-action="m-close" aria-label="Close">✕</button>${body}</div></div>`;
 }

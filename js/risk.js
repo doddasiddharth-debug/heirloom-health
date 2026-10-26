@@ -42,12 +42,15 @@ function isBlank(p) { return p.id !== SELF && !p.born && p.living === 'unknown' 
 // Each rule looks at your blood relatives and returns cards:
 // { level: 'act' | 'discuss' | 'note' | 'missing', title, rec, why: [...], sources: [...] }
 function bloodRelatives() { return S.people.filter(p => p.id !== SELF && kin(p.id).blood); }
+// A cancer that cannot happen for the person's recorded sex (likely a mix-up) is kept on the record but left out of the rules.
+const SEX_ONLY_CANCERS = { ovarian: 'F', uterine: 'F', prostate: 'M' };
+const possibleFor = (p, f) => !(f.cond === 'cancer' && SEX_ONLY_CANCERS[f.type] && ['F', 'M'].includes(p.sex) && p.sex !== SEX_ONLY_CANCERS[f.type]);
 function withFact(test, maxDegree = 3) {
   const out = [];
   for (const p of bloodRelatives()) {
     const k = kin(p.id);
     if (k.degree > maxDegree) continue;
-    for (const f of facts(p.id)) if (test(f)) out.push({ p, f, k, age: +f.age || null });
+    for (const f of facts(p.id)) if (possibleFor(p, f) && test(f)) out.push({ p, f, k, age: +f.age || null });
   }
   return out;
 }
@@ -99,15 +102,23 @@ function ruleFHS7() {
 function ruleLynch() {
   const lynchTypes = CANCER_TYPES.filter(t => t.lynch).map(t => t.id);
   const all = [...withFact(isCancer(...lynchTypes), 4)];
-  for (const f of facts(SELF)) if (isCancer(...lynchTypes)(f)) all.push({ p: byId(SELF), f, k: kin(SELF), age: +f.age || null });
+  for (const f of facts(SELF)) if (possibleFor(byId(SELF), f) && isCancer(...lynchTypes)(f)) all.push({ p: byId(SELF), f, k: kin(SELF), age: +f.age || null });
   const ids = [...new Set(all.map(x => x.p.id))];
   const gen = generations();
-  const linked = ids.some(a => ids.filter(b => b !== a && firstDegreePair(a, b)).length >= 2);
-  const successive = ids.some(a => ids.some(b => Math.abs(gen.get(a) - gen.get(b)) === 1));
-  const young = all.some(x => x.age && x.age < 50);
+  // Amsterdam II is judged within one lineage: relatives joined to each other by parent/child/full-sibling links.
+  const cluster = new Map(ids.map(id => [id, id]));
+  const root = id => cluster.get(id) === id ? id : root(cluster.get(id));
+  for (const a of ids) for (const b of ids) if (a < b && firstDegreePair(a, b)) cluster.set(root(a), root(b));
+  const meets = [...new Set(ids.map(root))].some(r => {
+    const grp = ids.filter(id => root(id) === r);
+    const linked = grp.some(a => grp.filter(b => b !== a && firstDegreePair(a, b)).length >= 2);
+    const successive = grp.some(a => grp.some(b => Math.abs(gen.get(a) - gen.get(b)) === 1));
+    const young = all.some(x => grp.includes(x.p.id) && x.age && x.age < 50);
+    return grp.length >= 3 && linked && successive && young;
+  });
   const src = ['amsterdam', 'nccn'];
   const why = all.map(x => `${x.p.id === SELF ? 'You' : who(x)}: ${factName(x.f.cond, x.f.type).toLowerCase()} ${atAge(x)}.`);
-  if (ids.length >= 3 && linked && successive && young) return [{ level: 'act', title: 'Ask about genetic counseling for Lynch syndrome',
+  if (meets) return [{ level: 'act', title: 'Ask about genetic counseling for Lynch syndrome',
     rec: 'Your family meets the Amsterdam II criteria: 3 or more relatives with Lynch-related cancers (colon, uterus, small intestine, ureter), one of them a parent, child or sibling of the other two, across 2 generations in a row, with at least one diagnosed before 50. Lynch syndrome is inherited and raises cancer risk, and screening for it starts much earlier.', why, sources: src }];
   const earlyFdr = all.filter(x => x.k.degree === 1 && x.age && x.age < 50 && ['colorectal', 'uterine'].includes(x.f.type));
   if (earlyFdr.length) return [{ level: 'act', title: 'Ask about genetic counseling for Lynch syndrome',
@@ -163,10 +174,17 @@ function ruleProstate() {
   if (byId(SELF).sex !== 'M') return [];
   const hits = withFact(isCancer('prostate'), 1).filter(x => x.p.sex === 'M');
   if (!hits.length) return [];
-  const young = hits.filter(x => x.age && x.age < 65);
+  const young = hits.filter(x => x.age && x.age < 65), noAge = hits.filter(x => !x.age);
+  const why = hits.map(x => `${who(x)}: prostate cancer ${atAge(x)}.`);
+  // The American Cancer Society's earlier start (45, or 40) is for a father or brother diagnosed before 65.
+  if (!young.length && !noAge.length) return [{ level: 'note', title: 'Prostate cancer in a father or brother',
+    rec: 'A father or brother had prostate cancer at 65 or older. The American Cancer Society moves the PSA screening talk earlier only when the diagnosis came before 65, so the usual plan applies: talk about it from age 50. Still mention it to your doctor.',
+    why, sources: ['acsProstate'] }];
   return [{ level: 'discuss', title: 'Talk about prostate cancer screening earlier',
-    rec: young.length >= 2 ? 'More than one father or brother had prostate cancer before 65. The American Cancer Society suggests talking about PSA screening from age 40.' : 'A father or brother had prostate cancer. The American Cancer Society suggests talking about PSA screening from age 45 (40 if more than one was diagnosed before 65).',
-    why: hits.map(x => `${who(x)}: prostate cancer ${atAge(x)}.`), sources: ['acsProstate'] }];
+    rec: young.length >= 2 ? 'More than one father or brother had prostate cancer before 65. The American Cancer Society suggests talking about PSA screening from age 40.'
+      : young.length ? 'A father or brother had prostate cancer before 65. The American Cancer Society suggests talking about PSA screening from age 45 (40 if more than one was diagnosed before 65).'
+      : 'A father or brother had prostate cancer. If it was found before 65, the American Cancer Society suggests talking about PSA screening from age 45 (40 if more than one was diagnosed before 65).',
+    why: [...why, ...(noAge.length ? ['An age is missing, so the earlier rule is used to be safe. Find out how old they were.'] : [])], sources: ['acsProstate'] }];
 }
 
 function ruleDisagreements() {
@@ -255,7 +273,8 @@ function suggestInterviews(limit = 3) {
      High:     a parent or sibling had it early; two or more parents/siblings had it;
                a parent/sibling plus an early grandparent/aunt/uncle on the same side;
                two grandparents/aunts/uncles on one side with at least one early;
-               three or more relatives on one side; (heart disease) any early grandparent, aunt or uncle.
+               three or more relatives on one side; a moderate pattern on both sides;
+               (heart disease) any early grandparent, aunt or uncle.
      Moderate: one parent or sibling (not early); two grandparents/aunts/uncles on one side (not early).
      Average:  only one more distant relative, or none. */
 function lineageOf(x) {
@@ -275,7 +294,7 @@ function familyRisk() {
     const early = x => !!(x.age && x.age < t.early(x.p));
     const fdr = hits.filter(x => x.k.degree === 1), sdr = hits.filter(x => x.k.degree === 2);
     const onSide = (list, side) => list.filter(x => lineageOf(x) === side || lineageOf(x) === 'both');
-    const high = [], moderate = [];
+    const high = [], moderate = [], moderateSides = [];
     if (fdr.some(early)) high.push('A parent or sibling had it at a young age.');
     if (fdr.length >= 2) high.push('Two or more parents or siblings had it.');
     if (t.key === 'heart' && sdr.some(early)) high.push('A grandparent, aunt or uncle had heart disease at a young age.');
@@ -285,7 +304,10 @@ function familyRisk() {
       if (s.length >= 2 && s.some(early)) high.push(`Two grandparents, aunts or uncles on ${SIDE_NAME[side]} side, at least one at a young age.`);
       if (all.length >= 3) high.push(`${all.length} relatives on ${SIDE_NAME[side]} side.`);
       if (s.length >= 2) moderate.push(`Two grandparents, aunts or uncles on ${SIDE_NAME[side]} side.`);
+      // A parent counts for one side only; a full sibling is shared by both, so does not make a side moderate alone.
+      if (s.length >= 2 || fdr.some(x => lineageOf(x) === side)) moderateSides.push(side);
     }
+    if (moderateSides.length === 2) high.push("A pattern on both Mom's and Dad's sides of the family.");
     if (fdr.length === 1) moderate.push('One parent or sibling had it.');
     // Keep this page consistent with the doctor report: a guideline that calls for genetic counseling raises the level.
     const flagged = (['breast', 'ovarian'].includes(t.key) && ruleFHS7()[0]?.level === 'act') || (['colorectal', 'uterine'].includes(t.key) && ruleLynch()[0]?.level === 'act') || (['ovarian', 'pancreatic'].includes(t.key) && ruleOvarianPancreatic().length);

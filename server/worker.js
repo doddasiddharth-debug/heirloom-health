@@ -193,7 +193,7 @@ async function feedback(request, env) {
   const info = String(body?.info || '').slice(0, 600);
   if (message.length < 5) return json({ error: 'Please write a little more.' }, 400);
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "That email address doesn't look right." }, 400);
-  if (!(await allow(request, env, 'feedback', 10))) return json({ error: 'Thanks! You have sent a lot today. Try again tomorrow.' }, 429);
+  if (!(await allow(request, env, 'feedback', 10))) return json({ error: 'Thanks! You have sent a lot just now. Try again in a little while.' }, 429);
   const at = new Date().toISOString();
   const id = `feedback:${at}:${crypto.randomUUID().slice(0, 8)}`;
   await env.FAMILY.put(id, JSON.stringify({ kind, message, email, info, at }), { expirationTtl: 60 * 60 * 24 * 365 });
@@ -239,10 +239,13 @@ function corsHeaders(request, env) {
 }
 function withCors(res, cors) { const r = new Response(res.body, res); for (const [k, v] of Object.entries(cors)) r.headers.set(k, v); return r; }
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } }); }
-// A simple per-IP hourly counter in KV. Rough (KV is eventually consistent), but enough to stop casual abuse.
+// Per-visitor limits. Cloudflare's rate limiter is free and doesn't use up KV writes (the free plan allows
+// 1,000 a day), so it's used when the binding exists; otherwise a rough hourly counter in KV.
 async function allow(request, env, bucket, limit = AI_PER_HOUR) {
-  if (!env.FAMILY) return true;
   const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+  const limiter = bucket === 'feedback' ? env.FEEDBACK_LIMITER : env.LIMITER;
+  if (limiter) { try { return (await limiter.limit({ key: `${bucket}:${ip}` })).success; } catch { return true; } }
+  if (!env.FAMILY) return true;
   const key = `rate:${bucket}:${ip}:${Math.floor(Date.now() / 3600000)}`;
   const n = Number(await env.FAMILY.get(key)) || 0;
   if (n >= limit) return false;

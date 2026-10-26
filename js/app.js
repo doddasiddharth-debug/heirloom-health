@@ -87,6 +87,8 @@ function migrateV1(v) {
 let ACCT = null, S = null;
 let AUTH = { mode: 'signin', pick: null, forgot: false };
 function loadFor(acct) {
+  // The example family always starts fresh; only whether the tour was seen is remembered.
+  if (acct.guest && !acct.contributor && !acct.viewer) { const ex = exampleState(); ex.toured = store.get('heirloom-guest-toured', false); return ex; }
   try { const v = JSON.parse(localStorage.getItem(dataKey(acct.id))); if (v?.v === 2 && Array.isArray(v.people)) return v; } catch {}
   return null;
 }
@@ -96,11 +98,17 @@ function legacyData() {
   try { const v1 = JSON.parse(localStorage.getItem('heirloom-health-v1')); if (v1 && Array.isArray(v1.people)) return migrateV1(v1); } catch {}
   return null;
 }
-function save() { touchFamily(); if (S && ACCT && !ACCT.viewer) try { localStorage.setItem(dataKey(ACCT.id), JSON.stringify(S)); } catch {} }
+function save() {
+  touchFamily();
+  if (!S || !ACCT || ACCT.viewer) return;
+  // Changes to the example family aren't kept, so it is always the same for the next visitor.
+  if (ACCT.guest && !ACCT.contributor) { store.set('heirloom-guest-toured', !!S.toured); return; }
+  try { localStorage.setItem(dataKey(ACCT.id), JSON.stringify(S)); } catch {}
+}
 function enter(acct, state) {
   ACCT = acct;
   S = state || loadFor(acct) || (acct.guest ? exampleState() : blankState({ name: acct.name }));
-  S.example = !!acct.guest; S.pdfBusy = false; S.celebrate = null; S.tab ||= 'tree';
+  S.example = !!acct.guest; S.pdfBusy = false; S.celebrate = null; S.tab ||= 'tree'; S.micBlocked = S.capBlocked = false;
   if (!S.toured) { TOUR_I = 0; S.tab = 'tree'; }
   save(); render(); window.scrollTo({ top: 0 });
   loadFiles().then(render);
@@ -112,6 +120,7 @@ function signOut() {
   TOUR_I = null;
   if (REC) REC.mr.stop();
   RECOG?.stop();
+  [...CLIPS, ...MEDIA].forEach(x => URL.revokeObjectURL(x.url));
   E = null; endSession(); S = null; ACCT = null; CLIPS = []; MEDIA = []; SUGG = { key: '', list: [] };
   AUTH = { mode: listAccounts().length ? 'signin' : 'create', pick: listAccounts()[0]?.id || null, forgot: false };
   render(); window.scrollTo({ top: 0 });
@@ -165,10 +174,10 @@ const IDB = {
   put(c, store = 'clips') { return this.run(store, 'readwrite', s => s.put(c)); },
   del(id, store = 'clips') { return this.run(store, 'readwrite', s => s.delete(id)); },
 };
-async function loadClips() { try { CLIPS = (await IDB.all()).filter(c => c.acct ? c.acct === ACCT?.id : ACCT && !ACCT.guest).map(c => ({ ...c, url: URL.createObjectURL(c.blob) })).sort((a, b) => a.created - b.created); } catch { CLIPS = []; } }
-async function addClip(pid, step, blob, secs) {
-  const rec = { id: 'clip-' + Date.now().toString(36), acct: ACCT?.id, pid, step, created: Date.now(), secs, blob, type: blob.type || 'audio/webm' };
-  try { await IDB.put(rec); CLIPS.push({ ...rec, url: URL.createObjectURL(blob) }); toast('Recording saved on this device'); }
+async function loadClips() { CLIPS.forEach(c => URL.revokeObjectURL(c.url)); try { CLIPS = (await IDB.all()).filter(c => c.acct ? c.acct === ACCT?.id : ACCT && !ACCT.guest).map(c => ({ ...c, url: URL.createObjectURL(c.blob) })).sort((a, b) => a.created - b.created); } catch { CLIPS = []; } }
+async function addClip(pid, step, blob, secs, acct = ACCT?.id) {
+  const rec = { id: 'clip-' + Date.now().toString(36), acct, pid, step, created: Date.now(), secs, blob, type: blob.type || 'audio/webm' };
+  try { await IDB.put(rec); if (acct && acct === ACCT?.id) CLIPS.push({ ...rec, url: URL.createObjectURL(blob) }); toast('Recording saved on this device'); }
   catch { toast("Couldn't save the recording. This browser may be blocking storage."); }
   render();
 }
@@ -177,14 +186,21 @@ async function removeClip(id) {
   const c = CLIPS.find(c => c.id === id); if (c) URL.revokeObjectURL(c.url);
   CLIPS = CLIPS.filter(c => c.id !== id); render();
 }
+// Remove a profile's recordings, photos and documents from this device.
+async function deleteFilesOf(acctId) {
+  for (const store of ['clips', 'media']) {
+    try { for (const r of await IDB.all(store)) if (r.acct === acctId) await IDB.del(r.id, store); } catch {}
+  }
+  if (acctId === ACCT?.id) { [...CLIPS, ...MEDIA].forEach(x => URL.revokeObjectURL(x.url)); CLIPS = []; MEDIA = []; }
+}
 const fmtSec = s => s == null ? '' : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 async function startRec(pid, step) {
   try {
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) throw new Error('no mic');
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mr = new MediaRecorder(stream), chunks = [], start = Date.now();
+    const mr = new MediaRecorder(stream), chunks = [], start = Date.now(), acct = ACCT?.id; // kept even if you sign out mid-recording
     mr.ondataavailable = e => e.data.size && chunks.push(e.data);
-    mr.onstop = () => { stream.getTracks().forEach(t => t.stop()); clearInterval(REC?.timer); REC = null; addClip(pid, step, new Blob(chunks, { type: mr.mimeType || 'audio/webm' }), Math.round((Date.now() - start) / 1000)); };
+    mr.onstop = () => { stream.getTracks().forEach(t => t.stop()); clearInterval(REC?.timer); REC = null; addClip(pid, step, new Blob(chunks, { type: mr.mimeType || 'audio/webm' }), Math.round((Date.now() - start) / 1000), acct); };
     REC = { mr, pid, step, start, timer: setInterval(() => { const el = $('#rec-time'); if (el) el.textContent = fmtSec(Math.round((Date.now() - start) / 1000)); }, 500) };
     mr.start(); render();
   } catch { S.micBlocked = true; save(); render(); toast("The microphone isn't available here. Use your phone's recorder button instead."); }
@@ -207,11 +223,11 @@ function startCaptions(pid, stepKey) {
     const r = new SR();
     r.lang = (LANGS.find(l => l.id === S.iv.lang) || LANGS[0]).speech; r.continuous = true; r.interimResults = false;
     r.onresult = e => {
-      const p = byId(pid);
+      const p = S && byId(pid); if (!p) return;
       for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) p.transcripts[stepKey] = ((p.transcripts[stepKey] || '') + ' ' + e.results[i][0].transcript).trim();
       save(); const ta = $('#iv-tr'); if (ta) ta.value = p.transcripts[stepKey];
     };
-    r.onerror = () => { S.capBlocked = true; toast("Live captions aren't available here. Type instead, or use your keyboard's microphone."); };
+    r.onerror = () => { if (!S) return; S.capBlocked = true; toast("Live captions aren't available here. Type instead, or use your keyboard's microphone."); };
     r.onend = () => { RECOG = null; render(); };
     r.start(); RECOG = r; render();
   } catch { S.capBlocked = true; render(); }
@@ -522,7 +538,7 @@ function recHTML(who, step) {
       ${live ? `<button class="btn rec-live" data-action="rec-stop"><span class="rec-dot"></span>Stop <span id="rec-time" class="num">0:00</span></button>`
         : S.micBlocked ? '' : `<button class="btn" data-action="rec-start" data-pid="${who.id}" ${REC ? 'disabled' : ''}>${ICON.mic}Record</button>`}
       <label class="btn ${S.micBlocked ? '' : 'sm'}" for="rec-file">${S.micBlocked ? ICON.mic + "Use phone's recorder" : 'Add audio file'}</label>
-      <input type="file" id="rec-file" class="sr" accept="audio/*" capture data-pid="${who.id}">
+      <input type="file" id="rec-file" class="sr" accept="audio/*" ${S.micBlocked ? 'capture' : ''} data-pid="${who.id}">
     </div>
     ${clipList(mine, false)}
   </div>`;
@@ -670,7 +686,7 @@ function renderAuth() {
         <label class="check"><input type="checkbox" id="auth-remember"> Stay signed in on this device</label>
         <button class="btn primary wide" type="submit">Sign in${pick ? ' as ' + esc(pick.name) : ''}</button>
         ${pick?.pinHash ? `<button type="button" class="link" data-action="auth-forgot">Forgot your PIN?</button>` : ''}
-        ${AUTH.forgot && pick ? `<div class="forgot"><p class="small">The PIN can't be recovered. The only option is to delete ${esc(pick.name)}'s profile and family from this device, then start again or restore a backup code.</p><button type="button" class="btn sm danger armed" data-action="auth-delete">Delete ${esc(pick.name)}'s profile</button></div>` : ''}
+        ${AUTH.forgot && pick ? `<div class="forgot"><p class="small">The PIN can't be recovered. The only option is to delete ${esc(pick.name)}'s profile and family from this device, then start again or restore a backup code.</p><button type="button" class="btn sm danger armed" data-action="auth-delete">${AUTH.confirmDel ? `Tap again to delete ${esc(pick.name)}'s family for good` : `Delete ${esc(pick.name)}'s profile`}</button></div>` : ''}
       ` : `
         <label class="f">Your first name<input type="text" id="auth-name" autocomplete="given-name" maxlength="40"></label>
         <div class="grid2">
@@ -694,6 +710,14 @@ function renderAuth() {
     <p class="small muted" style="text-align:center">By using Heirloom Health you agree to the ${termsLink()}.</p>
     <p class="fine">Profiles and answers stay on this device; nothing is uploaded. The PIN keeps others on a shared device out of your family. It is not a cloud account, so clearing this browser's data erases it. Copy a backup code from the Family tree page to be safe.</p>
   </div></div>`;
+}
+// What's typed on the sign-in page survives redraws, such as reading the Terms and coming back.
+function authForm() {
+  const els = [...document.querySelectorAll('#main [id^="auth-"]')].filter(el => /INPUT|SELECT/.test(el.tagName));
+  return els.length ? Object.fromEntries(els.map(el => [el.id, el.type === 'checkbox' ? el.checked : el.value])) : null;
+}
+function restoreAuthForm(form) {
+  for (const [id, v] of Object.entries(form || {})) { const el = document.getElementById(id); if (el) el.type === 'checkbox' ? el.checked = v : el.value = v; }
 }
 const authErr = msg => { const el = $('#auth-err'); if (el) el.textContent = msg; return false; };
 async function signUp() {
@@ -927,6 +951,7 @@ function renderBanner() {
   if (ACCT?.viewer) return `<div class="banner viewer-banner">${mascot(48)}<p><b>Family health history shared by ${esc(S.sharedBy || 'a patient')}</b> on ${fmtDate(S.sharedAt || today())}. Read-only. Nothing is saved on this device, and the report was never stored on a server.</p></div>`;
   return ACCT?.guest ? `<div class="banner">${mascot(48)}<p><b>You're exploring an example family.</b> The names and illnesses are made up, and changes here aren't yours to keep.</p><button class="btn primary" data-action="start-own">Create my profile</button></div>` : '';
 }
+const MODAL_FOCUS = { kind: null, back: null };
 function render() { renderApp(); applyTour(); }
 function renderApp() {
   const keep = document.activeElement?.id;
@@ -939,10 +964,18 @@ function renderApp() {
   document.body.classList.toggle('elder-on', !!E);
   document.body.classList.toggle('solo', !!(ACCT?.viewer || ACCT?.contributor));
   $('#modal-root').innerHTML = S ? renderModal() : '';
+  // Move keyboard focus into a pop-up when it opens, and back where it was when it closes.
+  const opened = S?.modal?.kind || null;
+  if (opened !== MODAL_FOCUS.kind) {
+    if (opened && !MODAL_FOCUS.kind) MODAL_FOCUS.back = document.activeElement;
+    if (opened) setTimeout(() => $('.modal input:not([readonly]), .modal textarea, .modal button:not(.modal-x), .modal a')?.focus(), 0);
+    else { const back = MODAL_FOCUS.back; MODAL_FOCUS.back = null; setTimeout(() => back?.isConnected && back.focus(), 0); }
+    MODAL_FOCUS.kind = opened;
+  }
   if (E && S) { $('#main').innerHTML = renderElder(); return; }
   if (ACCT?.contributor) { $('#main').innerHTML = renderContribStart(); return; }
   if (ACCT?.viewer) { $('#main').innerHTML = renderBanner() + renderDoctor(); return; }
-  if (!S) { $('#main').innerHTML = renderAuth(); if (keep) document.getElementById(keep)?.focus(); return; }
+  if (!S) { const form = authForm() || AUTH.form; $('#main').innerHTML = renderAuth(); restoreAuthForm(form); AUTH.form = null; if (keep) document.getElementById(keep)?.focus(); return; }
   renderShell();
   const page = S.tab === 'interview' && S.showVoices ? renderVoices : { tree: renderTree, interview: renderInterview, risks: renderRisks, doctor: renderDoctor }[S.tab] || renderTree;
   $('#main').innerHTML = renderBanner() + page();
@@ -988,7 +1021,7 @@ document.addEventListener('pointerup', () => {
 function setTab(t) { S.tab = t; save(); render(); window.scrollTo({ top: 0 }); }
 async function copyText(text, label) {
   try { await navigator.clipboard.writeText(text); toast(label); }
-  catch { const ta = $('#copy-fallback') || Object.assign(document.createElement('textarea'), { id: 'copy-fallback' }); if (!ta.parentNode) $('#main').append(ta); ta.hidden = false; ta.value = text; ta.select(); toast('Select all and copy the highlighted text'); }
+  catch { const ta = $('#copy-fallback') || Object.assign(document.createElement('textarea'), { id: 'copy-fallback' }); ($('.modal') || $('#main')).append(ta); ta.hidden = false; ta.value = text; ta.select(); toast('Select all and copy the highlighted text'); }
 }
 
 /* ---------- Events ---------- */
@@ -998,7 +1031,7 @@ document.addEventListener('input', e => {
   if (t.id === 'fb-email' && S?.modal) { S.modal.email = t.value; return; }
   if (!p) return;
   if (d.tr) { (p.transcripts ||= {})[d.tr] = t.value; save(); return; }
-  if (d.f && t.type !== 'checkbox' && t.type !== 'file' && t.tagName !== 'SELECT') { p[d.f] = t.value; save(); refreshTree(); }
+  if (d.f && t.type !== 'checkbox' && t.type !== 'file' && t.tagName !== 'SELECT') { p[d.f] = t.value; p.u = Date.now(); save(); refreshTree(); }
   else if (d.cf === 'age') { addReport(p.id, d.cond, d.type, d.by, { age: t.value }); save(); refreshTree(); }
 });
 document.addEventListener('change', e => {
@@ -1016,10 +1049,10 @@ document.addEventListener('change', e => {
   if (!p) return;
   if (d.cf === 'on') {
     if (t.checked) addReport(p.id, d.cond, '', d.by);
-    else dropReports(r => r.pid === p.id && r.cond === d.cond && r.by === d.by);
+    else { const gone = r => r.pid === p.id && r.cond === d.cond && r.by === d.by; noteDeleted('r', S.reports.filter(gone).map(r => r.id)); dropReports(gone); }
     save(); render();
     if (t.checked) document.getElementById(t.id + '-age')?.focus();
-  } else if (t.tagName === 'SELECT' && d.f) { p[d.f] = t.value; save(); render(); }
+  } else if (t.tagName === 'SELECT' && d.f) { p[d.f] = t.value; p.u = Date.now(); save(); render(); }
   else if (d.f === 'cause' || d.f === 'deathAge') render();
 });
 document.addEventListener('click', e => {
@@ -1027,11 +1060,11 @@ document.addEventListener('click', e => {
   const tab = e.target.closest('.nav button'); if (tab) return setTab(tab.dataset.tab);
   const node = e.target.closest('[data-node]'); if (node) { S.sel = node.dataset.node; S.confirmRemove = null; save(); render(); if (innerWidth <= 1100) document.querySelector('.editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
   const hl = e.target.closest('[data-hl]'); if (hl) { S.hl = hl.dataset.hl; save(); render(); return; }
-  const liv = e.target.closest('[data-living]'); if (liv) { const p = byId(liv.dataset.pid); p.living = liv.dataset.living; save(); render(); return; }
+  const liv = e.target.closest('[data-living]'); if (liv) { const p = byId(liv.dataset.pid); p.living = liv.dataset.living; p.u = Date.now(); save(); render(); return; }
   const b = e.target.closest('[data-action]'); if (!b) return;
   if (b.classList.contains('modal-back') && e.target.closest('.modal')) return; // a click inside the panel isn't a click on the backdrop
   const a = b.dataset.action;
-  if (a === 'legal-open') { LEGAL_OPEN = true; render(); window.scrollTo({ top: 0 }); return; }
+  if (a === 'legal-open') { if (!S) AUTH.form = authForm(); if (S?.modal) S.modal = null; LEGAL_OPEN = true; render(); window.scrollTo({ top: 0 }); return; }
   if (a === 'legal-close') { LEGAL_OPEN = false; render(); window.scrollTo({ top: 0 }); return; }
   if (a.startsWith('auth-')) return authAction(a, b);
   if (a === 'signout') return signOut();
@@ -1066,7 +1099,7 @@ document.addEventListener('click', e => {
       if (!S.reports.some(mine)) addReport(pid, 'cancer', '', by);
       save(); render(); break;
     }
-    case 'del-report': dropReports(r => r.id === b.dataset.rid); save(); render(); break;
+    case 'del-report': noteDeleted('r', [b.dataset.rid]); dropReports(r => r.id === b.dataset.rid); save(); render(); break;
     case 'clip-del': if (S.confirmClip === b.dataset.clip) { S.confirmClip = null; removeClip(b.dataset.clip); } else { S.confirmClip = b.dataset.clip; render(); } break;
     case 'pdf': exportPDF(); break;
     case 'm-close': S.modal = null; render(); break;
@@ -1091,6 +1124,7 @@ document.addEventListener('click', e => {
     case 'cloud-open': S.modal = { kind: 'cloud' }; render(); break;
     case 'cloud-start': startCloud().then(render); break;
     case 'cloud-sync': cloudSync(); break;
+    case 'cloud-join': { const { id, key } = S.modal; S.sync = { id, key }; S.modal = { kind: 'cloud' }; save(); render(); cloudSync(); break; }
     case 'cloud-off': S.sync = null; S.modal = null; save(); render(); toast('Sync is off. The copy on the server stays locked.'); break;
     case 'contrib-lang': S.iv.lang = b.dataset.lang; save(); startElder(SELF, b.dataset.lang, true); break;
     case 'contrib-send': contribAnswersLink().then(url => { E = null; S.modal = { kind: 'contrib-done', url }; save(); render(); }); break;
@@ -1106,12 +1140,12 @@ document.addEventListener('click', e => {
     case 'anc': { const me = byId(SELF), set = new Set(me.ancestry || []); set.has(b.dataset.id) ? set.delete(b.dataset.id) : set.add(b.dataset.id); me.ancestry = [...set]; save(); render(); break; }
     case 'zoom': setZoom((S.zoom || 1) + 0.15 * +b.dataset.z); break;
     case 'zoom-fit': setZoom(fitZoom()); break;
-    case 'center-me': centerOn(SELF); S.sel = SELF; save(); refreshTree(); break;
+    case 'center-me': S.sel = SELF; save(); render(); centerOn(SELF); break;
     case 'start-own': signOut(); AUTH.mode = 'create'; render(); break;
     case 'goto-doctor': setTab('doctor'); break;
     case 'add': { const np = addRelative(b.dataset.kind, p.id); S.sel = np.id; save(); render(); document.getElementById('ed-name')?.focus(); break; }
     case 'add-parent': addRelative(b.dataset.kind, p.id); save(); render(); break;
-    case 'remove': if (S.confirmRemove === p.id) { const gone = removalSet(p.id); removeMediaOf(gone); CLIPS.filter(c => gone.has(c.pid)).forEach(c => removeClip(c.id)); removePerson(p.id); S.sel = SELF; S.confirmRemove = null; } else S.confirmRemove = p.id; save(); render(); break;
+    case 'remove': if (S.confirmRemove === p.id) { const gone = removalSet(p.id); noteDeleted('p', [...gone]); noteDeleted('r', S.reports.filter(r => gone.has(r.pid)).map(r => r.id)); removeMediaOf(gone); CLIPS.filter(c => gone.has(c.pid)).forEach(c => removeClip(c.id)); removePerson(p.id); S.sel = SELF; S.confirmRemove = null; } else S.confirmRemove = p.id; save(); render(); break;
     case 'interview': S.iv.who = p.id; S.iv.step = 0; S.celebrate = null; setTab('interview'); break;
     case 'goto': S.sel = p.id; setTab('tree'); break;
     case 'goto-tree': S.celebrate = null; S.iv.step = 0; setTab('tree'); break;
@@ -1127,16 +1161,25 @@ document.addEventListener('click', e => {
     case 'restore': try {
       const v = JSON.parse(decodeURIComponent(escape(atob($('#restore-text').value.trim()))));
       if (!Array.isArray(v.people) || !Array.isArray(v.rels)) throw 0;
-      Object.assign(S, { people: v.people, rels: v.rels, reports: v.reports || [], example: false, restoreOpen: false, sel: SELF }); save(); render(); toast('Family restored');
+      const fam = cleanFamily(v);
+      if (!fam.people.some(x => x.id === SELF)) throw 0;
+      fam.people = fam.people.map(x => newPerson(x));
+      fam.reports = fam.reports.map(r => ({ said: '', at: today(), by: SELF, ...r, id: r.id || uid('r') }));
+      Object.assign(S, fam, { example: false, restoreOpen: false, sel: SELF }); touchFamily(); save(); render(); toast('Family restored');
     } catch { toast("That code didn't work. Paste the whole code you copied."); } break;
-    case 'wipe': if (S.confirmWipe) { const me = byId(SELF); S = blankState({ name: me.name, born: me.born, sex: me.sex }); save(); render(); toast('Erased. Your blank family is ready.'); } else { S.confirmWipe = true; render(); } break;
+    case 'wipe': if (S.confirmWipe) {
+      const me = byId(SELF), keep = { toured: S.toured, sttMode: S.sttMode, sttModel: S.sttModel }, lang = S.iv.lang;
+      S = Object.assign(blankState({ name: me.name, born: me.born, sex: me.sex }), keep); S.iv.lang = lang;
+      save(); deleteFilesOf(ACCT.id).then(render); render(); toast('Erased. Your blank family is ready.');
+    } else { S.confirmWipe = true; render(); } break;
   }
 });
 function authAction(a, b) {
   if (a === 'auth-mode') { AUTH.mode = b.dataset.mode; AUTH.forgot = false; render(); $('#auth-name')?.focus(); }
-  else if (a === 'auth-pick') { AUTH.pick = b.dataset.id; AUTH.forgot = false; render(); $('#auth-pin')?.focus(); }
-  else if (a === 'auth-forgot') { AUTH.forgot = !AUTH.forgot; render(); }
-  else if (a === 'auth-delete') { const name = listAccounts().find(x => x.id === AUTH.pick)?.name; deleteAccount(AUTH.pick); AUTH = { mode: listAccounts().length ? 'signin' : 'create', pick: null, forgot: false }; render(); toast(`${name}'s profile was deleted from this device`); }
+  else if (a === 'auth-pick') { AUTH.pick = b.dataset.id; AUTH.forgot = false; AUTH.confirmDel = false; render(); $('#auth-pin')?.focus(); }
+  else if (a === 'auth-forgot') { AUTH.forgot = !AUTH.forgot; AUTH.confirmDel = false; render(); }
+  else if (a === 'auth-delete' && !AUTH.confirmDel) { AUTH.confirmDel = true; render(); }
+  else if (a === 'auth-delete') { deleteFilesOf(AUTH.pick); const name = listAccounts().find(x => x.id === AUTH.pick)?.name; deleteAccount(AUTH.pick); AUTH = { mode: listAccounts().length ? 'signin' : 'create', pick: null, forgot: false }; render(); toast(`${name}'s profile was deleted from this device`); }
   else if (a === 'auth-guest') { startSession('guest', false); enter(GUEST); }
   else if (a === 'auth-agree') {
     const { id, remember } = AUTH.agree, acct = listAccounts().find(x => x.id === id);
@@ -1151,6 +1194,13 @@ document.addEventListener('submit', e => {
   AUTH.mode === 'signin' ? signIn() : signUp();
 });
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && S?.modal) { S.modal = null; render(); return; }
+  if (e.key === 'Tab' && S?.modal) { // keep Tab inside the pop-up
+    const f = [...document.querySelectorAll('.modal button, .modal input, .modal textarea, .modal select, .modal a[href]')].filter(el => !el.disabled && el.offsetParent !== null);
+    if (f.length && !e.target.closest?.('.modal')) { e.preventDefault(); f[0].focus(); }
+    else if (f.length && e.shiftKey && e.target === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (f.length && !e.shiftKey && e.target === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+  }
   const node = e.target.closest?.('[data-node]');
   if (node && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); node.dispatchEvent(new MouseEvent('click', { bubbles: true })); }
 });
@@ -1197,7 +1247,7 @@ async function boot() {
     S = loadFor(ACCT) || (ACCT.guest ? exampleState() : blankState({ name: ACCT.name }));
     const tab = hash.slice(1);
     if (['tree', 'interview', 'risks', 'doctor'].includes(tab)) S.tab = tab;
-    S.pdfBusy = false; S.celebrate = null; S.modal = null;
+    S.pdfBusy = false; S.celebrate = null; S.modal = null; S.micBlocked = S.capBlocked = false;
     if (!S.toured) TOUR_I = 0;
   }
   touchFamily();
@@ -1211,10 +1261,10 @@ async function handlePending() {
   if (!p || !S || !ACCT || ACCT.guest) return;
   store.del('heirloom-pending', 'session');
   if (p.kind === 'answers') {
-    try { S.modal = { kind: 'answers', data: await unpackData(p.data) }; render(); } catch { toast('That answers link is damaged.'); }
+    try { const raw = await unpackData(p.data); if (!okId(raw?.from)) throw 0; S.modal = { kind: 'answers', data: { ...raw, ...cleanFamily(raw), name: okText(raw.name, 80), at: okDate(raw.at) || today() } }; render(); } catch { toast('That answers link is damaged.'); }
   } else if (p.kind === 'sync') {
     const [id, key] = p.data.split('.');
-    if (id && key) { S.sync = { id, key }; save(); S.modal = { kind: 'cloud' }; render(); cloudSync(); }
+    if (id && key && okId(id)) { S.modal = { kind: 'cloud-join', id, key }; render(); }
   }
 }
 boot();

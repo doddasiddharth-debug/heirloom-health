@@ -47,7 +47,7 @@ function sttWorker() {
   };
   STT_WORKER.onerror = e => {
     for (const j of STT_JOBS.values()) j.reject(new Error(e.message || 'The speech model could not start.'));
-    STT_JOBS.clear(); STT_WORKER = null;
+    STT_JOBS.clear(); STT_WORKER?.terminate(); STT_WORKER = null;
   };
   return STT_WORKER;
 }

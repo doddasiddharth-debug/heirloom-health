@@ -11,7 +11,7 @@ const TOUR = [
   { tab: 'interview', capture: true, sel: ['[data-action="rec-start"]', '[data-action="rec-stop"]'], title: 'Record the answers', text: "Ask permission first, then record. The recording stays on this device. Later, Turn into text writes out what was said, either on your phone or with the free Heirloom server." },
   { tab: 'interview', capture: true, sel: ['[data-action="find"]', '#iv-tr'], title: 'Find answers for you', text: "Type or paste what your relative said, then tap Find answers. The app understands everyday words like \"sugar\" for diabetes and notices when someone says no. Check each suggestion before you add it. You can also tick answers yourself." },
   { tab: 'interview', sel: ['[data-action="elder-start"]'], title: 'Let grandparents answer on their own', text: "Large tap-to-answer mode shows one illness at a time with big Yes / No / Don't know buttons. Question voices lets a fluent relative record each question once, so it's always read out in a familiar voice." },
-  { tab: 'tree', sel: ['[data-action="invite"]', '[data-action="interview"]'], title: 'Relatives who live far away', text: "Select a relative and send them an invite link. They answer on their own phone with no sign-up and send a link back, and their answers are added to your tree. Family sync keeps the tree up to date across phones, encrypted so the server can't read it." },
+  { tab: 'tree', relative: true, sel: ['[data-action="invite"]', '[data-action="interview"]'], title: 'Relatives who live far away', text: "Select a relative and send them an invite link. They answer on their own phone with no sign-up and send a link back, and their answers are added to your tree. Family sync keeps the tree up to date across phones, encrypted so the server can't read it." },
   { tab: 'risks', sel: ['.anc-card', '.anc-note'], title: 'Your ancestry', text: "Some risks depend on where your family comes from, such as heart disease in South Asian families or thalassemia in Mediterranean and South Asian families. Choose all that apply here, or on your own card in the family tree." },
   { tab: 'risks', sel: ['.risks', '.lesson'], title: 'What am I most at risk for?', text: "Conditions are ranked as higher than average, moderate, or about average, using the family-history method behind the CDC's Family Healthware tool. This is not a diagnosis. It shows what to talk about with a doctor." },
   { tab: 'doctor', sel: ['.doc-head', '[data-action="pdf"]'], title: 'The doctor report', text: "This applies published screening guidelines, such as when to start colon cancer screening or whether to see a genetic counselor, and names the source of each finding. There is also a checklist of questions to ask at your next checkup." },
@@ -36,6 +36,8 @@ function showTourStep() {
   const step = TOUR[TOUR_I];
   S.celebrate = null; S.modal = null; S.showVoices = false;
   if (step.tab !== S.tab) { S.tab = step.tab; save(); }
+  // Invites are on a relative's card, so show one.
+  if (step.relative && S.sel === SELF) S.sel = S.people.find(p => p.id !== SELF && p.living !== 'no')?.id || SELF;
   // Recording and answer finding only appear on question steps, not the introduction.
   if (step.capture && ['intro', 'closing'].includes(STEPS[S.iv.step]?.type)) S.iv.step = Math.max(0, STEPS.findIndex(st => st.type !== 'intro' && st.type !== 'closing'));
   render();
@@ -106,7 +108,7 @@ document.addEventListener('click', e => {
   else if (a === 'back' && TOUR_I > 0) { TOUR_I--; showTourStep(); }
 }, true);
 document.addEventListener('keydown', e => {
-  if (!tourOn() || e.target.closest?.('input, textarea, select')) return;
+  if (!tourOn() || S.modal || e.target.closest?.('input, textarea, select')) return;
   if (e.key === 'Escape') endTour();
   else if (e.key === 'ArrowRight' && TOUR_I < TOUR.length - 1) { TOUR_I++; showTourStep(); }
   else if (e.key === 'ArrowLeft' && TOUR_I > 0) { TOUR_I--; showTourStep(); }
