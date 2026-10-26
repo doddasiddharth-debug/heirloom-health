@@ -71,42 +71,42 @@ const isBreast = t => t === 'breast' || t === 'breast2';
 const SUBTYPES = {
   cancer: CANCER_TYPES,
   diabetes: [
-    { id: 't2', short: 'T2 diab', en: 'Type 2 (usually starts as an adult)', name: 'Type 2 diabetes' },
-    { id: 't1', short: 'T1 diab', en: 'Type 1 (needs insulin from a young age)', name: 'Type 1 diabetes' },
-    { id: 'gest', short: 'Preg. diab', en: 'Only during pregnancy (gestational)', name: 'Diabetes during pregnancy' },
+    { id: 't2', short: 'T2 diab', en: 'Type 2 (usually starts as an adult)', name: 'Type 2 diabetes', te: 'టైప్ 2 (సాధారణంగా పెద్దయ్యాక వచ్చే షుగర్)', te_r: 'Type 2 (saadhaaranangaa peddayyaaka vachche sugar)', hi: 'टाइप 2 (अक्सर बड़ी उम्र में होने वाली शुगर)', hi_r: 'Type 2 (aksar badi umar mein hone waali sugar)', es: 'Tipo 2 (casi siempre empieza de adulto)' },
+    { id: 't1', short: 'T1 diab', en: 'Type 1 (needs insulin from a young age)', name: 'Type 1 diabetes', te: 'టైప్ 1 (చిన్నప్పటి నుంచే ఇన్సులిన్ కావాలి)', te_r: 'Type 1 (chinnappati nunche insulin kaavaali)', hi: 'टाइप 1 (कम उम्र से ही इंसुलिन चाहिए)', hi_r: 'Type 1 (kam umar se hi insulin chaahiye)', es: 'Tipo 1 (necesita insulina desde joven)' },
+    { id: 'gest', short: 'Preg. diab', en: 'Only during pregnancy (gestational)', name: 'Diabetes during pregnancy', te: 'గర్భంతో ఉన్నప్పుడు మాత్రమే', te_r: 'Garbhamto unnappudu maatrame', hi: 'सिर्फ़ गर्भावस्था में', hi_r: 'Sirf garbhaavastha mein', es: 'Solo durante el embarazo (gestacional)' },
   ],
   heart: [
-    { id: 'attack', short: 'Heart att', en: 'Heart attack, blocked arteries, bypass or stent', name: 'Heart attack or blocked arteries' },
-    { id: 'muscle', short: 'Cardiomyop', en: 'Weak or thick heart muscle (cardiomyopathy)', name: 'Cardiomyopathy (heart muscle disease)' },
-    { id: 'rhythm', short: 'Rhythm', en: 'Heart rhythm problem or pacemaker', name: 'Heart rhythm problem' },
-    { id: 'failure', short: 'Heart fail', en: 'Heart failure', name: 'Heart failure' },
-    { id: 'birth', short: 'Cong. heart', en: 'Heart problem from birth', name: 'Heart problem from birth' },
+    { id: 'attack', short: 'Heart att', en: 'Heart attack, blocked arteries, bypass or stent', name: 'Heart attack or blocked arteries', te: 'గుండెపోటు, గుండె నరాలు మూసుకుపోవడం, బైపాస్ లేదా స్టెంట్', te_r: 'Gundepotu, gunde naraalu moosukupovadam, bypass leda stent', hi: 'दिल का दौरा, नसों में रुकावट (ब्लॉकेज), बाईपास या स्टेंट', hi_r: 'Dil ka daura, nason mein rukaavat (blockage), bypass ya stent', es: 'Infarto, arterias tapadas, bypass o stent' },
+    { id: 'muscle', short: 'Cardiomyop', en: 'Weak or thick heart muscle (cardiomyopathy)', name: 'Cardiomyopathy (heart muscle disease)', te: 'గుండె కండరం బలహీనం లేదా మందం (కార్డియోమయోపతి)', te_r: 'Gunde kandaram balaheenam leda mandam (cardiomyopathy)', hi: 'दिल की मांसपेशी कमज़ोर या मोटी (कार्डियोमायोपैथी)', hi_r: 'Dil ki maanspeshi kamzor ya moti (cardiomyopathy)', es: 'Músculo del corazón débil o grueso (miocardiopatía)' },
+    { id: 'rhythm', short: 'Rhythm', en: 'Heart rhythm problem or pacemaker', name: 'Heart rhythm problem', te: 'గుండె కొట్టుకోవడంలో తేడా లేదా పేస్‌మేకర్', te_r: 'Gunde kottukovadamlo tedaa leda pacemaker', hi: 'धड़कन की गड़बड़ी या पेसमेकर', hi_r: 'Dhadkan ki gadbadi ya pacemaker', es: 'Problema del ritmo del corazón o marcapasos' },
+    { id: 'failure', short: 'Heart fail', en: 'Heart failure', name: 'Heart failure', te: 'గుండె బలహీనపడటం (హార్ట్ ఫెయిల్యూర్)', te_r: 'Gunde balaheenapadatam (heart failure)', hi: 'हार्ट फ़ेलियर (दिल का कमज़ोर होना)', hi_r: 'Heart failure (dil ka kamzor hona)', es: 'Insuficiencia cardíaca' },
+    { id: 'birth', short: 'Cong. heart', en: 'Heart problem from birth', name: 'Heart problem from birth', te: 'పుట్టుకతో వచ్చిన గుండె సమస్య', te_r: 'Puttukato vachchina gunde samasya', hi: 'जन्म से दिल की समस्या', hi_r: 'Janm se dil ki samasya', es: 'Problema del corazón de nacimiento' },
   ],
   kidney: [
-    { id: 'failure', short: 'Kidney fail', en: 'Kidney failure or dialysis', name: 'Kidney failure' },
-    { id: 'pkd', short: 'PKD', en: 'Polycystic kidneys (cysts)', name: 'Polycystic kidney disease' },
-    { id: 'stones', short: 'Stones', en: 'Kidney stones', name: 'Kidney stones' },
+    { id: 'failure', short: 'Kidney fail', en: 'Kidney failure or dialysis', name: 'Kidney failure', te: 'కిడ్నీలు ఫెయిల్ అవడం లేదా డయాలసిస్', te_r: 'Kidneylu fail avadam leda dialysis', hi: 'किडनी फ़ेल होना या डायलिसिस', hi_r: 'Kidney fail hona ya dialysis', es: 'Falla de los riñones o diálisis' },
+    { id: 'pkd', short: 'PKD', en: 'Polycystic kidneys (cysts)', name: 'Polycystic kidney disease', te: 'కిడ్నీలలో నీటి తిత్తులు (పాలిసిస్టిక్)', te_r: 'Kidneylalo neeti tittulu (polycystic)', hi: 'किडनी में पानी की थैलियाँ (पॉलीसिस्टिक किडनी)', hi_r: 'Kidney mein paani ki thailiyaan (polycystic kidney)', es: 'Riñones poliquísticos (quistes)' },
+    { id: 'stones', short: 'Stones', en: 'Kidney stones', name: 'Kidney stones', te: 'కిడ్నీలో రాళ్ళు', te_r: 'Kidneylo raallu', hi: 'पथरी (गुर्दे की पथरी)', hi_r: 'Pathri (gurde ki pathri)', es: 'Piedras en los riñones' },
   ],
   mental: [
-    { id: 'mood', short: 'Depression', en: 'Depression or anxiety', name: 'Depression or anxiety' },
-    { id: 'bipolar', short: 'Bipolar', en: 'Bipolar disorder', name: 'Bipolar disorder' },
-    { id: 'psychosis', short: 'Psychosis', en: 'Schizophrenia or psychosis', name: 'Schizophrenia or psychosis' },
-    { id: 'suicide', short: 'Suicide', en: 'Died by suicide or attempted it', name: 'Suicide or suicide attempt' },
-    { id: 'neuro', short: 'Autism/ADHD', en: 'Autism or ADHD', name: 'Autism or ADHD' },
+    { id: 'mood', short: 'Depression', en: 'Depression or anxiety', name: 'Depression or anxiety', te: 'డిప్రెషన్ (కుంగుబాటు) లేదా ఆందోళన', te_r: 'Depression (kungubaatu) leda aandolana', hi: 'डिप्रेशन या घबराहट (एंग्ज़ायटी)', hi_r: 'Depression ya ghabraahat (anxiety)', es: 'Depresión o ansiedad' },
+    { id: 'bipolar', short: 'Bipolar', en: 'Bipolar disorder', name: 'Bipolar disorder', te: 'బైపోలార్ (మూడ్ బాగా మారిపోవడం)', te_r: 'Bipolar (mood baagaa maaripovadam)', hi: 'बाइपोलर (मूड बहुत ऊपर-नीचे होना)', hi_r: 'Bipolar (mood bahut oopar-neeche hona)', es: 'Trastorno bipolar' },
+    { id: 'psychosis', short: 'Psychosis', en: 'Schizophrenia or psychosis', name: 'Schizophrenia or psychosis', te: 'స్కిజోఫ్రీనియా లేదా సైకోసిస్', te_r: 'Schizophrenia leda psychosis', hi: 'सिज़ोफ्रेनिया या साइकोसिस', hi_r: 'Schizophrenia ya psychosis', es: 'Esquizofrenia o psicosis' },
+    { id: 'suicide', short: 'Suicide', en: 'Died by suicide or attempted it', name: 'Suicide or suicide attempt', te: 'ఆత్మహత్య చేసుకున్నారు లేదా ప్రయత్నించారు', te_r: 'Aatmahatya chesukunnaaru leda prayatninchaaru', hi: 'आत्महत्या की या कोशिश की', hi_r: 'Aatmahatya ki ya koshish ki', es: 'Se quitó la vida o lo intentó' },
+    { id: 'neuro', short: 'Autism/ADHD', en: 'Autism or ADHD', name: 'Autism or ADHD', te: 'ఆటిజం లేదా ADHD', te_r: 'Autism leda ADHD', hi: 'ऑटिज़्म या ADHD', hi_r: 'Autism ya ADHD', es: 'Autismo o TDAH' },
   ],
   blood: [
-    { id: 'thal', short: 'Thalass.', en: 'Thalassemia', name: 'Thalassemia' },
-    { id: 'sickle', short: 'Sickle', en: 'Sickle cell disease or trait', name: 'Sickle cell disease or trait' },
-    { id: 'g6pd', short: 'G6PD', en: 'G6PD deficiency', name: 'G6PD deficiency' },
-    { id: 'anemia', short: 'Anemia', en: 'Anemia (low blood)', name: 'Anemia' },
-    { id: 'bleeding', short: 'Bleeding', en: 'Bleeding disorder (hemophilia, von Willebrand)', name: 'Bleeding disorder' },
+    { id: 'thal', short: 'Thalass.', en: 'Thalassemia', name: 'Thalassemia', te: 'తలసేమియా', te_r: 'Thalassemia', hi: 'थैलेसीमिया', hi_r: 'Thalassemia', es: 'Talasemia' },
+    { id: 'sickle', short: 'Sickle', en: 'Sickle cell disease or trait', name: 'Sickle cell disease or trait', te: 'సికిల్ సెల్ వ్యాధి లేదా లక్షణం (ట్రెయిట్)', te_r: 'Sickle cell vyaadhi leda lakshanam (trait)', hi: 'सिकल सेल बीमारी या ट्रेट (वाहक)', hi_r: 'Sickle cell beemaari ya trait (vaahak)', es: 'Anemia falciforme o rasgo falciforme' },
+    { id: 'g6pd', short: 'G6PD', en: 'G6PD deficiency', name: 'G6PD deficiency', te: 'G6PD లోపం', te_r: 'G6PD lopam', hi: 'G6PD की कमी', hi_r: 'G6PD ki kami', es: 'Deficiencia de G6PD' },
+    { id: 'anemia', short: 'Anemia', en: 'Anemia (low blood)', name: 'Anemia', te: 'రక్తహీనత (రక్తం తక్కువ)', te_r: 'Raktaheenata (raktam takkuva)', hi: 'खून की कमी (एनीमिया)', hi_r: 'Khoon ki kami (anemia)', es: 'Anemia (sangre baja)' },
+    { id: 'bleeding', short: 'Bleeding', en: 'Bleeding disorder (hemophilia, von Willebrand)', name: 'Bleeding disorder', te: 'రక్తం గడ్డకట్టని జబ్బు (హీమోఫీలియా, వాన్ విల్లెబ్రాండ్)', te_r: 'Raktam gaddakattani jabbu (hemophilia, von Willebrand)', hi: 'खून न रुकने की बीमारी (हीमोफ़ीलिया, वॉन विलेब्रांड)', hi_r: 'Khoon na rukne ki beemaari (hemophilia, von Willebrand)', es: 'Trastorno de sangrado (hemofilia, von Willebrand)' },
   ],
   liver: [
-    { id: 'hepb', short: 'Hep B', en: 'Hepatitis B', name: 'Hepatitis B' },
-    { id: 'hepc', short: 'Hep C', en: 'Hepatitis C', name: 'Hepatitis C' },
-    { id: 'fatty', short: 'Fatty liver', en: 'Fatty liver', name: 'Fatty liver disease' },
-    { id: 'cirrhosis', short: 'Cirrhosis', en: 'Cirrhosis or liver failure', name: 'Cirrhosis' },
-    { id: 'iron', short: 'Iron', en: 'Too much iron (hemochromatosis)', name: 'Hemochromatosis' },
+    { id: 'hepb', short: 'Hep B', en: 'Hepatitis B', name: 'Hepatitis B', te: 'హెపటైటిస్ బి', te_r: 'Hepatitis B', hi: 'हेपेटाइटिस बी', hi_r: 'Hepatitis B', es: 'Hepatitis B' },
+    { id: 'hepc', short: 'Hep C', en: 'Hepatitis C', name: 'Hepatitis C', te: 'హెపటైటిస్ సి', te_r: 'Hepatitis C', hi: 'हेपेटाइटिस सी', hi_r: 'Hepatitis C', es: 'Hepatitis C' },
+    { id: 'fatty', short: 'Fatty liver', en: 'Fatty liver', name: 'Fatty liver disease', te: 'ఫ్యాటీ లివర్ (కాలేయంలో కొవ్వు)', te_r: 'Fatty liver (kaaleyamlo kovvu)', hi: 'फैटी लिवर (जिगर में चर्बी)', hi_r: 'Fatty liver (jigar mein charbi)', es: 'Hígado graso' },
+    { id: 'cirrhosis', short: 'Cirrhosis', en: 'Cirrhosis or liver failure', name: 'Cirrhosis', te: 'లివర్ సిరోసిస్ లేదా లివర్ ఫెయిల్ అవడం', te_r: 'Liver cirrhosis leda liver fail avadam', hi: 'सिरोसिस या लिवर फ़ेल होना', hi_r: 'Cirrhosis ya liver fail hona', es: 'Cirrosis o falla del hígado' },
+    { id: 'iron', short: 'Iron', en: 'Too much iron (hemochromatosis)', name: 'Hemochromatosis', te: 'శరీరంలో ఐరన్ ఎక్కువ (హీమోక్రోమాటోసిస్)', te_r: 'Shareeramlo iron ekkuva (hemochromatosis)', hi: 'शरीर में आयरन ज़्यादा (हीमोक्रोमैटोसिस)', hi_r: 'Shareer mein iron zyaada (hemochromatosis)', es: 'Demasiado hierro (hemocromatosis)' },
   ],
 };
 const subtypeOf = (cond, type) => type && SUBTYPES[cond]?.find(t => t.id === type);
@@ -181,30 +181,75 @@ const Q = {
   },
   children: {
     en: 'Tell me about your children. Did any of them have serious health problems, or pass away young?',
+    te: 'మీ పిల్లల గురించి చెప్పండి. వాళ్ళలో ఎవరికైనా పెద్ద ఆరోగ్య సమస్యలు ఉన్నాయా, లేదా ఎవరైనా చిన్న వయసులోనే చనిపోయారా?',
+    te_r: 'Mee pillala gurinchi cheppandi. Vaallalo evarikainaa pedda aarogya samasyalu unnaayaa, leda evarainaa chinna vayasulone chanipoyaaraa?',
+    hi: 'मुझे अपने बच्चों के बारे में बताइए। क्या उनमें से किसी को कोई गंभीर स्वास्थ्य समस्या थी, या किसी का कम उम्र में देहांत हुआ?',
+    hi_r: 'Mujhe apne bachchon ke baare mein bataaiye. Kya unmein se kisi ko koi gambheer swaasthya samasya thi, ya kisi ka kam umar mein dehaant hua?',
+    es: 'Cuénteme de sus hijos. ¿Alguno tuvo problemas de salud graves, o falleció joven?',
   },
   genetic: {
     en: 'Has anyone in the family had a genetic test, for example for BRCA or Lynch syndrome? Who was it, and what did it find?',
+    te: 'మన కుటుంబంలో ఎవరైనా జన్యు పరీక్ష (జెనెటిక్ టెస్ట్) చేయించుకున్నారా? ఉదాహరణకు BRCA లేదా లించ్ సిండ్రోమ్ కోసం. ఎవరు, అందులో ఏం తెలిసింది?',
+    te_r: 'Mana kutumbamlo evarainaa janyu pareeksha (genetic test) cheyinchukunnaaraa? Udaaharanaku BRCA leda Lynch syndrome kosam. Evaru, andulo em telisindi?',
+    hi: 'क्या परिवार में किसी ने जेनेटिक टेस्ट (आनुवंशिक जाँच) करवाया है, जैसे BRCA या लिंच सिंड्रोम के लिए? वह कौन था, और उसमें क्या निकला?',
+    hi_r: 'Kya parivaar mein kisi ne genetic test (aanuvanshik jaanch) karvaaya hai, jaise BRCA ya Lynch syndrome ke liye? Woh kaun tha, aur usmein kya nikla?',
+    es: '¿Alguien de la familia se ha hecho una prueba genética, por ejemplo de BRCA o del síndrome de Lynch? ¿Quién fue, y qué encontraron?',
   },
   sudden: {
     en: 'Did anyone in the family die suddenly without a clear reason before age 50, faint while exercising, or drown?',
+    te: 'మన కుటుంబంలో ఎవరైనా 50 ఏళ్ళ లోపే స్పష్టమైన కారణం లేకుండా అకస్మాత్తుగా చనిపోయారా, వ్యాయామం చేస్తున్నప్పుడు స్పృహ తప్పి పడిపోయారా, లేదా నీళ్ళలో మునిగి చనిపోయారా?',
+    te_r: 'Mana kutumbamlo evarainaa 50 ella lope spashtamaina kaaranam lekundaa akasmaattugaa chanipoyaaraa, vyaayaamam chestunnappudu spruha tappi padipoyaaraa, leda neellalo munigi chanipoyaaraa?',
+    hi: 'क्या परिवार में किसी की 50 साल से पहले बिना किसी साफ़ वजह के अचानक मौत हुई, कोई कसरत करते समय बेहोश हुआ, या किसी की डूबकर मौत हुई?',
+    hi_r: 'Kya parivaar mein kisi ki 50 saal se pehle bina kisi saaf wajah ke achaanak maut hui, koi kasrat karte samay behosh hua, ya kisi ki doobkar maut hui?',
+    es: '¿Alguien de la familia murió de repente sin una causa clara antes de los 50 años, se desmayó haciendo ejercicio, o se ahogó?',
   },
   related: {
     en: 'Were your parents related to each other by blood, for example cousins, or uncle and niece? Were you and your husband or wife?',
+    te: 'మీ అమ్మా నాన్నలు ఒకరికొకరు రక్తసంబంధీకులా, ఉదాహరణకు బావ-మరదలు (మేనరికం), లేదా మేనమామ-మేనకోడలు? మీరూ మీ భర్త / భార్య కూడా బంధువులా?',
+    te_r: 'Mee ammaa naannalu okarikokaru raktasambandheekulaa, udaaharanaku baava-maradalu (menarikam), leda menamaama-menakodalu? Meeroo mee bharta / bhaarya koodaa bandhuvulaa?',
+    hi: 'क्या आपके माता-पिता आपस में खून के रिश्ते में थे, जैसे चचेरे-ममेरे भाई-बहन, या मामा-भांजी? क्या आप और आपके पति या पत्नी भी रिश्तेदार हैं?',
+    hi_r: 'Kya aapke maata-pita aapas mein khoon ke rishte mein the, jaise chachere-mamere bhai-behen, ya maama-bhaanji? Kya aap aur aapke pati ya patni bhi rishtedaar hain?',
+    es: '¿Sus padres eran parientes de sangre, por ejemplo primos, o tío y sobrina? ¿Y usted y su esposo o esposa?',
   },
   pregnancy: {
     en: 'In our family, were there miscarriages, stillbirths, or babies who died in their first year?',
+    te: 'మన కుటుంబంలో గర్భస్రావాలు, చనిపోయి పుట్టిన బిడ్డలు, లేదా ఏడాది లోపే చనిపోయిన పసిపిల్లలు ఉన్నారా?',
+    te_r: 'Mana kutumbamlo garbhasraavaalu, chanipoyi puttina biddalu, leda edaadi lope chanipoyina pasipillalu unnaaraa?',
+    hi: 'क्या हमारे परिवार में कभी गर्भपात हुए, बच्चे मरे हुए पैदा हुए, या कोई बच्चा पहले साल में ही गुज़र गया?',
+    hi_r: 'Kya hamaare parivaar mein kabhi garbhpaat hue, bachche mare hue paida hue, ya koi bachcha pehle saal mein hi guzar gaya?',
+    es: 'En nuestra familia, ¿hubo pérdidas de embarazo, bebés que nacieron sin vida, o bebés que murieron en su primer año?',
   },
   birth: {
     en: 'Was anyone in the family born with a health problem, or did anyone have trouble learning, an intellectual disability, or hearing loss as a child?',
+    te: 'మన కుటుంబంలో ఎవరైనా పుట్టుకతోనే ఏదైనా ఆరోగ్య సమస్యతో పుట్టారా? లేదా చిన్నప్పుడు ఎవరికైనా చదువు నేర్చుకోవడంలో ఇబ్బంది, బుద్ధిమాంద్యం, లేదా వినికిడి లోపం ఉండేదా?',
+    te_r: 'Mana kutumbamlo evarainaa puttukatone edainaa aarogya samasyato puttaaraa? Leda chinnappudu evarikainaa chaduvu nerchukovadamlo ibbandi, buddhimaandyam, leda vinikidi lopam undedaa?',
+    hi: 'क्या परिवार में कोई जन्म से किसी स्वास्थ्य समस्या के साथ पैदा हुआ, या बचपन में किसी को सीखने में दिक्कत, मानसिक विकलांगता, या कम सुनाई देने की समस्या थी?',
+    hi_r: 'Kya parivaar mein koi janm se kisi swaasthya samasya ke saath paida hua, ya bachpan mein kisi ko seekhne mein dikkat, maanasik viklaangta, ya kam sunaai dene ki samasya thi?',
+    es: '¿Alguien de la familia nació con un problema de salud, o tuvo de niño problemas para aprender, una discapacidad intelectual o pérdida de audición?',
   },
   anesthesia: {
     en: 'Has anyone in the family had a serious reaction to anesthesia during an operation, like a very high fever?',
+    te: 'మన కుటుంబంలో ఎవరికైనా ఆపరేషన్ సమయంలో మత్తుమందు (అనస్థీషియా) వల్ల తీవ్రమైన రియాక్షన్ వచ్చిందా, ఉదాహరణకు చాలా ఎక్కువ జ్వరం?',
+    te_r: 'Mana kutumbamlo evarikainaa operation samayamlo mattumandu (anesthesia) valla teevramaina reaction vachchindaa, udaaharanaku chaalaa ekkuva jvaram?',
+    hi: 'क्या परिवार में किसी को ऑपरेशन के दौरान बेहोशी की दवा (एनेस्थीसिया) से गंभीर रिएक्शन हुआ, जैसे बहुत तेज़ बुखार?',
+    hi_r: 'Kya parivaar mein kisi ko operation ke dauraan behoshi ki dawa (anesthesia) se gambheer reaction hua, jaise bahut tez bukhaar?',
+    es: '¿Alguien de la familia tuvo una reacción grave a la anestesia durante una operación, como una fiebre muy alta?',
   },
   tobacco: {
     en: 'Did you or your parents smoke, or chew tobacco, gutka or paan? For how many years?',
+    te: 'మీరు గానీ మీ అమ్మా నాన్నలు గానీ సిగరెట్ / బీడీ తాగారా, లేదా పొగాకు, గుట్కా, పాన్ నమిలారా? ఎన్ని సంవత్సరాలు?',
+    te_r: 'Meeru gaani mee ammaa naannalu gaani cigarette / beedi taagaaraa, leda pogaaku, gutka, paan namilaaraa? Enni samvatsaraalu?',
+    hi: 'क्या आप या आपके माता-पिता सिगरेट / बीड़ी पीते थे, या तंबाकू, गुटखा या पान खाते थे? कितने साल तक?',
+    hi_r: 'Kya aap ya aapke maata-pita cigarette / beedi peete the, ya tambaakoo, gutkha ya paan khaate the? Kitne saal tak?',
+    es: '¿Usted o sus padres fumaban, o masticaban tabaco, gutka o paan? ¿Por cuántos años?',
   },
   ancestry: {
     en: "Where did your parents' and grandparents' families come from?",
+    te: 'మీ అమ్మానాన్నల, వాళ్ళ అమ్మానాన్నల కుటుంబాలు ఎక్కడి నుంచి వచ్చాయి?',
+    te_r: 'Mee ammaanaannala, vaalla ammaanaannala kutumbaalu ekkadi nunchi vachchaayi?',
+    hi: 'आपके माता-पिता और दादा-दादी, नाना-नानी के परिवार कहाँ से आए थे?',
+    hi_r: 'Aapke maata-pita aur daada-daadi, naana-naani ke parivaar kahaan se aaye the?',
+    es: '¿De dónde venían las familias de sus padres y de sus abuelos?',
   },
   closing: {
     en: 'Thank you so much. This will help me and my doctor take care of my health.',
@@ -218,6 +263,9 @@ const Q = {
 const FOLLOW = {
   kind: {
     en: 'What kind was it?',
+    te: 'అది ఏ రకం?', te_r: 'Adi ee rakam?',
+    hi: 'वह किस तरह का था?', hi_r: 'Woh kis tarah ka tha?',
+    es: '¿De qué tipo era?',
   },
   cancer_type: {
     en: 'What kind of cancer was it? Where in the body did it start?',
@@ -309,8 +357,8 @@ const ELDER_TEXT = {
   born_q: { en: 'What year were you born?', te: 'మీరు ఏ సంవత్సరంలో పుట్టారు?', te_r: 'Meeru ee samvatsaramlo puttaaru?', hi: 'आपका जन्म किस साल हुआ?', hi_r: 'Aapka janm kis saal hua?', es: '¿En qué año nació?' },
   welcome: { en: 'Your family asked you to help with a family health history. Tap the answers. You can skip anything.', te: 'కుటుంబ ఆరోగ్య చరిత్ర కోసం మీ సహాయం అడిగారు. జవాబులను తాకండి. ఏదైనా వదిలేయవచ్చు.', te_r: 'Kutumba aarogya charitra kosam mee sahaayam adigaaru. Javaabulanu taakandi. Edainaa vadileyavachchu.', hi: 'आपके परिवार ने पारिवारिक स्वास्थ्य इतिहास में आपकी मदद माँगी है। जवाब पर टैप करें। आप कुछ भी छोड़ सकते हैं।', hi_r: 'Aapke parivaar ne paarivaarik swaasthya itihaas mein aapki madad maangi hai. Jawaab par tap karein. Aap kuchh bhi chhod sakte hain.', es: 'Su familia le pidió ayuda con una historia de salud familiar. Toque las respuestas. Puede saltarse cualquier pregunta.' },
   send_back: { en: 'Send your answers back', te: 'మీ జవాబులను తిరిగి పంపండి', te_r: 'Mee javaabulanu tirigi pampandi', hi: 'अपने जवाब वापस भेजें', hi_r: 'Apne jawaab waapas bhejein', es: 'Enviar sus respuestas' },
-  tap_all: { en: 'Tap all that apply.' },
-  about_family: { en: 'About the whole family' },
+  tap_all: { en: 'Tap all that apply.', te: 'సరిపోయే వాటన్నింటినీ తాకండి.', te_r: 'Saripoye vaatanninteenee taakandi.', hi: 'जो-जो लागू हों, सब पर टैप करें।', hi_r: 'Jo-jo laagoo hon, sab par tap karein.', es: 'Toque todas las que correspondan.' },
+  about_family: { en: 'About the whole family', te: 'మొత్తం కుటుంబం గురించి', te_r: 'Mottam kutumbam gurinchi', hi: 'पूरे परिवार के बारे में', hi_r: 'Poore parivaar ke baare mein', es: 'Sobre toda la familia' },
 };
 
 /* ---------- Everyday words → medical terms ----------
@@ -330,16 +378,16 @@ const LEXICON = [
   { cond: 'dementia', words: ['dementia', 'alzheimer', "alzheimer's", 'memory loss', 'మతిమరుపు', 'matimarupu', 'डिमेंशिया', 'भूलने की बीमारी', 'demencia', 'alzhéimer'] },
   { cond: 'mental', words: ['depression', 'anxiety', 'bipolar', 'schizophrenia', 'mental illness', 'డిప్రెషన్', 'మానసిక', 'maanasika', 'डिप्रेशन', 'मानसिक', 'depresión', 'ansiedad'] },
   { cond: 'blood', words: ['thalassemia', 'thalassaemia', 'sickle cell', 'anemia', 'anaemia', 'తలసేమియా', 'రక్తహీనత', 'raktaheenata', 'थैलेसीमिया', 'खून की कमी', 'talasemia'] },
-  { cond: 'polyps', words: ['polyp', 'polyps', 'pólipo', 'pólipos', 'पॉलिप', 'పాలిప్'] },
-  { cond: 'liver', words: ['hepatitis', 'liver disease', 'liver problem', 'cirrhosis', 'fatty liver', 'hemochromatosis', 'hepatitis b', 'hepatitis c', 'cirrosis', 'hígado graso', 'enfermedad del hígado'] },
-  { cond: 'clots', words: ['blood clot', 'blood clots', 'clot in', 'dvt', 'pulmonary embolism', 'embolism', 'trombosis', 'coágulo', 'coágulos', 'embolia'] },
-  { cond: 'ibd', words: ['crohn', "crohn's", 'crohns', 'ulcerative colitis', 'colitis', 'colitis ulcerosa', 'enfermedad de crohn'] },
-  { cond: 'celiac', words: ['celiac', 'coeliac', 'gluten', 'celíaca', 'celiaquía', 'celíaco'] },
-  { cond: 'glaucoma', words: ['glaucoma', 'ग्लूकोमा', 'काला मोतिया', 'kala motia'] },
-  { cond: 'osteo', words: ['osteoporosis', 'weak bones', 'brittle bones', 'broken hip', 'hip fracture', 'broke her hip', 'broke his hip', 'osteoporosis', 'huesos débiles', 'fractura de cadera'] },
-  { cond: 'autoimmune', words: ['lupus', 'rheumatoid', 'autoimmune', 'artritis reumatoide', 'autoinmune'] },
-  { cond: 'substance', words: ['alcoholic', 'alcoholism', 'addiction', 'addicted', 'drinking problem', 'drug problem', 'alcohólico', 'alcoholismo', 'adicción', 'adicto'] },
-  { cond: 'hearing', words: ['deaf', 'hearing loss', 'hard of hearing', 'hearing aid', 'sordo', 'sordera', 'audífono'] },
+  { cond: 'polyps', words: ['polyp', 'polyps', 'pólipo', 'pólipos', 'पॉलिप', 'పాలిప్', 'पोलिप'] },
+  { cond: 'liver', words: ['hepatitis', 'liver disease', 'liver problem', 'cirrhosis', 'fatty liver', 'hemochromatosis', 'hepatitis b', 'hepatitis c', 'cirrosis', 'hígado graso', 'enfermedad del hígado', 'హెపటైటిస్', 'లివర్ జబ్బు', 'లివర్ సిరోసిస్', 'సిరోసిస్', 'ఫ్యాటీ లివర్', 'కాలేయ వ్యాధి', 'liver jabbu', 'हेपेटाइटिस', 'हेपाटाइटिस', 'लिवर की बीमारी', 'जिगर की बीमारी', 'सिरोसिस', 'फैटी लिवर', 'liver ki bimari', 'liver ki beemaari', 'jigar ki bimari'] },
+  { cond: 'clots', words: ['blood clot', 'blood clots', 'clot in', 'dvt', 'pulmonary embolism', 'embolism', 'trombosis', 'coágulo', 'coágulos', 'embolia', 'రక్తం గడ్డకట్ట', 'రక్తం గడ్డ కట్ట', 'खून का थक्का', 'खून के थक्के', 'थक्का', 'थक्के', 'khoon ka thakka'] },
+  { cond: 'ibd', words: ['crohn', "crohn's", 'crohns', 'ulcerative colitis', 'colitis', 'colitis ulcerosa', 'enfermedad de crohn', 'క్రోన్స్', 'కొలైటిస్', 'क्रोन', 'कोलाइटिस'] },
+  { cond: 'celiac', words: ['celiac', 'coeliac', 'gluten', 'celíaca', 'celiaquía', 'celíaco', 'సీలియాక్', 'గ్లూటెన్', 'सीलिएक', 'सीलियक', 'ग्लूटेन'] },
+  { cond: 'glaucoma', words: ['glaucoma', 'ग्लूकोमा', 'काला मोतिया', 'kala motia', 'గ్లకోమా', 'గ్లాకోమా', 'ग्लॉकोमा', 'kaala motiya', 'kala motiya'] },
+  { cond: 'osteo', words: ['osteoporosis', 'weak bones', 'brittle bones', 'broken hip', 'hip fracture', 'broke her hip', 'broke his hip', 'osteoporosis', 'huesos débiles', 'fractura de cadera', 'ఆస్టియోపొరోసిస్', 'ఎముకలు బలహీన', 'తుంటి ఎముక విరిగ', 'ऑस्टियोपोरोसिस', 'कमज़ोर हड्डि', 'कमजोर हड्डि', 'कूल्हे की हड्डी टूट', 'kamzor haddi', 'kamzor haddiyan'] },
+  { cond: 'autoimmune', words: ['lupus', 'rheumatoid', 'autoimmune', 'artritis reumatoide', 'autoinmune', 'లూపస్', 'రుమటాయిడ్', 'ఆటోఇమ్యూన్', 'ल्यूपस', 'रूमेटॉइड', 'रुमेटाइड', 'रूमेटाइड', 'ऑटोइम्यून'] },
+  { cond: 'substance', words: ['alcoholic', 'alcoholism', 'addiction', 'addicted', 'drinking problem', 'drug problem', 'alcohólico', 'alcoholismo', 'adicción', 'adicto', 'తాగుడు అలవాటు', 'తాగుబోతు', 'మద్యానికి బానిస', 'మత్తుమందులకు బానిస', 'taagubotu', 'शराब की लत', 'नशे की लत', 'शराबी', 'नशेड़ी', 'sharabi', 'sharaabi', 'sharab ki lat', 'nashe ki lat'] },
+  { cond: 'hearing', words: ['deaf', 'hearing loss', 'hard of hearing', 'hearing aid', 'sordo', 'sordera', 'audífono', 'చెవుడు', 'వినికిడి లోపం', 'వినికిడి యంత్రం', 'chevudu', 'बहरापन', 'कम सुनाई', 'कान की मशीन', 'behra', 'behrapan', 'kam sunai'] },
 ];
 // Cancer kinds, only matched in a sentence that also mentions cancer.
 const CANCER_LEXICON = [
@@ -355,16 +403,16 @@ const CANCER_LEXICON = [
   { type: 'lung', words: ['lung', 'ఊపిరితిత్తు', 'oopiritittu', 'फेफड़', 'pulmón'] },
   { type: 'bloodca', words: ['leukemia', 'leukaemia', 'lymphoma', 'blood cancer', 'రక్త క్యాన్సర్', 'ब्लड कैंसर', 'leucemia', 'linfoma'] },
   { type: 'skin', words: ['melanoma', 'skin', 'చర్మ', 'त्वचा', 'piel'] },
-  { type: 'thyroidca', words: ['thyroid', 'tiroides', 'थायरॉइड', 'థైరాయిడ్'] },
-  { type: 'kidneyca', words: ['kidney', 'renal cell', 'riñón', 'किडनी', 'కిడ్నీ'] },
-  { type: 'liverca', words: ['liver', 'hígado', 'लिवर', 'जिगर', 'లివర్', 'కాలేయ'] },
-  { type: 'cervical', words: ['cervix', 'cervical', 'cuello uterino', 'cérvix', 'सर्वाइकल'] },
-  { type: 'headneck', words: ['mouth', 'tongue', 'throat', 'oral', 'boca', 'lengua', 'garganta', 'मुंह', 'जीभ', 'गले', 'నోటి', 'నాలుక', 'గొంతు'] },
-  { type: 'esophagus', words: ['esophagus', 'oesophagus', 'esophageal', 'food pipe', 'esófago', 'ग्रासनली', 'అన్నవాహిక'] },
-  { type: 'bladder', words: ['bladder', 'vejiga', 'मूत्राशय', 'మూత్రాశయ'] },
-  { type: 'brain', words: ['brain', 'cerebro', 'cerebral', 'दिमाग', 'मस्तिष्क', 'మెదడు'] },
-  { type: 'testicular', words: ['testicle', 'testicular', 'testículo', 'अंडकोष', 'వృషణ'] },
-  { type: 'sarcoma', words: ['sarcoma', 'bone cancer', 'hueso', 'हड्डी', 'ఎముక'] },
+  { type: 'thyroidca', words: ['thyroid', 'tiroides', 'थायरॉइड', 'థైరాయిడ్', 'थायराइड'] },
+  { type: 'kidneyca', words: ['kidney', 'renal cell', 'riñón', 'किडनी', 'కిడ్నీ', 'మూత్రపిండ', 'गुर्दे', 'गुर्दा', 'gurde', 'gurda'] },
+  { type: 'liverca', words: ['liver', 'hígado', 'लिवर', 'जिगर', 'లివర్', 'కాలేయ', 'लीवर', 'jigar'] },
+  { type: 'cervical', words: ['cervix', 'cervical', 'cuello uterino', 'cérvix', 'सर्वाइकल', 'సర్వైకల్', 'సర్విక్స్', 'గర్భాశయ ముఖద్వార', 'सर्विक्स', 'बच्चेदानी का मुँह', 'बच्चेदानी के मुँह', 'बच्चेदानी का मुंह', 'बच्चेदानी के मुंह', 'गर्भाशय ग्रीवा', 'cuello del útero'] },
+  { type: 'headneck', words: ['mouth', 'tongue', 'throat', 'oral', 'boca', 'lengua', 'garganta', 'मुंह', 'जीभ', 'गले', 'నోటి', 'నాలుక', 'గొంతు', 'నోరు', 'నోట్లో', 'मुँह', 'गला', 'munh ka', 'munh ke', 'gale ka', 'gale ke'] },
+  { type: 'esophagus', words: ['esophagus', 'oesophagus', 'esophageal', 'food pipe', 'esófago', 'ग्रासनली', 'అన్నవాహిక', 'ఆహార నాళ', 'खाने की नली', 'भोजन नली', 'आहार नली'] },
+  { type: 'bladder', words: ['bladder', 'vejiga', 'मूत्राशय', 'మూత్రాశయ', 'पेशाब की थैली'] },
+  { type: 'brain', words: ['brain', 'cerebro', 'cerebral', 'दिमाग', 'मस्तिष्क', 'మెదడు', 'दिमाग़', 'dimaag', 'dimag', 'medadu'] },
+  { type: 'testicular', words: ['testicle', 'testicular', 'testículo', 'अंडकोष', 'వృషణ', 'अंडकोश'] },
+  { type: 'sarcoma', words: ['sarcoma', 'bone cancer', 'hueso', 'हड्डी', 'ఎముక', 'सारकोमा', 'सार्कोमा', 'సార్కోమా'] },
 ];
 // Bare गुजर / పోయారు are left out: "गुजरात" and "హైదరాబాద్ పోయారు" (went to Hyderabad) are not deaths.
 const DEATH_WORDS = ['died', 'passed away', 'passed on', 'death', 'చనిపోయ', 'కాలం చేశ', 'కాలం చేస', 'మరణించ', 'కన్నుమూశ', 'chanipoy', 'kaalam chesa', 'गुजर ग', 'गुज़र ग', 'गुजर चुके', 'गुज़र चुके', 'चल बस', 'देहांत', 'मृत्यु', 'मौत', 'guzar', 'dehaant', 'murió', 'falleció', 'muerte'];
@@ -440,7 +488,7 @@ const FOR_BEFORE = ['for', 'past', 'last', 'since', 'durante', 'hace', 'pichhle'
 const FOR_AFTER = ['ago', 'back', 'से', 'గా', 'పాటు', 'క్రితం', 'மாக', 'களாக', 'ಗಳಿಂದ', 'ধরে', 'আগে', 'પહેલ', 'سے', 'پہلے', 'pehle', 'pahle', 'पहले', 'atrás', 'antes'];
 const FOR_PHRASES = ['saal se', 'sal se', 'saalon se', 'saalo se', 'baras se'];
 // Words that look like an illness word but mean something else.
-const FALSE_FRIENDS = { 'दिल': ['दिलचस्प', 'दिलाना', 'दिलाया', 'दिलासा'], 'दौरे': ['दिल के दौरे', 'दौरे पर'], '胰': ['胰岛素'], '肾': ['肾上腺'] };
+const FALSE_FRIENDS = { 'दिल': ['दिलचस्प', 'दिलाना', 'दिलाया', 'दिलासा'], 'दौरे': ['दिल के दौरे', 'दौरे पर'], '胰': ['胰岛素'], '肾': ['肾上腺'], 'గర్భాశయ': ['గర్భాశయ ముఖద్వార'], 'गर्भाशय': ['गर्भाशय ग्रीवा'], 'útero': ['cuello del útero'] };
 const LIVING_WORDS = ['still alive', 'alive', 'still living', 'is living', 'బతికే ఉన్నారు', 'బతికున్నారు', 'ఇంకా ఉన్నారు', 'batike unnaaru', 'जीवित', 'ज़िंदा', 'जिंदा', 'zinda', 'jeevit', 'está vivo', 'está viva', 'sigue vivo', 'sigue viva'];
 const PRONOUNS = ['he', 'she', 'his', 'her', 'they', 'ఆయన', 'ఆమె', 'వారు', 'వాళ్ళు', 'वह', 'वो', 'उन्हें', 'उनको', 'उनकी', 'उनका', 'él', 'ella'];
 const BORN_WORDS = ['born', 'birth', 'పుట్టా', 'పుట్టి', 'puttaa', 'జన్మ', 'जन्म', 'पैदा', 'janm', 'nací', 'nació', 'nacimiento'];
