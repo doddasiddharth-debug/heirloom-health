@@ -104,7 +104,7 @@ function renderModal() {
       ${qr ? `<div class="qr">${qr}</div>` : ''}${linkBox(m.url)}${shareBtns(m.url, 'My answers', 'Here are my family health answers:')}`;
   } else if (m.kind === 'ai-consent') {
     body = `<h2>Send this to the AI helper?</h2>
-      <p>${m.what === 'audio' ? "This recording is sent to Heirloom's server and on to OpenAI's speech-to-text service to turn it into words." : "This text is sent to Heirloom's server and on to Anthropic's Claude to find the health answers in it."} Neither keeps it after answering. Nothing is saved until you confirm the answers.</p>
+      <p>${m.what === 'audio' ? "This recording is sent to Heirloom's server and on to an AI speech-to-text service (Cloudflare Workers AI) to turn it into words." : "This text is sent to Heirloom's server and on to an AI service (Cloudflare Workers AI) to find the health answers in it."} The Heirloom server doesn't keep it. Nothing is saved until you confirm the answers.</p>
       <p class="small muted">Only continue if the person you interviewed is okay with this.</p>
       <div class="row"><button class="btn primary" data-action="m-consent">Allow</button><button class="btn" data-action="m-close">Cancel</button></div>`;
   } else if (m.kind === 'feedback') body = feedbackHTML(m);
