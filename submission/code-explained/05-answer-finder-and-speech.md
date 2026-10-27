@@ -114,7 +114,7 @@ const reEsc = w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 (`js/extract.js:15`) Puts a backslash before any character that has a special meaning in regex. Without it, the word `"dr."` would turn into a pattern where `.` means "any character". `$&` means "the matched character itself".
 
 ```js
-const WORDCH = /[\p{L}\p{M}]/u, HAN = /\p{Script=Han}/u, VIRAMA = /[्্્்్್]/;
+const WORDCH = /[\p{L}\p{M}]/u, HAN = /\p{Script=Han}/u, VIRAMA = /[\u094D\u09CD\u0ACD\u0BCD\u0C4D\u0CCD]/;
 ```
 (`js/extract.js:16`)
 - `WORDCH`: "is this character part of a word?" (a letter or a mark, in any script).

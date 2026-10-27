@@ -737,7 +737,7 @@ A service worker has no `window` and no page. It refers to itself as `self`, and
 ### 6.1 Version and file list
 
 ```js
-const VERSION = 'heirloom-v19';
+const VERSION = 'heirloom-v20'; // the number goes up with every update
 const APP_FILES = [
   './', 'index.html', 'manifest.webmanifest',
   'js/config.js', 'js/content.js', 'js/stories.js', 'js/languages.js', ...
