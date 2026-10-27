@@ -2,7 +2,7 @@
 //
 // Stories stay on this device. Typed memories are saved on the person (person.stories = { id: text }) and
 // recordings in the same on-device store as interview clips, with step 'story:<id>'. They are left out of
-// doctor reports, PDFs, invite and report links, backup codes and cloud sync (see withoutStories below).
+// doctor reports, PDFs, invite and report links and cloud sync (encrypted backups do include them) (see withoutStories below).
 //
 // Loads after content.js and before languages.js, which adds the other seven languages to these prompts.
 'use strict';

@@ -36,7 +36,7 @@ function legalHTML() {
     <h3>5. Optional online features</h3>
     <p>Some features send information off your device, only when you use them and only after the app tells you what will be sent: the AI helper, turning recordings into text with the server, family sync, and feedback. They are described under Privacy below. You can use everything else without them.</p>
     <h3>6. No guarantees</h3>
-    <p>The app is provided "as is", without warranties of any kind. To the extent the law allows, the makers of Heirloom Health are not responsible for decisions made using it, for lost data, or for problems caused by other services it connects to. Keep a backup code if your family's information matters to you.</p>
+    <p>The app is provided "as is", without warranties of any kind. To the extent the law allows, the makers of Heirloom Health are not responsible for decisions made using it, for lost data, or for problems caused by other services it connects to. Save an encrypted backup if your family's information matters to you.</p>
     <h3>7. Changes</h3>
     <p>If these terms change, the app will ask you to read and agree to them again.</p>
 
@@ -52,7 +52,7 @@ function legalHTML() {
       <li><b>Feedback:</b> your message, the email address if you give one, and device details if you tick that box. Please don't include family health details.</li>
     </ul>
     <h3>Things every website does</h3>
-    <p>The website is hosted on GitHub Pages, and its fonts come from Google Fonts. Like any website, these services see your device's internet address when the page loads. The app itself has no analytics, cookies for tracking, or ads.</p>
+    <p>The website is hosted on GitHub Pages, and its fonts are served from the same site, so no font service sees you. Like any website, GitHub sees your device's internet address when the page loads. The app itself has no analytics, cookies for tracking, or ads.</p>
     <h3>Children</h3>
     <p>We do not knowingly collect information from children. The app keeps information on the device. If a child under 13 sent feedback or used an online feature without a parent, contact us and we will delete what we have.</p>
     <h3>Contact</h3>

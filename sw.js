@@ -1,12 +1,13 @@
 // Offline support: the app's own files are cached on first visit, so interviews work without Wi-Fi.
-// Fonts and the PDF library come from CDNs and are cached the first time they load.
+// Fonts are served from this site too; each language's font is cached the first time it is used.
 // Bump VERSION whenever you change a file, so phones pick up the new copy.
-const VERSION = 'heirloom-v21';
+const VERSION = 'heirloom-v24';
 const APP_FILES = [
   './', 'index.html', 'manifest.webmanifest',
   'js/config.js', 'js/content.js', 'js/stories.js', 'js/languages.js', 'js/family.js', 'js/risk.js', 'js/timeline.js', 'js/layout.js', 'js/extract.js',
-  'js/legal.js', 'js/auth.js', 'js/media.js', 'js/elder.js', 'js/share.js', 'js/handoff.js', 'js/stt.js', 'js/stt-worker.js',
+  'js/legal.js', 'js/auth.js', 'js/media.js', 'js/elder.js', 'js/share.js', 'js/handoff.js', 'js/backup.js', 'js/stt.js', 'js/stt-worker.js',
   'js/feedback.js', 'js/tour.js', 'js/fhir.js', 'js/app.js', 'vendor/jspdf.umd.min.js', 'vendor/qrcode.js',
+  'fonts/fonts.css', 'fonts/bricolagegrotesque-40c2cb34af.woff2', 'fonts/lexend-2be22f5eba.woff2',
   'icons/icon.svg', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
 ];
 
@@ -16,10 +17,10 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
-// Network first (so updates show up), falling back to the cache when offline. Only this app's files, fonts and
+// Network first (so updates show up), falling back to the cache when offline. Only this app's files (fonts included) and
 // the speech engine are handled here. Speech models (already cached by the speech library) and server replies
 // go straight to the network, so an offline failure is reported as one instead of returning the app page.
-const CDNS = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdn.jsdelivr.net'];
+const CDNS = ['cdn.jsdelivr.net'];
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const host = new URL(e.request.url).host;

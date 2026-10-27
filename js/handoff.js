@@ -85,7 +85,7 @@ function renderModal() {
   const m = S?.modal;
   if (!m) return '';
   let body = '';
-  const linkBox = url => `<div class="linkbox"><input type="text" readonly value="${esc(url)}" aria-label="Link" onclick="this.select()"></div>`;
+  const linkBox = url => `<div class="linkbox"><input type="text" readonly value="${esc(url)}" aria-label="Link" data-selectall></div>`;
   const shareBtns = (url, title, text) => `<div class="row">
       <button class="btn primary" data-action="m-share" data-url="${esc(url)}" data-title="${esc(title)}" data-text="${esc(text)}">Share link</button>
       <button class="btn" data-action="m-copy" data-url="${esc(url)}">Copy link</button>
@@ -127,15 +127,21 @@ function renderModal() {
   } else if (m.kind === 'feedback') body = feedbackHTML(m);
   else if (m.kind === 'menu') body = menuHTML();
   else if (m.kind === 'stt') body = sttChooserHTML(m.clip);
+  else if (m.kind === 'backup' || m.kind === 'restore') body = backupModalHTML(m);
+  else if (m.kind === 'privacy') body = privacyModalHTML(m);
   else if (m.kind === 'invite-pick') {
     // Everyone who could answer: living (or unknown) relatives, closest blood relatives first.
     const rank = p => (kin(p.id).blood ? 0 : 100) + (kin(p.id).degree || 9);
     const list = S.people.filter(p => p.id !== SELF && p.living !== 'no')
       .sort((a, b) => rank(a) - rank(b));
-    body = `<h2>Invite a relative to answer</h2>
-      <p class="small muted">Pick who to send a link to. They open it on their own phone, choose their language, and tap their answers in large print. No sign-up. When they finish, they send a link back and their answers are added to your tree.</p>
+    // hand: the relative answers right here on this phone, in large tap-to-answer mode.
+    body = m.hand ? `<h2>Hand them this phone</h2>
+      <p class="small muted">Pick who is answering. They'll see one question at a time with big Yes / No / Don't know buttons, in the language chosen on the Interview page. Their answers go straight into your tree.</p>`
+      : `<h2>Invite a relative to answer</h2>
+      <p class="small muted">Pick who to send a link to. They open it on their own phone, choose their language, and tap their answers in large print. No sign-up. When they finish, they send a link back and their answers are added to your tree.</p>`;
+    body += `
       ${list.length ? `<ul class="invite-list">${list.map(p => `<li><span><b>${esc(nameOf(p))}</b><br><span class="small muted">${esc(relOf(p))}${p.interviewed ? ' · interviewed' : ''}</span></span>
-        <button class="btn sm primary" data-action="invite" data-pid="${p.id}">Send link</button></li>`).join('')}</ul>`
+        ${m.hand ? `<button class="btn sm primary" data-action="elder-start" data-pid="${p.id}">Start</button>` : `<button class="btn sm primary" data-action="invite" data-pid="${p.id}">Send link</button>`}</li>`).join('')}</ul>`
         : '<p class="small">Add relatives to your family tree first, then invite them here.</p>'}
       ${ACCT?.guest ? '<p class="fine">This is the example family. To add real answers, create your own profile first.</p>' : ''}`;
   } else if (m.kind === 'cloud-join') {

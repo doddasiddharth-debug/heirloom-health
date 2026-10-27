@@ -28,7 +28,7 @@ Most people can't answer "Does heart disease run in your family?" because nobody
 - **Doctor report.** Applies screening guidelines (colon cancer screening age, inherited breast/ovarian cancer, Lynch syndrome, early cholesterol testing, diabetes testing). Each finding names its source. Exports to PDF.
 - **Download for medical records.** The doctor report also saves a standard HL7 FHIR R4 file (`.fhir.json`) that clinic record systems can import: one family-history entry per relative with the standard relationship code (mother, paternal grandfather, maternal cousin and so on), sex, birth year, age at death, and each condition with its SNOMED CT code where one matches exactly, the youngest reported age at diagnosis, who reported it, and any disagreement. The whole-family answers are included too. A doctor opening a shared read-only link can download it as well.
 - **Who to ask next.** Suggests the relative who can fill the most important gaps.
-- **Private by design.** Everything stays on the device. Profiles with an optional PIN let siblings share a phone; with a PIN, the family is encrypted on the device (PBKDF2 and AES-GCM), and wrong guesses are slowed down. Works offline once loaded, and can be installed on a phone's home screen.
+- **Private by design.** Everything stays on the device. Profiles with an optional PIN let siblings share a phone; with a PIN (which can also be added later), the family is encrypted on the device (PBKDF2 and AES-GCM), and wrong guesses are slowed down. Encrypted backup files (password-locked, with recordings and photos) protect against a lost or broken phone. A Content Security Policy only lets the page connect to its own server, and fonts are self-hosted, so no third party sees the page load. Long recordings are saved in 5-second pieces as they happen. Works offline once loaded, and can be installed on a phone's home screen.
 
 ## How the code is organized
 
@@ -46,6 +46,7 @@ Most people can't answer "Does heart disease run in your family?" because nobody
 | `js/elder.js` | Large tap-to-answer mode and recorded question voices |
 | `js/share.js` | Invite links, merging answers, encrypted cloud sync |
 | `js/handoff.js` | Doctor checklist, QR code, read-only doctor view, pop-up panels |
+| `js/backup.js` | Encrypted backup files: saving, restoring and the backup reminder |
 | `js/fhir.js` | The medical-records export (HL7 FHIR R4 Bundle) and its relationship and SNOMED CT codes |
 | `js/config.js` | The address of the optional server |
 | `js/stt.js`, `js/stt-worker.js` | Speech-to-text on the device (Whisper via Transformers.js) or with the server |
@@ -58,6 +59,7 @@ Most people can't answer "Does heart disease run in your family?" because nobody
 | `vendor/` | jsPDF and qrcode-generator (MIT licensed), kept here so PDF and QR work offline. Transformers.js (Apache-2.0) loads from jsDelivr, pinned to 4.3.0. |
 | `js/app.js` | Screens, recordings, PDF export, event handling |
 | `sw.js` | Offline support |
+| `fonts/` | Self-hosted Google Fonts (SIL Open Font License): Lexend, Bricolage Grotesque and Noto Sans for each script |
 
 There is no build step and no server. It is plain HTML, CSS and JavaScript.
 

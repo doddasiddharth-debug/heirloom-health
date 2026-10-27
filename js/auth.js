@@ -1,8 +1,8 @@
 // Sign-in: profiles that live on this device.
 //
-// Each profile keeps its own family in its own storage slot. An optional PIN is never stored;
-// only a salted SHA-256 hash of it is. This keeps a brother or sister from opening your family
-// by accident on a shared phone. It is a device lock, not a cloud account.
+// Each profile keeps its own family in its own storage slot. An optional PIN is never stored: it is
+// turned into a key that encrypts the family on this device (see pinSecrets). It is a device lock,
+// not a cloud account.
 'use strict';
 
 const ACCOUNTS_KEY = 'heirloom-accounts';
@@ -58,6 +58,14 @@ async function checkPin(acct, pin) {
   store.set(ACCOUNTS_KEY, listAccounts().map(a => a.id === acct.id ? { ...a, pinHash: check, kdf: 'pbkdf2' } : a));
   acct.pinHash = check; acct.kdf = 'pbkdf2';
   await setDataKey(acct.id, key); return true;
+}
+
+// Add a PIN to a profile made without one. The next save encrypts the family with it.
+async function addPin(acct, pin) {
+  const { check, key } = await pinSecrets(pin, acct.salt);
+  store.set(ACCOUNTS_KEY, listAccounts().map(a => a.id === acct.id ? { ...a, pinHash: check, kdf: 'pbkdf2' } : a));
+  acct.pinHash = check; acct.kdf = 'pbkdf2';
+  await setDataKey(acct.id, key);
 }
 
 /* ---------- The family, encrypted with the PIN ---------- */

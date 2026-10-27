@@ -130,7 +130,7 @@ let SAVE_WARNED = false;
 function saveFailed() {
   if (SAVE_WARNED) return;
   SAVE_WARNED = true;
-  toast("Your latest changes couldn't be saved on this device. Storage may be full, or this may be a private window. Copy a backup code to keep them safe.");
+  toast("Your latest changes couldn't be saved on this device. Storage may be full, or this may be a private window. Save an encrypted backup (Family tree page) to keep them safe.");
 }
 // Opens a profile after its PIN was checked: decrypts its family first, so an encrypted family is never mistaken for an empty one.
 async function openAccount(acct, remember) {
@@ -154,7 +154,7 @@ function enter(acct, state) {
   handlePending();
 }
 // Everything kept in on-device file storage for this profile.
-function loadFiles() { return Promise.all([loadClips(), loadMedia(), typeof loadVoices === 'function' ? loadVoices() : null]); }
+function loadFiles() { return Promise.all([recoverChunks().then(loadClips), loadMedia(), typeof loadVoices === 'function' ? loadVoices() : null]); }
 function signOut() {
   TOUR_I = null;
   if (REC) REC.mr.stop();
@@ -191,6 +191,7 @@ const ICON = {
   doctor: `<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="5" y="5" width="24" height="27" rx="4" fill="#E0546A"/><rect x="11" y="2" width="12" height="7" rx="2.5" fill="#A93448"/><rect x="9" y="11" width="16" height="17" rx="2" fill="#fff"/><path d="M17 14.5v10M12 19.5h10" stroke="#E0546A" stroke-width="3.4" stroke-linecap="round"/></svg>`,
   risks: `<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><path d="M4.5 25a12.5 12.5 0 0 1 4.6-9.7" stroke="#2E9E62" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M12.8 13.3a12.5 12.5 0 0 1 8.4 0" stroke="#F5A524" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M24.9 15.3a12.5 12.5 0 0 1 4.6 9.7" stroke="#E0546A" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M17 25l6-8" stroke="#1E1D33" stroke-width="3" stroke-linecap="round"/><circle cx="17" cy="25" r="3" fill="#1E1D33"/></svg>`,
   speaker: `<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>`,
+  lock: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
   send: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>',
   mic: `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2" width="8" height="13" rx="4" fill="currentColor"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>`,
   bulb: `<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z" fill="var(--accent)"/><rect x="8.5" y="18.5" width="7" height="3" rx="1.5" fill="var(--accent-dk)"/></svg>`,
@@ -202,10 +203,11 @@ let CLIPS = [], REC = null;
 // On-device storage for large files: interview clips, photos and documents, and recorded question voices.
 const IDB = {
   db: null,
-  STORES: ['clips', 'media', 'voices'],
+  // 'chunks' holds the pieces of a recording while it is still going (see startRec).
+  STORES: ['clips', 'media', 'voices', 'chunks'],
   open() {
     return this.db ||= new Promise((res, rej) => {
-      const r = indexedDB.open('heirloom-audio', 2);
+      const r = indexedDB.open('heirloom-audio', 3);
       r.onupgradeneeded = () => { for (const name of this.STORES) if (!r.result.objectStoreNames.contains(name)) r.result.createObjectStore(name, { keyPath: 'id' }); };
       r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
     });
@@ -214,13 +216,17 @@ const IDB = {
   all(store = 'clips') { return this.run(store, 'readonly', s => s.getAll()); },
   put(c, store = 'clips') { return this.run(store, 'readwrite', s => s.put(c)); },
   del(id, store = 'clips') { return this.run(store, 'readwrite', s => s.delete(id)); },
+  // All records whose id starts with prefix, in id order, and deleting them.
+  range(prefix, store) { return this.run(store, 'readonly', s => s.getAll(IDBKeyRange.bound(prefix, prefix + '\uffff'))); },
+  delRange(prefix, store) { return this.run(store, 'readwrite', s => s.delete(IDBKeyRange.bound(prefix, prefix + '\uffff'))); },
 };
 async function loadClips() { CLIPS.forEach(c => URL.revokeObjectURL(c.url)); try { CLIPS = (await IDB.all()).filter(c => c.acct ? c.acct === ACCT?.id : ACCT && !ACCT.guest).map(c => ({ ...c, url: URL.createObjectURL(c.blob) })).sort((a, b) => a.created - b.created); } catch { CLIPS = []; } }
 async function addClip(pid, step, blob, secs, acct = ACCT?.id) {
   const rec = { id: 'clip-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6), acct, pid, step, created: Date.now(), secs, blob, type: blob.type || 'audio/webm' };
-  try { await IDB.put(rec); if (acct && acct === ACCT?.id) CLIPS.push({ ...rec, url: URL.createObjectURL(blob) }); toast('Recording saved on this device'); }
+  let ok = false;
+  try { await IDB.put(rec); ok = true; if (acct && acct === ACCT?.id) CLIPS.push({ ...rec, url: URL.createObjectURL(blob) }); toast('Recording saved on this device'); }
   catch { toast("Couldn't save the recording. This browser may be blocking storage."); }
-  render();
+  render(); return ok;
 }
 async function removeClip(id) {
   try { await IDB.del(id); } catch {}
@@ -229,21 +235,61 @@ async function removeClip(id) {
 }
 // Remove a profile's recordings, photos and documents from this device.
 async function deleteFilesOf(acctId) {
-  for (const store of ['clips', 'media']) {
+  for (const store of ['clips', 'media', 'chunks']) {
     try { for (const r of await IDB.all(store)) if (r.acct === acctId) await IDB.del(r.id, store); } catch {}
   }
   if (acctId === ACCT?.id) { [...CLIPS, ...MEDIA].forEach(x => URL.revokeObjectURL(x.url)); CLIPS = []; MEDIA = []; }
+}
+// Long recordings are written to the device in 5-second pieces while they happen, instead of piling up in memory.
+// That keeps memory use low on older phones, and if the browser closes mid-recording, the pieces already
+// saved are put back together the next time the app opens (recoverChunks).
+const CHUNK_MS = 5000;
+function chunkSaver(meta) {
+  const recId = 'rec-' + meta.start.toString(36) + '-' + Math.random().toString(36).slice(2, 6) + '-';
+  let n = 0, queue = Promise.resolve(), memory = null; // memory: the fallback if this browser won't store the pieces
+  return {
+    add(blob, type) {
+      const i = n++;
+      queue = queue.then(() => memory ? memory.push(blob) : IDB.put({ id: recId + String(i).padStart(6, '0'), ...meta, type, blob }, 'chunks'))
+        .catch(() => { memory = memory || []; memory.push(blob); });
+    },
+    // The finished recording. Pieces read back from the device stay on disk, so joining them doesn't load them into memory.
+    async finish(type) {
+      await queue;
+      let parts = [];
+      try { parts = (await IDB.range(recId, 'chunks')).map(c => c.blob); } catch {}
+      return new Blob(memory ? parts.concat(memory) : parts, { type });
+    },
+    clear() { IDB.delRange(recId, 'chunks').catch(() => {}); },
+  };
+}
+// Turn pieces left over from a recording that never finished (the tab closed or crashed) into normal recordings.
+async function recoverChunks() {
+  let left;
+  try { left = await IDB.all('chunks'); } catch { return; }
+  if (REC || !left.length) return;
+  const recs = new Map();
+  for (const c of left) { const k = c.id.slice(0, c.id.lastIndexOf('-') + 1); if (!recs.has(k)) recs.set(k, []); recs.get(k).push(c); }
+  for (const [k, parts] of recs) {
+    const m = parts[0];
+    try { await IDB.put({ id: 'clip-' + k.slice(4, -1), acct: m.acct, pid: m.pid, step: m.step, created: m.start, secs: Math.round(parts.length * CHUNK_MS / 1000), blob: new Blob(parts.map(c => c.blob), { type: m.type || 'audio/webm' }), type: m.type || 'audio/webm', recovered: true }); await IDB.delRange(k, 'chunks'); } catch {}
+  }
 }
 const fmtSec = s => s == null ? '' : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 async function startRec(pid, step) {
   try {
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) throw new Error('no mic');
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mr = new MediaRecorder(stream), chunks = [], start = Date.now(), acct = ACCT?.id; // kept even if you sign out mid-recording
-    mr.ondataavailable = e => e.data.size && chunks.push(e.data);
-    mr.onstop = () => { stream.getTracks().forEach(t => t.stop()); clearInterval(REC?.timer); REC = null; addClip(pid, step, new Blob(chunks, { type: mr.mimeType || 'audio/webm' }), Math.round((Date.now() - start) / 1000), acct); };
+    const mr = new MediaRecorder(stream), start = Date.now(), acct = ACCT?.id; // kept even if you sign out mid-recording
+    const saver = chunkSaver({ acct, pid, step, start });
+    mr.ondataavailable = e => e.data.size && saver.add(e.data, mr.mimeType);
+    mr.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop()); clearInterval(REC?.timer); REC = null;
+      const blob = await saver.finish(mr.mimeType || 'audio/webm');
+      if (await addClip(pid, step, blob, Math.round((Date.now() - start) / 1000), acct)) saver.clear(); // else the pieces are kept and recovered later
+    };
     REC = { mr, pid, step, start, timer: setInterval(() => { const el = $('#rec-time'); if (el) el.textContent = fmtSec(Math.round((Date.now() - start) / 1000)); }, 500) };
-    mr.start(); render();
+    mr.start(CHUNK_MS); render();
   } catch { S.micBlocked = true; save(); render(); toast("The microphone isn't available here. Use your phone's recorder button instead."); }
 }
 function clipList(clips, showQ) {
@@ -381,6 +427,7 @@ function condTiles(p, { by, pre, lang = 'en', roman = false, merged = false }) {
       const f = fs.find(f => f.cond === c.id), r = mine[0];
       extra = `<div class="extra"><label for="${pre}-${c.id}-age">${merged ? 'Your answer: age found' : 'Age found'}</label>
         <input type="number" inputmode="numeric" min="0" max="120" id="${pre}-${c.id}-age" placeholder="${!r?.age && f?.age ? f.age : 'Age'}" data-pid="${p.id}" data-cond="${c.id}" data-type="" data-by="${by}" data-cf="age" value="${esc(r?.age || '')}">
+        ${ageChips(p.id, c.id, '', by, r?.age)}
         ${reportList(merged ? all : others, { editable: merged, fact: f })}</div>`;
     } else if (others.length) extra = `<p class="also">Also heard: ${others.map(r => `${esc(reporterName(r.by))}${r.age ? ' (' + esc(r.age) + ')' : ''}`).join(', ')}</p>`;
     return `<div class="cond${on ? ' on' : ''}">
@@ -388,9 +435,11 @@ function condTiles(p, { by, pre, lang = 'en', roman = false, merged = false }) {
       <label for="${pre}-${c.id}"><span class="tick"></span><span class="nm">${langBlock(c, lang, roman)}</span></label>${extra}
     </div>`;
   };
-  return `<div class="conds">${CONDS.filter(c => !c.more && !c.free).map(tile).join('')}</div>
+  // In English the names are short enough to show as quick-tap chips; other languages keep full tiles for the extra lines.
+  const cls = lang === 'en' ? 'conds chipset' : 'conds';
+  return `<div class="${cls}">${CONDS.filter(c => !c.more && !c.free).map(tile).join('')}</div>
     <h4 class="conds-more">Less common, but worth asking</h4>
-    <div class="conds">${CONDS.filter(c => c.more).map(tile).join('')}${otherTile(p, { by, pre, lang, roman, merged })}</div>`;
+    <div class="${cls}">${CONDS.filter(c => c.more).map(tile).join('')}${otherTile(p, { by, pre, lang, roman, merged })}</div>`;
 }
 // "Something else": an illness that isn't on the list, saved under the name the relative gives it.
 function otherTile(p, { by, pre, lang, roman, merged }) {
@@ -421,9 +470,40 @@ function kindExtra(p, cond, { by, pre, lang, roman, merged }) {
     const id = `${pre}-${cond}-${esc(f.type || 'unk')}-age`;
     return `<div class="ca-row"><span class="ca-name">${esc(factName(cond, f.type))}</span>
       <input type="number" inputmode="numeric" id="${id}" aria-label="Age ${esc(factName(cond, f.type))} was found" placeholder="${!mine?.age && f.age ? f.age : 'Age'}" data-pid="${p.id}" data-cond="${cond}" data-type="${esc(f.type)}" data-by="${by}" data-cf="age" value="${esc(mine?.age || '')}">
+      ${ageChips(p.id, cond, f.type, by, mine?.age)}
       ${reportList(merged ? f.reports : f.reports.filter(r => r.by !== by), { editable: merged, fact: f })}</div>`;
   }).join('');
   return `<div class="extra ca"><span class="ca-q">What kind?${cond === 'cancer' ? '' : ' <span class="muted small">(skip if they aren\'t sure)</span>'}</span><div class="chips">${chips}</div>${rows}</div>`;
+}
+// Age found, in one tap when nobody knows the exact year: "in her 50s" is saved as 55, the middle of the decade.
+// The exact age can still be typed in the box above.
+const AGE_CHIPS = [['Child', 10], ['Teens', 15], ['20s', 25], ['30s', 35], ['40s', 45], ['50s', 55], ['60s', 65], ['70s', 75], ['80+', 85]];
+function ageChips(pid, cond, type, by, age) {
+  return `<div class="chips age-chips" role="group" aria-label="Or pick roughly when">${AGE_CHIPS.map(([label, v]) =>
+    `<button type="button" class="chip-t" data-action="age-chip" data-pid="${pid}" data-cond="${cond}" data-type="${esc(type || '')}" data-by="${esc(by)}" data-age="${v}" aria-pressed="${String(age) === String(v)}">${label}</button>`).join('')}</div>`;
+}
+// Card view: everyone as a list of cards grouped by generation. Easier than the chart on a small phone.
+function familyCardsHTML(selId) {
+  const gens = generations(), groups = new Map();
+  const label = g => g <= -2 ? 'Grandparents and older' : g === -1 ? 'Parents, aunts and uncles' : g === 0 ? 'You, brothers, sisters and cousins' : g === 1 ? 'Children, nieces and nephews' : 'Grandchildren and younger';
+  const order = p => (p.id === SELF ? -1 : 0) + (kin(p.id).blood ? 0 : 50) + (kin(p.id).degree || 9);
+  for (const p of [...S.people].sort((a, b) => order(a) - order(b))) {
+    const g = Math.max(-2, Math.min(2, gens.get(p.id) ?? 0));
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(p);
+  }
+  const card = p => {
+    const fs = facts(p.id), ph = photoOf(p.id), hit = S.hl !== 'any' && fs.some(f => f.cond === S.hl); // picking an illness above highlights who had it
+    const life = p.living === 'no' ? `Passed away${p.deathAge ? ' at ' + esc(p.deathAge) : ''}` : p.born ? `Born ${esc(p.born)}` : '';
+    return `<button class="pcard${p.id === selId ? ' sel' : ''}${hit ? ' hit' : ''}" data-node="${p.id}">
+      <span class="pc-av sex-${esc(p.sex)}">${ph ? `<img src="${ph.url}" alt="">` : esc((nameOf(p) || '?')[0].toUpperCase())}</span>
+      <span class="pc-main"><b>${esc(nameOf(p))}${p.id === SELF ? ' (you)' : ''}</b>
+        <span class="small muted">${esc(relOf(p))}${life ? ' · ' + life : ''}${p.interviewed ? ' · interviewed' : ''}</span>
+        ${fs.length ? `<span class="pc-conds">${fs.map(f => `<span class="pc-c${S.hl === f.cond ? ' on' : ''}">${esc(factName(f.cond, f.type))}${f.age ? ' · ' + esc(f.age) : ''}</span>`).join('')}</span>`
+          : `<span class="small muted">${isBlank(p) ? 'Nothing filled in yet' : 'No illnesses reported'}</span>`}</span>
+    </button>`;
+  };
+  return `<div class="pcards">${[...groups.keys()].sort((a, b) => a - b).map(g => `<h3 class="pc-gen">${label(g)}</h3>${groups.get(g).map(card).join('')}`).join('')}</div>`;
 }
 function vitalFields(p, pre) {
   const seg = ['yes', 'no', 'unknown'].map(v => `<button type="button" class="pill-btn" data-pid="${p.id}" data-living="${v}" aria-pressed="${p.living === v}">${{ yes: 'Living', no: 'Passed away', unknown: "Don't know" }[v]}</button>`).join('');
@@ -481,30 +561,37 @@ function renderTree() {
   const blood = bloodRelatives(), known = blood.filter(x => !isBlank(x)).length, me = byId(SELF), k = kin(p.id);
   const gone = removalSet(p.id).size - 1;
   const hasMom = !!motherOf(p.id, false), hasDad = !!fatherOf(p.id, false);
+  const cards = S.view === 'cards';
   return `
   <div style="display:grid;gap:6px"><h1>${me.name ? esc(me.name) + "'s family" : 'Your family'}</h1>
     <p class="muted">Tap anyone on the tree to fill in what you know, or to add their relatives.</p>
-    <div class="row"><button class="btn primary sm" data-action="invite-pick">${ICON.send}Invite a relative to answer</button><span class="small muted">They answer on their own phone, in their language.</span></div></div>
+    <button class="trust" data-action="privacy-open">${ICON.lock}${privacyLine()}<span class="trust-more">How?</span></button></div>
+  ${familyHelpHTML()}
+  ${backupNudgeHTML()}
   ${statTiles([['Blood relatives', known, `/ ${blood.length}`, 'accent'], ['Interviews', S.people.filter(x => x.interviewed).length, '', 'primary'], ['Recordings', CLIPS.filter(c => !isStoryClip(c)).length, '', 'iris']])}
   <div class="family">
-    <section class="card tree-card" aria-label="Pedigree chart">
+    <section class="card tree-card" aria-label="${cards ? 'Family cards' : 'Pedigree chart'}">
       <div class="hd">
         <div class="row" style="justify-content:space-between"><h2>${S.people.length} people, ${new Set([...generations().values()]).size} generations</h2><span class="tag">${known} of ${blood.length} blood relatives filled in</span></div>
-        <div class="zoom" role="group" aria-label="Chart zoom">
+        <div class="seg" role="group" aria-label="How to show your family">
+          <button data-action="view" data-view="tree" aria-pressed="${!cards}">Tree view</button>
+          <button data-action="view" data-view="cards" aria-pressed="${cards}">Card view</button>
+        </div>
+        ${cards ? '' : `<div class="zoom" role="group" aria-label="Chart zoom">
           <button class="zbtn" data-action="zoom" data-z="-1" aria-label="Zoom out">−</button>
           <span class="zval" id="zval">${Math.round((S.zoom || 1) * 100)}%</span>
           <button class="zbtn" data-action="zoom" data-z="1" aria-label="Zoom in">+</button>
           <button class="btn sm" data-action="zoom-fit">Fit to screen</button>
           <button class="btn sm" data-action="center-me">Find me</button>
           <span class="small muted zhint">Drag to move around</span>
-        </div>
-        <div class="pills" role="group" aria-label="Shade the chart by condition">
+        </div>`}
+        <div class="pills" role="group" aria-label="${cards ? 'Highlight relatives by condition' : 'Shade the chart by condition'}">
           <button class="pill-btn" data-hl="any" aria-pressed="${S.hl === 'any'}">Any condition</button>
           ${present.map(c => `<button class="pill-btn" data-hl="${c.id}" aria-pressed="${S.hl === c.id}">${esc((c.free ? 'Other' : c.en).replace(' ("fits")', ''))}</button>`).join('')}
         </div>
       </div>
-      <div class="tree-scroll" id="tree-svg">${treeSVG({ zoom: S.zoom || 1 })}</div>
-      ${keyHTML()}
+      ${cards ? familyCardsHTML(p.id) : `<div class="tree-scroll" id="tree-svg">${treeSVG({ zoom: S.zoom || 1 })}</div>
+      ${keyHTML()}`}
     </section>
     <aside class="card editor" aria-label="Edit relative">
       <div class="who">${avatar(p)}<div><span class="eyebrow">${esc(relOf(p))}</span><h2>${esc(nameOf(p))}</h2>
@@ -540,17 +627,60 @@ function renderTree() {
   ${nextAskHTML()}
   ${storeHTML()}`;
 }
+/* ---------- Privacy, said plainly ---------- */
+// The promise on the sign-in page, before anyone types anything.
+function privacyPromiseHTML() {
+  return `<div class="promise" role="note">
+    <b>${ICON.lock} Your family's health stays private</b>
+    <ul><li>Saved only on this phone. No account, no ads, no tracking.</li>
+      <li>Add a PIN and everything is encrypted on this phone.</li>
+      <li>Nothing leaves this phone unless you choose to send it.</li></ul></div>`;
+}
+function privacyLine() {
+  if (ACCT?.guest) return 'Example family: nothing here is saved';
+  return needsKey(ACCT) ? 'Private: encrypted on this phone with your PIN' : 'Private: saved only on this phone';
+}
+function privacyModalHTML(m) {
+  const pin = needsKey(ACCT), guest = ACCT?.guest;
+  return `<h2>${ICON.lock} Where your family's information goes</h2>
+    <ul class="privacy-list">
+      <li><b>It stays on this phone.</b> Heirloom has no account system and no database of families. There are no ads, no analytics and no tracking.</li>
+      <li><b>${pin ? 'It is encrypted with your PIN.' : guest ? 'Profiles can be encrypted with a PIN.' : 'Add a PIN to encrypt it.'}</b> ${pin ? 'Your answers are scrambled on this phone, and only your PIN unlocks them. The PIN itself is never saved.' : 'With a PIN, your answers are scrambled on this phone and only your PIN unlocks them.'}</li>
+      <li><b>Nothing is sent unless you send it.</b> Information leaves this phone only when you share a link, turn on family sync (encrypted, so the server can't read it), or allow the AI helper for one recording or answer.</li>
+      <li><b>The browser enforces it.</b> A security rule in the app tells the browser to block connections to anywhere except the Heirloom server.</li>
+      <li><b>Backups are locked too.</b> Backup files are encrypted with a password only you know.</li>
+    </ul>
+    ${!pin && !guest ? (m.pinOpen ? `<form id="pin-add" class="pin-add" novalidate><label class="f">New PIN (4 to 8 numbers)<input id="pin-new" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password"></label>
+        <label class="f">Type the PIN again<input id="pin-new2" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password"></label>
+        <p class="small muted">Write it down. It can't be recovered, so if it's forgotten, the family on this phone can't be opened.</p>
+        <button class="btn primary" type="submit" ${m.busy ? 'disabled' : ''}>${m.busy ? 'Encrypting…' : 'Add PIN and encrypt'}</button></form>`
+      : '<div class="row"><button class="btn primary" data-action="pin-open">Add a PIN</button></div>') : ''}
+    <div class="row"><button class="btn" data-action="legal-open">Read the full privacy policy</button></div>`;
+}
+
+/* ---------- Getting the family to help ---------- */
+// The tree page's reminder that relatives can fill in their own answers.
+function familyHelpHTML() {
+  const helped = S.people.filter(p => p.id !== SELF && p.interviewed).length;
+  return `<section class="card help-card" aria-label="Get your family to help">
+    <div><h2>You don't have to fill this in alone</h2>
+      <p class="small muted">${helped ? `${helped} ${helped === 1 ? 'relative has' : 'relatives have'} answered so far. ` : ''}Your relatives know their own health best. Let them answer.</p></div>
+    <div class="help-ways">
+      <button class="help-way" data-action="invite-pick">${ICON.send}<b>Send them a link</b><span>They answer on their own phone, in their language. No sign-up.</span></button>
+      <button class="help-way" data-action="hand-pick"><b>Hand them this phone</b><span>Big buttons, one question at a time, read aloud.</span></button>
+      ${cloudOn() ? `<button class="help-way" data-action="cloud-open"><b>Build the tree together</b><span>Sync one family tree across a parent's or cousin's phone.</span></button>` : ''}
+    </div></section>`;
+}
 function storeHTML() {
   return `<section class="card" aria-label="Your data" style="display:grid;gap:12px">
     <div><h3>Back up your family</h3>
-    <p class="small muted">Everything stays on this device. Copy a backup code to keep it safe or move it to another phone. Recordings, photos and documents are not in the code.</p></div>
+    <p class="small muted">Everything stays on this device. Save an encrypted backup file, with recordings and photos, so a lost or broken phone doesn't take your family history with it. It also moves your family to a new phone.${S.lastBackup ? ` Last backup: ${fmtDate(new Date(S.lastBackup).toISOString().slice(0, 10))}.` : ''}</p></div>
     <div class="row">
-      <button class="btn sm" data-action="backup">Copy backup code</button>
-      <button class="btn sm" data-action="restore-open">Restore from code</button>
+      <button class="btn sm primary" data-action="bk-open">Save encrypted backup</button>
+      <button class="btn sm" data-action="bk-restore-open">Restore a backup</button>
       ${cloudOn() ? `<button class="btn sm" data-action="cloud-open">${S.sync ? 'Family sync is on' : 'Sync with family'}</button>` : ''}
       <button class="btn sm danger ${S.confirmWipe ? 'armed' : ''}" data-action="wipe">${S.confirmWipe ? 'Tap again to erase' : 'Erase and start over'}</button>
     </div>
-    ${S.restoreOpen ? `<label class="f">Paste your backup code<textarea id="restore-text"></textarea></label><div class="row"><button class="btn primary" data-action="restore">Restore</button></div>` : ''}
     <textarea id="copy-fallback" readonly hidden></textarea>
   </section>`;
 }
@@ -761,6 +891,7 @@ function renderAuth() {
   const signin = AUTH.mode === 'signin';
   return `<div class="auth"><div class="auth-card">
     <div class="auth-head">${mascot(84)}<h1>heirloom<i>.</i></h1><p class="muted">Ask your elders now. Hand your doctor a family tree later.</p></div>
+    ${privacyPromiseHTML()}
     <div class="auth-tabs" role="tablist">
       <button role="tab" type="button" data-action="auth-mode" data-mode="signin" aria-selected="${signin}" ${accts.length ? '' : 'disabled'}>Sign in</button>
       <button role="tab" type="button" data-action="auth-mode" data-mode="create" aria-selected="${!signin}">Create profile</button>
@@ -773,7 +904,7 @@ function renderAuth() {
         <label class="check"><input type="checkbox" id="auth-remember"> Stay signed in on this device</label>
         <button class="btn primary wide" type="submit">Sign in${pick ? ' as ' + esc(pick.name) : ''}</button>
         ${pick?.pinHash ? `<button type="button" class="link" data-action="auth-forgot">Forgot your PIN?</button>` : ''}
-        ${AUTH.forgot && pick ? `<div class="forgot"><p class="small">The PIN can't be recovered. The only option is to delete ${esc(pick.name)}'s profile and family from this device, then start again or restore a backup code.</p><button type="button" class="btn sm danger armed" data-action="auth-delete">${AUTH.confirmDel ? `Tap again to delete ${esc(pick.name)}'s family for good` : `Delete ${esc(pick.name)}'s profile`}</button></div>` : ''}
+        ${AUTH.forgot && pick ? `<div class="forgot"><p class="small">The PIN can't be recovered. The only option is to delete ${esc(pick.name)}'s profile and family from this device, then start again or restore an encrypted backup.</p><button type="button" class="btn sm danger armed" data-action="auth-delete">${AUTH.confirmDel ? `Tap again to delete ${esc(pick.name)}'s family for good` : `Delete ${esc(pick.name)}'s profile`}</button></div>` : ''}
       ` : `
         <label class="f">Your first name<input type="text" id="auth-name" autocomplete="given-name" maxlength="40"></label>
         <div class="grid2">
@@ -795,7 +926,7 @@ function renderAuth() {
     <div class="or"><span>or</span></div>
     <button class="btn wide" data-action="auth-guest">Explore the example family</button>
     <p class="small muted" style="text-align:center">By using Heirloom Health you agree to the ${termsLink()}.</p>
-    <p class="fine">Profiles and answers stay on this device; nothing is uploaded. The PIN keeps others on a shared device out of your family. It is not a cloud account, so clearing this browser's data erases it. Copy a backup code from the Family tree page to be safe.</p>
+    <p class="fine">This is not a cloud account, so clearing this browser's data erases your family. Save an encrypted backup from the Family tree page to be safe.</p>
   </div></div>`;
 }
 // What's typed on the sign-in page survives redraws, such as reading the Terms and coming back.
@@ -1197,6 +1328,8 @@ async function copyText(text, label) {
 }
 
 /* ---------- Events ---------- */
+// Tapping a link box selects the whole link, ready to copy. (No inline handlers: the page's security policy blocks them.)
+document.addEventListener('click', e => e.target.matches?.('[data-selectall]') && e.target.select());
 document.addEventListener('input', e => {
   const t = e.target, d = t.dataset, p = d.pid && byId(d.pid);
   if (t.id === 'fb-msg' && S?.modal) { S.modal.draft = t.value; return; }
@@ -1250,6 +1383,7 @@ document.addEventListener('click', e => {
   if (!S) return;
   if (elderAction(a, b)) return;
   if (typeof storiesAction === 'function' && storiesAction(a, b)) return;
+  if (backupAction(a)) return;
   const p = b.dataset.pid && byId(b.dataset.pid);
   if (a !== 'remove') S.confirmRemove = null;
   if (a !== 'wipe') S.confirmWipe = false;
@@ -1291,6 +1425,15 @@ document.addEventListener('click', e => {
     case 'fhir': exportFHIR(); break;
     case 'm-close': S.modal = null; render(); break;
     case 'menu-open': S.modal = { kind: 'menu' }; render(); break;
+    case 'privacy-open': S.modal = { kind: 'privacy' }; render(); break;
+    case 'pin-open': S.modal.pinOpen = true; render(); $('#pin-new')?.focus(); break;
+    case 'hand-pick': S.modal = { kind: 'invite-pick', hand: true }; render(); break;
+    case 'view': S.view = b.dataset.view === 'cards' ? 'cards' : 'tree'; save(); render(); break;
+    case 'age-chip': {
+      const pressed = b.getAttribute('aria-pressed') === 'true';
+      addReport(p.id, b.dataset.cond, b.dataset.type, b.dataset.by, { age: pressed ? '' : b.dataset.age }); save(); render(); break;
+    }
+    case 'text-size': setTextSize(!document.documentElement.classList.contains('big-text')); render(); break;
     case 'feedback-open': S.modal = { kind: 'feedback', type: 'bug' }; render(); $('#fb-msg')?.focus(); break;
     case 'fb-type': S.modal.type = b.dataset.type; render(); break;
     case 'fb-send': sendFeedback(); break;
@@ -1318,7 +1461,7 @@ document.addEventListener('click', e => {
       S.confirmCloudDel = false; deleteCloudCopy(); break;
     case 'contrib-lang': S.iv.lang = b.dataset.lang; save(); startElder(SELF, b.dataset.lang, true); break;
     case 'contrib-send': contribAnswersLink().then(url => { E = null; S.modal = { kind: 'contrib-done', url }; save(); render(); }); break;
-    case 'elder-start': startElder(b.dataset.pid, S.iv.lang); break;
+    case 'elder-start': S.modal = null; startElder(b.dataset.pid, S.iv.lang); break;
     case 'voices-open': S.showVoices = true; S.voiceLang = S.iv.lang !== 'en' ? S.iv.lang : 'te'; render(); window.scrollTo({ top: 0 }); break;
     case 'voices-close': S.showVoices = false; render(); break;
     case 'voice-rec': recordVoice(b.dataset.lang, b.dataset.key); break;
@@ -1352,8 +1495,6 @@ document.addEventListener('click', e => {
     case 'iv-done': { const w = byId(S.iv.who); w.interviewed = today(); S.celebrate = w.id; S.sel = w.id; save(); render(); window.scrollTo({ top: 0 }); break; }
     case 'speak': speak(); break;
     case 'copy-summary': copyText(summaryText(), 'Summary copied'); break;
-    case 'backup': copyText(btoa(unescape(encodeURIComponent(JSON.stringify({ v: 2, people: S.people.map(withoutStories), rels: S.rels, reports: S.reports })))), 'Backup code copied'); break;
-    case 'restore-open': S.restoreOpen = !S.restoreOpen; render(); break;
     case 'restore': try {
       const v = JSON.parse(decodeURIComponent(escape(atob($('#restore-text').value.trim()))));
       if (!Array.isArray(v.people) || !Array.isArray(v.rels)) throw 0;
@@ -1361,7 +1502,7 @@ document.addEventListener('click', e => {
       if (!fam.people.some(x => x.id === SELF)) throw 0;
       fam.people = fam.people.map(x => newPerson(x));
       fam.reports = fam.reports.map(r => ({ said: '', at: today(), by: SELF, ...r, id: r.id || uid('r') }));
-      Object.assign(S, fam, { example: false, restoreOpen: false, sel: SELF }); touchFamily(); save(); render(); toast('Family restored');
+      Object.assign(S, fam, { example: false, sel: SELF, modal: null }); touchFamily(); save(); render(); toast('Family restored');
     } catch { toast("That code didn't work. Paste the whole code you copied."); } break;
     case 'wipe': if (S.confirmWipe) {
       const me = byId(SELF), keep = { toured: S.toured, sttMode: S.sttMode, sttModel: S.sttModel }, lang = S.iv.lang;
@@ -1384,6 +1525,23 @@ function authAction(a, b) {
   }
   else if (a === 'auth-agree-cancel') { AUTH.agree = null; render(); }
 }
+// Adding a PIN to an open profile (Privacy panel).
+document.addEventListener('submit', async e => {
+  if (e.target.id !== 'pin-add') return;
+  e.preventDefault();
+  const pin = $('#pin-new').value, again = $('#pin-new2').value;
+  if (!/^\d{4,8}$/.test(pin)) return toast('Use 4 to 8 numbers for the PIN.');
+  if (pin !== again) return toast("The two PINs don't match.");
+  S.modal.busy = true; render();
+  try { await addPin(ACCT, pin); S.modal = null; save(); render(); toast('PIN added. Your family is now encrypted on this phone.'); }
+  catch { S.modal.busy = false; render(); toast("Couldn't add the PIN. Try again."); }
+});
+// Larger text for older relatives: a setting for this phone, not for one family.
+function setTextSize(big) {
+  document.documentElement.classList.toggle('big-text', big);
+  store.set('heirloom-big-text', big);
+}
+setTextSize(!!store.get('heirloom-big-text', false));
 document.addEventListener('submit', e => {
   if (e.target.id !== 'auth-form') return;
   e.preventDefault();

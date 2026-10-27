@@ -15,9 +15,14 @@
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Heirloom">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Lexend:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@500;700&family=Noto+Sans+Telugu:wght@500;700&family=Noto+Sans+Tamil:wght@500;700&family=Noto+Sans+Kannada:wght@500;700&family=Noto+Sans+Bengali:wght@500;700&family=Noto+Sans+Gujarati:wght@500;700&family=Noto+Nastaliq+Urdu:wght@500;700&family=Noto+Sans+SC:wght@500;700&display=swap">
+<!-- Security policy: the page may only load its own files, and may only send data to the Heirloom server.
+     Even if a bug or a library tried to send family information anywhere else, the browser would block it.
+     (Speech-to-text runs in its own worker, which downloads the Whisper model but never uploads audio.) -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://heirloom-health.dodda-siddharth.workers.dev; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="preload" href="fonts/bricolagegrotesque-40c2cb34af.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/lexend-2be22f5eba.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 /* Layout: app shell. Sidebar nav on wide screens, bottom tab bar on phones; one focused column of soft, tactile cards.
    Palette: white page, peacock teal + marigold (festive, family), leaf for done, rose for alerts, iris for language help.
@@ -549,6 +554,65 @@ body.touring .content { padding-bottom: 360px; }
 .album-item h3 { margin: 0; }
 .album-item p { margin: 0; overflow-wrap: anywhere; }
 .album-text { white-space: pre-wrap; }
+
+/* Privacy, said up front */
+.promise { background: var(--primary-soft); border-radius: 18px; padding: 14px 16px; color: var(--primary-dk); display: grid; gap: 6px; text-align: left; }
+.promise b { display: flex; align-items: center; gap: 8px; font: 600 1rem var(--f); color: var(--primary-dk); }
+.promise ul { margin: 0; padding-left: 20px; display: grid; gap: 2px; font-size: .92rem; color: var(--ink); }
+.trust { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 14px; border-radius: 999px; border: 2px solid var(--primary-soft); background: var(--primary-soft); color: var(--primary-dk); font: 600 .9rem var(--f); cursor: pointer; text-align: left; }
+.trust-more { text-decoration: underline; font-weight: 500; }
+.privacy-list { margin: 0; padding-left: 20px; display: grid; gap: 10px; }
+.privacy-list b { color: var(--strong); }
+.pin-add { display: grid; gap: 10px; }
+
+/* Getting the family to help */
+.help-card { display: grid; gap: 12px; }
+.help-ways { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.help-way { display: grid; gap: 4px; align-content: start; text-align: left; min-height: 64px; border: 2px solid var(--line); border-radius: 16px; background: var(--panel); padding: 12px 14px; cursor: pointer; font: 400 .9rem var(--f); color: var(--muted); }
+.help-way svg { color: var(--primary); }
+.help-way b { font: 600 1rem var(--f); color: var(--primary-dk); }
+.help-way:hover { border-color: var(--primary); }
+@media (max-width: 640px) {
+  .help-ways { gap: 8px; }
+  .help-way { padding: 10px 12px; min-height: 52px; font-size: .85rem; }
+}
+.nudge { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border-color: var(--accent); background: var(--accent-soft); }
+
+/* Tree view / Card view */
+.seg { display: inline-flex; background: var(--soft); border-radius: 999px; padding: 4px; gap: 4px; justify-self: start; }
+.seg button { border: 0; background: none; border-radius: 999px; padding: 10px 16px; min-height: 44px; font: 600 .92rem var(--f); color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--panel); color: var(--primary-dk); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.pcards { display: grid; gap: 10px; padding: 4px 0; }
+.pc-gen { margin: 10px 0 0; font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.pcard { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 12px; align-items: center; text-align: left; width: 100%; border: 2px solid var(--line); border-radius: 16px; background: var(--panel); padding: 12px; cursor: pointer; font: 400 1rem var(--f); color: var(--ink); }
+.pcard.sel { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-soft); }
+.pcard.hit { background: var(--accent-soft); border-color: var(--accent); }
+.pc-av { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; overflow: hidden; background: var(--soft); color: var(--strong); font: 600 1.1rem var(--f); }
+.pc-av.sex-M { border-radius: 12px; }
+.pc-av img { width: 100%; height: 100%; object-fit: cover; }
+.pc-main { display: grid; gap: 4px; min-width: 0; }
+.pc-main b { color: var(--strong); }
+.pc-conds { display: flex; flex-wrap: wrap; gap: 6px; }
+.pc-c { font: 500 .82rem var(--f); padding: 3px 10px; border-radius: 999px; background: var(--rose-soft); color: var(--rose-dk); }
+.pc-c.on { background: var(--rose); color: var(--on); }
+
+/* Illnesses as quick-tap chips (English); a chosen one opens across the full width for its details */
+.conds.chipset { display: flex; flex-wrap: wrap; gap: 8px; }
+.conds.chipset .cond { flex: 0 1 auto; border-radius: 999px; }
+.conds.chipset .cond > label { grid-template-columns: 22px auto; gap: 8px; padding: 10px 16px 10px 12px; min-height: 44px; }
+.conds.chipset .cond .tick { width: 22px; height: 22px; }
+.conds.chipset .cond.on, .conds.chipset .other-cond { flex-basis: 100%; border-radius: 16px; }
+.conds.chipset .cond .extra { padding-left: 14px; }
+.age-chips { grid-column: 1 / -1; }
+.cond .extra .age-chips .chip-t, .ca-row .age-chips .chip-t { min-height: 36px; }
+.ca-row .age-chips { grid-column: 1 / -1; }
+
+/* Comfortable for older relatives: larger text on request, and big enough targets everywhere */
+html.big-text { font-size: 118%; }
+.acct .link, .side .acct .link { min-height: 44px; padding: 8px 10px; }
+@media (max-width: 860px) {
+  .nav button { font-size: .8rem; }
+}
 </style>
 </head>
 <body>
@@ -590,6 +654,7 @@ body.touring .content { padding-bottom: 360px; }
 <script src="js/elder.js"></script>
 <script src="js/share.js"></script>
 <script src="js/handoff.js"></script>
+<script src="js/backup.js"></script>
 <script src="js/stt.js"></script>
 <script src="js/feedback.js"></script>
 <script src="js/tour.js"></script>
