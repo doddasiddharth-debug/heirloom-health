@@ -38,13 +38,7 @@ In computer science, a **graph** is a set of **nodes** (things) connected by **e
 - A **parent** edge: `{ kind: 'parent', parent, child, bio }`. `bio` is `true` for a birth parent and `false` for an adoptive parent.
 - A **partner** edge: `{ kind: 'partner', a, b }`, for couples.
 
-Notice what is *not* stored: there is no "aunt" edge or "cousin" edge. Every relationship is worked out from parent and partner edges. An aunt is "a child of one of your parent's parents". This is a good design because there is only one source of truth. If you stored "aunt" separately, it could disagree with the parent links.
-
-The file comment says this directly (`js/family.js:1`):
-
-```js
-// Family graph: people are nodes; "parent" links (biological or adoptive) and "partner" links are edges.
-```
+Notice what is *not* stored: there is no "aunt" or "cousin" edge. Every relationship is worked out from parent and partner edges (an aunt is "a child of one of your parent's parents"). This gives one source of truth: a stored "aunt" link could disagree with the parent links.
 
 ## Our running example
 
@@ -58,7 +52,7 @@ To trace the code, we will use a small family. You can build it in the app by ad
 
 Later we will add a **Brother** and a **Half-sister** (Dad's daughter with another partner) to show full and half siblings.
 
-I ran the real `family.js` and `layout.js` on this family to check the results quoted below.
+The results quoted below were checked by running the real `family.js` and `layout.js` on this family.
 
 ## Setup: the cache, ids and new people (lines 5–14)
 
@@ -73,7 +67,7 @@ function touchFamily() { KIN_CACHE = new Map(); }
 
 **Concept: Map.** A `Map` is a lookup table: you store a value under a key with `map.set(key, value)` and get it back with `map.get(key)`. `map.has(key)` asks whether a key is there. It is like a dictionary.
 
-**Concept: caching (memoization).** Working out a relationship takes some effort (several searches through the family). The app asks "what is this person to me?" many times per screen. So the first answer for each person is saved in `KIN_CACHE`, and later questions just look it up. This is called **memoization**: remembering the result of a function call. The danger of any cache is that it goes **stale**: if the family changes, the saved answers may be wrong. `touchFamily()` solves this by throwing the whole cache away. It is called after adding or removing people, and also from `save()` in `app.js` (`js/app.js:102-103`), which runs after almost every edit. So a change of name or sex also clears it.
+**Concept: caching (memoization).** Working out a relationship takes several searches through the family, and the app asks "what is this person to me?" many times per screen. So the first answer for each person is saved in `KIN_CACHE`, and later questions just look it up. Remembering a function's results like this is called **memoization**. The danger is a **stale** cache: if the family changes, saved answers may be wrong. `touchFamily()` throws the whole cache away. It is called after adding or removing people, and from `save()` in `app.js` (`js/app.js:102-103`), which runs after almost every edit.
 
 ```js
 const byId = id => S.people.find(p => p.id === id);
@@ -85,7 +79,7 @@ const uid = prefix => prefix + '-' + Math.random().toString(36).slice(2, 8);
 
 `uid` makes a random id like `p-k3x9qa` from six base-36 characters of `Math.random()`. **Limitation:** nothing checks that the id is unused. A clash is very unlikely (about 2 billion possibilities) but not impossible.
 
-`newPerson(o = {})` (`js/family.js:12-14`) builds a person with default fields (`name: ''`, `sex: 'U'` for unknown, `living: 'unknown'`, and so on) and then `Object.assign` copies anything you pass in `o` on top. So `newPerson({ sex: 'F' })` is a blank person whose sex is female. `o = {}` is a **default parameter**: if you call `newPerson()` with nothing, `o` is an empty object.
+`newPerson(o = {})` (`js/family.js:12-14`) builds a person with default fields (`sex: 'U'` for unknown, `living: 'unknown'`, ...), then `Object.assign` copies anything in `o` on top. `o = {}` is a **default parameter**: with no argument, `o` is an empty object.
 
 ## Edge helpers: reading the links (lines 16–42)
 
@@ -99,7 +93,7 @@ function bioParents(id) { return parentLinks(id).filter(l => l.bio).map(l => l.i
 
 `parentLinks('self')` keeps the parent edges whose child is you, and turns each into `{ id, bio }`. In our example it returns `[{ id: 'mom', bio: true }, { id: 'dad', bio: true }]`. `bioParents` keeps only birth parents and returns just their ids: `['mom', 'dad']`.
 
-Why `r.bio !== false` instead of just `r.bio`? It means "biological unless it is *explicitly* false". If an older saved link had no `bio` field at all, it counts as biological. That is a safe default for old data.
+Why `r.bio !== false` instead of just `r.bio`? It means "biological unless *explicitly* false", so an older saved link with no `bio` field still counts as biological.
 
 `childLinks(id)` is the same thing in the other direction. `partnersOf(id)` finds partner edges that mention `id` on either end and returns the *other* person (`js/family.js:21`).
 
@@ -119,9 +113,7 @@ function siblingsOf(id) {
 ```
 (`js/family.js:31-36`)
 
-**Concept: Set.** A `Set` is a collection where each value can appear only once. Adding the same value twice does nothing. Here that matters: your brother is a child of Mom *and* of Dad, so the loop finds him twice, but the set keeps one copy. `[...out]` turns the set back into an ordinary array (the `...` "spreads" its items into a new list).
-
-This finds anyone who shares *any* parent with you, birth or adoptive, so it includes half-siblings and adopted siblings.
+**Concept: Set.** A `Set` is a collection where each value appears only once. Your brother is a child of Mom *and* of Dad, so the loop finds him twice, but the set keeps one copy. `[...out]` "spreads" the set back into an ordinary array. This finds anyone sharing *any* parent with you, so it includes half-siblings and adopted siblings.
 
 ### Adding links without duplicates
 
@@ -192,11 +184,11 @@ If you delete your aunt, her husband and son would be left floating, connected t
 
 The trick: start the BFS from *you*, but pretend the person being deleted is a wall (`!gone.has(n.id)`). Anyone the search cannot reach is cut off, so they go too.
 
-**Trace: removing Aunt.** BFS from You reaches Mom, Dad, then Grandma and Grandpa. From the grandparents it would reach Aunt, but Aunt is in `gone`, so it stops there. Uncle and Cousin are only reachable through Aunt, so they are never seen. Result (checked by running it): `['aunt', 'uncleM', 'cousin']`. `app.js` shows how many extra people will go before you confirm (`js/app.js:443`).
+**Trace: removing Aunt.** BFS from You reaches Mom, Dad, then Grandma and Grandpa. From the grandparents it would reach Aunt, but Aunt is in `gone`, so it stops there. Uncle and Cousin are only reachable through Aunt, so they are never seen. Result (checked by running it): Aunt, Uncle and Cousin. `app.js` shows how many extra people will go before you confirm (`js/app.js:443`).
 
 `removePerson` (lines 99–106) refuses to delete you, then filters `S.people`, `S.rels` and `S.reports` to drop anything that mentions a removed person, including answers they gave about others (`r.by`).
 
-You may notice `removalSet` calls `neighbors`, which is defined lower in the file (line 109). That works because **function declarations are "hoisted"**: JavaScript makes every `function name() {}` in a script available before the code runs.
+`removalSet` calls `neighbors`, defined lower down (line 109). That works because **function declarations are "hoisted"**: every `function name() {}` in a script is available before the code runs.
 
 ## Graph walks (lines 108–137)
 
@@ -297,7 +289,7 @@ Then it walks backwards from the target to you along `prev`, building a list of 
 2. Step "up to Grandma", next step is down → sibling case. `firstDegreePair('mom', 'aunt')` is true (full sisters) → `"sister"`, and the down step is skipped.
 3. Step "down to Cousin" → `"son"`.
 
-Joined with `"'s "` and capitalized: **"Mom's sister's son"**. That is exactly what the code produced when I ran it.
+Joined with `"'s "` and capitalized: **"Mom's sister's son"**. That is exactly what the real code produces.
 
 If the path needs more than four words, it returns `null` (line 170), because "Mom's mom's dad's sister's son" is not helpful. The kinship label is used instead. If the person is not connected at all, it returns `'Relative'`.
 
@@ -414,7 +406,7 @@ The side is "which of your parents the connection runs through" (`js/family.js:2
 2. **Relatives through a grandparent or higher** (`dS >= 2`): for each of your birth parents, check if the common ancestor is exactly one generation above that parent (`a.get(commonAncestor) === dS - 1`). For Cousin, the common ancestor is Grandpa at dS = 2; Grandpa is 1 generation above Mom, so "maternal".
 3. **Married-in relatives** (no common ancestor): take the side of the blood relative they are partnered with. Uncle is married to Aunt (maternal), so he is maternal. This is the call to `kin(q)` that could loop, which the cache placeholder prevents.
 
-Your parents, siblings and children get no side (`null`). That makes sense: Mom is not "on Mom's side". `risk.js` handles first-degree relatives separately (`js/risk.js:365`).
+Your parents, siblings and children get no side (`null`): Mom is not "on Mom's side". `risk.js` handles them separately (`js/risk.js:365`).
 
 ### Full siblings and first-degree pairs (lines 240–256)
 
@@ -433,7 +425,7 @@ Two people sharing two birth parents are full siblings. If they share exactly on
 
 **Trace: You and Half-sister.** Shared birth parent: Dad. Your other parent: Mom. Her other parent: the placeholder created by `addRelative('halfsib-father', ...)`. Each has a different other parent, so the function returns `false`: half-siblings. This is why `addRelative` always creates that placeholder.
 
-Why treat "other parent unknown" as full? The comment explains (`js/family.js:248`): "A missing or deleted parent is "unknown", not "different"." If you only know one parent of a sibling, the code does not guess "half". Treating them as full makes them first-degree, which is the more cautious choice for health risk.
+Why treat "other parent unknown" as full? The comment says (`js/family.js:248`): "A missing or deleted parent is "unknown", not "different"." The code does not guess "half", and full siblings count as first-degree, the more cautious choice for health risk.
 
 `firstDegreePair(a, b)` (lines 242–246) is true for parent–child or full siblings. `pathLabel` uses it to choose "sister" or "half-sister".
 
@@ -484,7 +476,7 @@ let TREE_GEOM = null; // the last interactive chart drawn, used for zoom and "ce
 ```
 (`js/layout.js:17-20`)
 
-Get every connected person's generation, list the distinct generation numbers sorted from oldest (most negative) to youngest, and build one row per generation. `new Set(...)` removes duplicates. Note `.sort((a, b) => a - b)`: JavaScript's default sort compares as text, so a number comparison function is needed.
+Get each connected person's generation, list the distinct generation numbers from oldest (most negative) to youngest, and build one row per generation. The `(a, b) => a - b` is needed because JavaScript's default sort compares numbers as text.
 
 Each row is a list of **blocks**. A block is a group of partners who must stay side by side. `buildBlocks` (lines 78–92) finds them with a small BFS over partner links within the row, so a couple becomes one block, and a person with two partners becomes a block of three.
 
@@ -507,7 +499,7 @@ row 2: [You]  [Cousin]
 ```
 (`js/layout.js:27-29`)
 
-Children with exactly the same set of parents form one "family", which will share one horizontal sibling bar. The key is the sorted parent ids joined with `|` (for example `"grandma|grandpa"`). Sorting makes sure "Mom and Dad" and "Dad and Mom" give the same key. A child counts as `bio` only if *all* their parent links are biological; otherwise their line is drawn dashed.
+Children with exactly the same parents form one "family" that shares one sibling bar. The key is the sorted parent ids joined with `|` (like `"grandma|grandpa"`); sorting makes "Mom and Dad" and "Dad and Mom" the same key. A child counts as `bio` only if *all* their parent links are biological.
 
 In our example there are three families: Mom+Dad → You; Grandma+Grandpa → Mom, Aunt; Aunt+Uncle → Cousin.
 
@@ -523,14 +515,9 @@ In our example there are three families: Mom+Dad → You; Grandma+Grandpa → Mo
 ```
 (`js/layout.js:34-37`)
 
-Each round does a **top-down pass** (sort each row by where the parents are in the row above) and then a **bottom-up pass** (sort each row by where the children are in the row below). Six top-down passes and five bottom-up ones mean the last pass is always top-down, which is also the pass that turns couples to face their parents (`true` as the last argument).
+Each round sorts rows **top-down** (by where each person's parents are in the row above) and then **bottom-up** (by where their children are in the row below). There are six top-down passes and five bottom-up, so the last pass is top-down; top-down passes also turn couples to face their parents (the final `true`). `rowIndex` (line 105) numbers the people in a row 0, 1, 2, ...
 
-`rowIndex(row)` (line 105) gives each person their position number in a row: 0, 1, 2, ... across all blocks.
-
-`sortRow` (lines 106–122) works in two parts:
-
-1. If `orient` is true, call `orientBlock` on each block (explained next).
-2. Give each block a sort key: the average barycenter of its members. A block with no links in the neighbor row gets `prev + 1e-3` (the previous key plus 0.001), so it stays right after whatever it followed. Then sort by key. Modern JavaScript's sort is **stable** (equal keys keep their order), which also helps blocks stay put.
+`sortRow` (lines 106–122) optionally calls `orientBlock` on each block, then gives each block a key: the average barycenter of its members. A block with no links gets the previous key plus 0.001 (`prev + 1e-3`), so it stays where it was. Then the row is sorted by key.
 
 ### Turning couples: `orientBlock`
 
@@ -557,7 +544,7 @@ row 1: [Mom, Dad]  [Aunt, Uncle]
 row 2: [You]  [Cousin]
 ```
 
-**Limitation shown by this trace:** because both sisters had exactly the middle value, they were both treated as "right side", so Dad ended up *between* Mom and Aunt. The comment at the top of the file says a person "always stays next to their brothers and sisters", but with a tie like this they don't. The chart is still correct (the sibling bar runs behind Dad), just less tidy. Also, blocks of four or more people are never turned at all, since `orientBlock` only handles sizes 2 and 3.
+**Limitation shown by this trace:** both sisters had exactly the middle value, so both were treated as "right side", and Dad ended up *between* Mom and Aunt. The file's top comment says a person "always stays next to their brothers and sisters", but with a tie like this they don't. The chart is still correct (the sibling bar runs behind Dad), just less tidy. Blocks of four or more are never turned at all.
 
 ### Phase 3: coordinates
 
@@ -591,7 +578,7 @@ The main loop runs 80 times, alternating top-to-bottom and bottom-to-top (line 4
 
 `w(b)` is the width a block takes beyond its first member. `L` sweeps left to right: each block goes where it wants, unless that would overlap the previous block, in which case it is pushed right. `R` does the same sweeping right to left, pushing left. Each of these alone would lean the row to one side, so the final x is the average of the two. Since both `L` and `R` keep every gap at least `W` wide, their average does too, so nothing overlaps.
 
-**Trace of the first round** (I checked these numbers by running the code with the loop stopped after one round). Starting x: Grandpa 0, Grandma 156; Mom 0, Dad 156, Aunt 312, Uncle 468; You 0, Cousin 156.
+**Trace of the first round** (checked by running the code with the loop stopped after one round). Starting x: Grandpa 0, Grandma 156; Mom 0, Dad 156, Aunt 312, Uncle 468; You 0, Cousin 156.
 
 - **Row 0, grandparents block.** Their family's parents average `pm = 78`; their kids Mom and Aunt average `km = (0 + 312) / 2 = 156`. Pull: `0 + (156 − 78) = 78`. Block moves to 78: Grandpa 78, Grandma 234.
 - **Row 1, [Mom, Dad] block (x = 0).** As parents of You: `pm = 78`, `km = 0`, pull `0 + (0 − 78) = −78`. As a child of the grandparents (Mom): `pm = 156`, `km = 156`, pull `0`. Desired: average = −39.
@@ -599,13 +586,13 @@ The main loop runs 80 times, alternating top-to-bottom and bottom-to-top (line 4
 - **Pack row 1.** `L = [−39, max(195, −39 + 156 + 156)] = [−39, 273]`. `R = [min(−39, 195 − 156 − 156), 195] = [−117, 195]`. Averages: −78 and 234. So Mom −78, Dad 78, Aunt 234, Uncle 390.
 - **Row 2.** You are pulled under your parents' middle (0); Cousin is pulled under Aunt and Uncle's middle (312).
 
-After all 80 rounds the chart settles at: Grandpa 26, Grandma 182; Mom −52, Dad 104, Aunt 260, Uncle 416; You 26, Cousin 338. You sit exactly under the middle of Mom and Dad ((−52 + 104) / 2 = 26), and the grandparents' center (104) is close to the center of Mom and Aunt (104). The repeated small moves are why the code loops many times: each pass fixes one row a little, which shifts the rows above and below, until nothing changes much.
+After all 80 rounds the chart settles at: Grandpa 26, Grandma 182; Mom −52, Dad 104, Aunt 260, Uncle 416; You 26, Cousin 338. You sit exactly under the middle of Mom and Dad ((−52 + 104) / 2 = 26), and the grandparents' center (104) is exactly over the center of Mom and Aunt (104). Each pass fixes one row a little, which shifts its neighbors, so the code repeats until things settle.
 
 ### Final positions and the sibling-bar stagger (lines 60–75)
 
 Each person's final `{ x, y }` goes into `pos`, with `y = TOP + r * ROW` (64, 304, 544 in our example). The code also tracks the leftmost and rightmost x so the picture can be sized.
 
-If two families' sibling bars are on the same row, they could sit at the same height and overlap. Lines 71–73 sort the families on each row by their children's average x and give them a `stagger` of 0, 1 or 2 (`i % 3`, the remainder after dividing by 3). Each step raises the bar 9 units. **Limitation:** with four or more families on one row, the fourth reuses stagger 0, so two bars can still line up at the same height (usually they are far apart, so it rarely matters).
+Sibling bars on the same row could overlap, so lines 71–73 give each family on a row a `stagger` of 0, 1 or 2 (`i % 3`, the remainder after dividing by 3); each step raises the bar 9 units. **Limitation:** a fourth family on the row reuses height 0.
 
 The function returns everything the drawing needs. For our example: `minX` is −176 (Mom's −52, minus half a slot, minus the gutter), the width is 682 and the height is 692.
 
