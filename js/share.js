@@ -225,4 +225,13 @@ async function cloudSync() {
   } catch { toast("Couldn't reach the sync server. Your family is still saved on this phone."); }
 }
 function startCloud() { S.sync = { id: b64u(crypto.getRandomValues(new Uint8Array(16))), key: b64u(crypto.getRandomValues(new Uint8Array(32))) }; save(); return cloudSync(); }
+// Removes the locked copy from the server, so the sync link stops working for everyone. This phone keeps its family.
+async function deleteCloudCopy() {
+  if (!cloudOn() || !S.sync) return;
+  try {
+    const res = await fetch(`${CONFIG.apiBase}/api/family/${S.sync.id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(res.status);
+    S.sync = null; S.modal = null; save(); render(); toast('The shared copy was deleted. Your family is still saved on this phone.');
+  } catch { toast("Couldn't reach the sync server, so the shared copy wasn't deleted. Try again later."); }
+}
 const cloudLink = () => `${appUrl()}#sync=${S.sync.id}.${S.sync.key}`;

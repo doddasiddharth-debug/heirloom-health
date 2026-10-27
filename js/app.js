@@ -90,8 +90,8 @@ function loadFor(acct) {
   // The example family always starts fresh. Its tour starts when someone chooses to explore it (see auth-guest),
   // not on every reload.
   if (acct.guest && !acct.contributor && !acct.viewer) { const ex = exampleState(); ex.toured = true; return ex; }
-  try { const v = JSON.parse(localStorage.getItem(dataKey(acct.id))); if (v?.v === 2 && Array.isArray(v.people)) return v; } catch {}
-  return null;
+  const v = storedFamily(acct.id);
+  return v?.v === 2 && Array.isArray(v.people) ? v : null; // an encrypted family ({ enc: 1 }) is opened with openAccount()
 }
 // A family saved before profiles existed, offered to the first profile created.
 function legacyData() {
@@ -104,9 +104,47 @@ function save() {
   if (!S || !ACCT || ACCT.viewer) return;
   // Changes to the example family aren't kept, so it is always the same for the next visitor.
   if (ACCT.guest && !ACCT.contributor) return;
-  try { localStorage.setItem(dataKey(ACCT.id), JSON.stringify(S)); } catch {}
+  if (needsKey(ACCT)) { queueEncryptedSave(); return; }
+  writeFamily(ACCT.id, JSON.stringify(S));
+}
+// Profiles with a PIN are saved encrypted. Encrypting takes a moment, so saves are queued and only the newest is written.
+let SAVE_BUSY = false, SAVE_AGAIN = false;
+async function queueEncryptedSave() {
+  if (SAVE_BUSY) { SAVE_AGAIN = true; return; }
+  SAVE_BUSY = true;
+  try {
+    do {
+      SAVE_AGAIN = false;
+      if (!ACCT || !S || !needsKey(ACCT) || DATA_KEY_FOR !== ACCT.id) break; // never write a PIN profile unencrypted
+      const id = ACCT.id, text = await encryptState(S);
+      if (ACCT?.id === id) writeFamily(id, text);
+    } while (SAVE_AGAIN);
+  } catch { saveFailed(); }
+  SAVE_BUSY = false;
+}
+function writeFamily(id, text) {
+  try { localStorage.setItem(dataKey(id), text); SAVE_WARNED = false; } catch { saveFailed(); }
+}
+// If the browser refuses to save (storage full, or a private window), say so once instead of failing silently.
+let SAVE_WARNED = false;
+function saveFailed() {
+  if (SAVE_WARNED) return;
+  SAVE_WARNED = true;
+  toast("Your latest changes couldn't be saved on this device. Storage may be full, or this may be a private window. Copy a backup code to keep them safe.");
+}
+// Opens a profile after its PIN was checked: decrypts its family first, so an encrypted family is never mistaken for an empty one.
+async function openAccount(acct, remember) {
+  let state = null;
+  if (needsKey(acct)) {
+    try { state = await decryptStored(acct.id); } catch { return authErr("This family couldn't be unlocked. Check the PIN and try again."); }
+  }
+  startSession(acct.id, remember);
+  enter(acct, state?.v === 2 && Array.isArray(state.people) ? state : null);
+  return true;
 }
 function enter(acct, state) {
+  // Safety net: a PIN profile's encrypted family must be unlocked first, never replaced by a blank one.
+  if (!state && needsKey(acct) && storedFamily(acct.id)?.enc && DATA_KEY_FOR !== acct.id) { endSession(); AUTH.pick = acct.id; render(); toast('Enter your PIN to open your family.'); return; }
   ACCT = acct;
   S = state || loadFor(acct) || (acct.guest ? exampleState() : blankState({ name: acct.name }));
   S.example = !!acct.guest; S.pdfBusy = false; S.celebrate = null; S.tab ||= 'tree'; S.micBlocked = S.capBlocked = false;
@@ -122,6 +160,7 @@ function signOut() {
   if (REC) REC.mr.stop();
   RECOG?.stop();
   [...CLIPS, ...MEDIA].forEach(x => URL.revokeObjectURL(x.url));
+  forgetDataKey();
   E = null; endSession(); S = null; ACCT = null; CLIPS = []; MEDIA = []; SUGG = { key: '', list: [] };
   AUTH = { mode: listAccounts().length ? 'signin' : 'create', pick: listAccounts()[0]?.id || null, forgot: false };
   render(); window.scrollTo({ top: 0 });
@@ -178,7 +217,7 @@ const IDB = {
 };
 async function loadClips() { CLIPS.forEach(c => URL.revokeObjectURL(c.url)); try { CLIPS = (await IDB.all()).filter(c => c.acct ? c.acct === ACCT?.id : ACCT && !ACCT.guest).map(c => ({ ...c, url: URL.createObjectURL(c.blob) })).sort((a, b) => a.created - b.created); } catch { CLIPS = []; } }
 async function addClip(pid, step, blob, secs, acct = ACCT?.id) {
-  const rec = { id: 'clip-' + Date.now().toString(36), acct, pid, step, created: Date.now(), secs, blob, type: blob.type || 'audio/webm' };
+  const rec = { id: 'clip-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6), acct, pid, step, created: Date.now(), secs, blob, type: blob.type || 'audio/webm' };
   try { await IDB.put(rec); if (acct && acct === ACCT?.id) CLIPS.push({ ...rec, url: URL.createObjectURL(blob) }); toast('Recording saved on this device'); }
   catch { toast("Couldn't save the recording. This browser may be blocking storage."); }
   render();
@@ -446,7 +485,7 @@ function renderTree() {
   <div style="display:grid;gap:6px"><h1>${me.name ? esc(me.name) + "'s family" : 'Your family'}</h1>
     <p class="muted">Tap anyone on the tree to fill in what you know, or to add their relatives.</p>
     <div class="row"><button class="btn primary sm" data-action="invite-pick">${ICON.send}Invite a relative to answer</button><span class="small muted">They answer on their own phone, in their language.</span></div></div>
-  ${statTiles([['Blood relatives', known, `/ ${blood.length}`, 'accent'], ['Interviews', S.people.filter(x => x.interviewed).length, '', 'primary'], ['Recordings', CLIPS.length, '', 'iris']])}
+  ${statTiles([['Blood relatives', known, `/ ${blood.length}`, 'accent'], ['Interviews', S.people.filter(x => x.interviewed).length, '', 'primary'], ['Recordings', CLIPS.filter(c => !isStoryClip(c)).length, '', 'iris']])}
   <div class="family">
     <section class="card tree-card" aria-label="Pedigree chart">
       <div class="hd">
@@ -580,7 +619,7 @@ function renderInterview() {
     return `<div class="lesson"><div class="done">${mascot(120, true)}
       <h2>Interview complete!</h2>
       <p class="muted" style="max-width:40ch">You saved ${esc(nameOf(W))}'s memories. Most families never write this down.</p>
-      ${statTiles([['Questions', STEPS.length, '', 'accent'], ['Answers saved', n, '', 'primary'], ['Recordings', CLIPS.filter(c => c.pid === W.id).length, '', 'iris']])}
+      ${statTiles([['Questions', STEPS.length, '', 'accent'], ['Answers saved', n, '', 'primary'], ['Recordings', CLIPS.filter(c => c.pid === W.id && !isStoryClip(c)).length, '', 'iris']])}
       <div class="row" style="justify-content:center"><button class="btn" data-action="see-report">See doctor report</button><button class="btn primary" data-action="goto-tree">Continue</button></div>
     </div>${nextAskHTML(2, true)}</div>`;
   }
@@ -788,14 +827,14 @@ async function signUp() {
 async function signIn() {
   const acct = listAccounts().find(a => a.id === AUTH.pick);
   if (!acct) return authErr('Tap your name first.');
-  if (pinLocked()) return authErr('Too many wrong PINs. Wait 30 seconds, then try again.');
+  if (pinLocked(acct.id)) return authErr(`Too many wrong PINs. Try again in ${Math.max(1, Math.ceil((pinLockedUntil(acct.id) - Date.now()) / 60000))} minute(s).`);
   let ok = false;
+  if (acct.pinHash) authErr('Checking your PIN…');
   try { ok = await checkPin(acct, $('#auth-pin')?.value.trim() || ''); } catch { return authErr("This browser can't check PINs here. Try another browser."); }
-  if (!ok) { notePinMiss(); $('#auth-pin').value = ''; return authErr("That PIN isn't right. Try again."); }
+  if (!ok) { notePinMiss(acct.id); $('#auth-pin').value = ''; return authErr("That PIN isn't right. Try again."); }
+  clearPinMisses(acct.id);
   if (acct.terms !== TERMS_VERSION) { AUTH.agree = { id: acct.id, remember: $('#auth-remember').checked }; render(); window.scrollTo({ top: 0 }); return; }
-  startSession(acct.id, $('#auth-remember').checked);
-  enter(acct);
-  toast(`Welcome back, ${acct.name}!`);
+  if (await openAccount(acct, $('#auth-remember').checked)) toast(`Welcome back, ${acct.name}!`);
 }
 
 /* ---------- Doctor tab ---------- */
@@ -905,14 +944,53 @@ function pedigreePNG() {
     img.onload = () => {
       const k = 2, c = document.createElement('canvas'); c.width = img.width * k; c.height = img.height * k;
       const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
-      res({ url: c.toDataURL('image/png'), w: img.width, h: img.height });
+      res({ url: c.toDataURL('image/jpeg', 0.92), w: img.width, h: img.height }); // JPEG keeps the PDF small (the background is white)
     };
     img.onerror = rej;
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s);
   });
 }
 // The PDF's built-in Helvetica only covers Latin-1, so swap common punctuation and mark anything else.
-const lat = s => String(s).replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/…/g, '...').replace(/[^\x00-\xFF]/g, '?');
+// The PDF's built-in font only covers Western European letters (Latin-1). Plain punctuation is swapped in, and any
+// text in another script (Telugu, Hindi, Chinese, Urdu…) is drawn as a sharp picture instead (see pdfScript below).
+const latSoft = s => String(s).replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/…/g, '...');
+const lat = s => latSoft(s).replace(/[^\x00-\xFF]/g, '?');
+const outsideLatin1 = s => /[^\x00-\xFF]/.test(latSoft(s));
+// Text in other scripts for the PDF: measured and drawn on a canvas with the page's fonts, then placed as an image.
+function pdfScript(doc) {
+  const K = 4; // drawn at 4x for print sharpness
+  const ctx = document.createElement('canvas').getContext('2d');
+  const font = (size, bold) => `${bold ? 700 : 400} ${size * K}px Helvetica, Arial, "Noto Sans Telugu", "Noto Sans Devanagari", "Noto Sans Tamil", "Noto Sans Kannada", "Noto Sans Bengali", "Noto Sans Gujarati", "Noto Nastaliq Urdu", "Noto Sans SC", sans-serif`;
+  const width = (t, size, bold) => { ctx.font = font(size, bold); return ctx.measureText(t).width / K; };
+  // Word wrap to a width in points; words longer than a line are split by character.
+  const wrap = (t, size, bold, w) => {
+    const lines = [];
+    for (const para of String(t).split('\n')) {
+      let line = '';
+      for (const word of para.split(/(\s+)/)) {
+        const next = line + word;
+        if (width(next, size, bold) <= w || !line.trim()) {
+          if (width(next, size, bold) <= w) { line = next; continue; }
+          for (const ch of word) { if (width(line + ch, size, bold) > w && line) { lines.push(line); line = ''; } line += ch; }
+          continue;
+        }
+        lines.push(line.trimEnd()); line = word.trimStart();
+      }
+      lines.push(line.trimEnd());
+    }
+    return lines;
+  };
+  // Draws one line with its baseline at y + size, the same place doc.text would put it.
+  const draw = (t, x, y, size, bold, color) => {
+    const c = document.createElement('canvas'), w = Math.max(1, width(t, size, bold)), h = size * 1.6;
+    c.width = Math.ceil(w * K) + 4; c.height = Math.ceil(h * K);
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    g.font = font(size, bold); g.fillStyle = `rgb(${color.join(',')})`; g.textBaseline = 'alphabetic';
+    g.fillText(t, 0, size * 1.15 * K);
+    doc.addImage(c.toDataURL('image/jpeg', 0.9), 'JPEG', x, y + size - size * 1.15, c.width / K, c.height / K);
+  };
+  return { wrap, draw };
+}
 async function makePDF() {
   const { jsPDF } = window.jspdf || {};
   if (!jsPDF) throw new Error('The PDF tool did not load. Check your connection and try again.');
@@ -920,8 +998,10 @@ async function makePDF() {
   const M = 54, PW = 612, PH = 792, CW = PW - 2 * M, INK = [30, 29, 51], MUTED = [110, 108, 134], TEAL = [14, 124, 134];
   let y = M;
   const need = h => { if (y + h > PH - M - 20) { doc.addPage(); y = M; } };
+  const script = pdfScript(doc);
   const text = (s, { size = 10, bold = false, color = INK, x = M, w = CW, gap = 1.35 } = {}) => {
     doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(size); doc.setTextColor(...color);
+    if (outsideLatin1(s)) { for (const line of script.wrap(latSoft(s), size, bold, w)) { need(size * gap); script.draw(line, x, y, size, bold, color); y += size * gap; } return; }
     for (const line of doc.splitTextToSize(lat(s), w)) { need(size * gap); doc.text(line, x, y + size); y += size * gap; }
   };
   const heading = s => { y += 16; need(40); text(s, { size: 13, bold: true }); doc.setDrawColor(228, 226, 238); doc.setLineWidth(1.5); doc.line(M, y + 2, PW - M, y + 2); y += 10; };
@@ -967,9 +1047,11 @@ async function makePDF() {
   const cols = [M, M + 160, M + 270, M + 320];
   const row = (cells, { bold = false, color = INK } = {}) => {
     doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(9); doc.setTextColor(...color);
-    const wrapped = cells.map((c, i) => doc.splitTextToSize(lat(c), (cols[i + 1] || PW - M) - cols[i] - 8));
+    const colW = i => (cols[i + 1] || PW - M) - cols[i] - 8;
+    const wrapped = cells.map((c, i) => outsideLatin1(c) ? script.wrap(latSoft(c), 9, bold, colW(i)) : doc.splitTextToSize(lat(c), colW(i)));
     const h = Math.max(...wrapped.map(w => w.length)) * 11.5 + 6; need(h);
-    wrapped.forEach((w, i) => doc.text(w, cols[i] + 4, y + 11)); y += h;
+    wrapped.forEach((lines, i) => lines.forEach((t, j) => outsideLatin1(t) ? script.draw(t, cols[i] + 4, y + j * 11.5 + 2, 9, bold, color) : doc.text(t, cols[i] + 4, y + 11 + j * 11.5)));
+    y += h;
   };
   let any = false;
   row(['Relative', 'Side', 'Age found', 'Reported by'], { bold: true, color: MUTED });
@@ -993,7 +1075,7 @@ async function makePDF() {
   let w = CW, h = w * img.h / img.w;
   if (h > PH - 2 * M - 60) { h = PH - 2 * M - 60; w = h * img.w / img.h; }
   heading('Pedigree'); need(h + 30);
-  doc.addImage(img.url, 'PNG', M + (CW - w) / 2, y, w, h); y += h + 6;
+  doc.addImage(img.url, 'JPEG', M + (CW - w) / 2, y, w, h); y += h + 6;
   text('Square = male, circle = female, shaded = has a condition, slash = deceased, dashed = not blood related or adopted, arrow = me.', { size: 8.5, color: MUTED });
 
   if (refs.length) { heading('Sources'); refs.forEach((s, i) => text(`[${i + 1}] ${SOURCES[s].full} ${SOURCES[s].url}`, { size: 8.5 })); }
@@ -1147,7 +1229,8 @@ document.addEventListener('change', e => {
     if (t.checked) addReport(p.id, d.cond, '', d.by);
     else { const gone = r => r.pid === p.id && r.cond === d.cond && r.by === d.by; noteDeleted('r', S.reports.filter(gone).map(r => r.id)); dropReports(gone); }
     save(); render();
-    if (t.checked) document.getElementById(t.id + '-age')?.focus();
+    // Illnesses that come in kinds name their age box after the kind ("…-unk-age" until one is picked).
+    if (t.checked) (document.getElementById(t.id + '-age') || document.getElementById(t.id + '-unk-age'))?.focus();
   } else if (t.tagName === 'SELECT' && d.f) { p[d.f] = t.value; p.u = Date.now(); save(); render(); }
   else if (d.f === 'cause' || d.f === 'deathAge') render();
 });
@@ -1172,6 +1255,7 @@ document.addEventListener('click', e => {
   if (a !== 'wipe') S.confirmWipe = false;
   if (a !== 'clip-del') S.confirmClip = null;
   if (a !== 'media-del') S.confirmMedia = null;
+  if (a !== 'cloud-delete') S.confirmCloudDel = false;
   switch (a) {
     case 'rec-start': startRec(p.id, S.iv.step); break;
     case 'rec-stop': REC?.mr.stop(); break;
@@ -1229,7 +1313,9 @@ document.addEventListener('click', e => {
     case 'cloud-start': startCloud().then(render); break;
     case 'cloud-sync': cloudSync(); break;
     case 'cloud-join': { const { id, key } = S.modal; S.sync = { id, key }; S.modal = { kind: 'cloud' }; save(); render(); cloudSync(); break; }
-    case 'cloud-off': S.sync = null; S.modal = null; save(); render(); toast('Sync is off. The copy on the server stays locked.'); break;
+    case 'cloud-off': S.sync = null; S.modal = null; save(); render(); toast('Sync is off on this phone. The shared copy stays locked for others with the link.'); break;
+    case 'cloud-delete': if (!S.confirmCloudDel) { S.confirmCloudDel = true; render(); break; }
+      S.confirmCloudDel = false; deleteCloudCopy(); break;
     case 'contrib-lang': S.iv.lang = b.dataset.lang; save(); startElder(SELF, b.dataset.lang, true); break;
     case 'contrib-send': contribAnswersLink().then(url => { E = null; S.modal = { kind: 'contrib-done', url }; save(); render(); }); break;
     case 'elder-start': startElder(b.dataset.pid, S.iv.lang); break;
@@ -1294,7 +1380,7 @@ function authAction(a, b) {
   else if (a === 'auth-agree') {
     const { id, remember } = AUTH.agree, acct = listAccounts().find(x => x.id === id);
     agreeTerms(id, TERMS_VERSION); AUTH.agree = null;
-    startSession(id, remember); enter({ ...acct, terms: TERMS_VERSION }); toast(`Welcome back, ${acct.name}!`);
+    openAccount({ ...acct, terms: TERMS_VERSION }, remember).then(ok => ok && toast(`Welcome back, ${acct.name}!`));
   }
   else if (a === 'auth-agree-cancel') { AUTH.agree = null; render(); }
 }
@@ -1352,10 +1438,16 @@ async function boot() {
     store.set('heirloom-pending', { kind: link[1], data: link[2] }, 'session');
     history.replaceState(null, '', location.pathname); // keep keys and answers out of the address bar
   }
-  const signedIn = currentAccount();
+  let signedIn = currentAccount();
+  // A profile with a PIN reopens without asking only in the same tab; otherwise the PIN unlocks its family again.
+  let unlocked = null;
+  if (signedIn && needsKey(signedIn)) {
+    try { unlocked = (await restoreDataKey(signedIn.id)) ? await decryptStored(signedIn.id) : null; } catch { unlocked = null; }
+    if (!unlocked && storedFamily(signedIn.id)?.enc || !DATA_KEY) { AUTH.pick = signedIn.id; endSession(); signedIn = null; toast('Enter your PIN to open your family.'); }
+  }
   if (signedIn) {
     ACCT = signedIn;
-    S = loadFor(ACCT) || (ACCT.guest ? exampleState() : blankState({ name: ACCT.name }));
+    S = (unlocked?.v === 2 ? unlocked : null) || loadFor(ACCT) || (ACCT.guest ? exampleState() : blankState({ name: ACCT.name }));
     const tab = hash.slice(1);
     if (['tree', 'interview', 'risks', 'doctor'].includes(tab)) S.tab = tab;
     S.pdfBusy = false; S.celebrate = null; S.modal = null; S.micBlocked = S.capBlocked = false;

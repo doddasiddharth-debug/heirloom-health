@@ -28,7 +28,7 @@ Most people can't answer "Does heart disease run in your family?" because nobody
 - **Doctor report.** Applies screening guidelines (colon cancer screening age, inherited breast/ovarian cancer, Lynch syndrome, early cholesterol testing, diabetes testing). Each finding names its source. Exports to PDF.
 - **Download for medical records.** The doctor report also saves a standard HL7 FHIR R4 file (`.fhir.json`) that clinic record systems can import: one family-history entry per relative with the standard relationship code (mother, paternal grandfather, maternal cousin and so on), sex, birth year, age at death, and each condition with its SNOMED CT code where one matches exactly, the youngest reported age at diagnosis, who reported it, and any disagreement. The whole-family answers are included too. A doctor opening a shared read-only link can download it as well.
 - **Who to ask next.** Suggests the relative who can fill the most important gaps.
-- **Private by design.** Everything stays on the device. Profiles with an optional PIN let siblings share a phone. Works offline once loaded, and can be installed on a phone's home screen.
+- **Private by design.** Everything stays on the device. Profiles with an optional PIN let siblings share a phone; with a PIN, the family is encrypted on the device (PBKDF2 and AES-GCM), and wrong guesses are slowed down. Works offline once loaded, and can be installed on a phone's home screen.
 
 ## How the code is organized
 

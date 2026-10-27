@@ -225,7 +225,9 @@ function renderElder() {
     const r = elderReports(t.id, card.cond)[0];
     body = `<span class="e-sect" ${langAttrs(L)}>${esc(say(COND[card.cond], L))}</span>${big(T.age)}${numberPad('age', r?.age)}`;
   } else body = `${mascot(120, true)}${big(T.thanks)}${E.contributor ? `<button class="e-btn y big" data-action="contrib-send" ${langAttrs(L)}>${esc(say(T.send_back, L))}</button>` : `<button class="btn primary" data-action="elder-exit">Back to the interview</button>`}`;
-  const pct = Math.round(E.i / (cards.length - 1) * 100);
+  // Progress counts only the cards this person will actually see, so the bar moves evenly.
+  const shown = cards.map((c, i) => i).filter(i => i === 0 || i === cards.length - 1 || !elderSkip(cards[i]));
+  const pct = Math.round(Math.max(0, shown.indexOf(E.i)) / Math.max(1, shown.length - 1) * 100);
   return `<div class="elder">
     <div class="e-top"><div class="bar"><i style="width:${pct}%"></i></div>
       ${E.contributor ? '' : `<button class="link" data-action="elder-exit">Exit large mode</button>`}</div>

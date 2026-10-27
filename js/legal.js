@@ -42,7 +42,7 @@ function legalHTML() {
 
     <h2>Privacy</h2>
     <h3>What stays on your device</h3>
-    <p>Profiles, PINs (stored only in scrambled form), your family tree, health answers, interview notes, recordings, photos, documents and recorded question voices are saved in this browser on this device. We cannot see them. Clearing your browser's data, using "Erase and start over", or deleting your profile removes them.</p>
+    <p>Profiles, PINs (never stored themselves, only a slow one-way scramble of them), your family tree, health answers, interview notes, recordings, photos, documents and recorded question voices are saved in this browser on this device. We cannot see them. Clearing your browser's data, using "Erase and start over", or deleting your profile removes them. If your profile has a PIN, your family tree, health answers and notes are also encrypted with it, so they can't be read on this device without the PIN. Recordings, photos and documents stay on the device but are not encrypted.</p>
     <h3>What leaves your device, and only when you choose</h3>
     <ul>
       <li><b>Share links</b> (inviting a relative, sending answers back, showing your doctor): the information travels inside the link itself, after the # sign, which browsers never send to a website's server. Anyone you give the link to can read it.</li>

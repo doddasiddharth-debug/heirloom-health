@@ -227,6 +227,11 @@ async function family(request, env, id) {
     await env.FAMILY.put(id, value, { expirationTtl: 60 * 60 * 24 * 400 }); // kept for about a year after the last sync
     return json({ ok: true });
   }
+  if (request.method === 'DELETE') { // "Delete the shared copy": anyone with the family's sync link can remove it
+    if (!(await allow(request, env, 'sync', 120))) return json({ error: 'Too many requests. Please wait a minute and try again.' }, 429);
+    await env.FAMILY.delete(id);
+    return json({ ok: true });
+  }
   return json({ error: 'Method not allowed' }, 405);
 }
 
@@ -235,7 +240,7 @@ function corsHeaders(request, env) {
   const origin = request.headers.get('origin');
   const allowed = String(env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
   if (!origin || !allowed.includes(origin)) return null;
-  return { 'access-control-allow-origin': origin, 'access-control-allow-methods': 'GET, PUT, POST, OPTIONS', 'access-control-allow-headers': 'content-type', 'access-control-max-age': '86400', vary: 'origin' };
+  return { 'access-control-allow-origin': origin, 'access-control-allow-methods': 'GET, PUT, POST, DELETE, OPTIONS', 'access-control-allow-headers': 'content-type', 'access-control-max-age': '86400', vary: 'origin' };
 }
 function withCors(res, cors) { const r = new Response(res.body, res); for (const [k, v] of Object.entries(cors)) r.headers.set(k, v); return r; }
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json' } }); }

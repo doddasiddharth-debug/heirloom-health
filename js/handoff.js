@@ -105,8 +105,11 @@ function renderModal() {
       <p class="fine">The report is packed inside the link itself and is never stored on a server. Anyone with the link can read it, so only give it to your doctor.</p>`;
   } else if (m.kind === 'answers') {
     const a = m.data, who = byId(a.from), n = a.reports.length;
+    // The invite carried this family's id; answers from some other family's invite are flagged before merging.
+    const otherFamily = a.fam && a.fam !== S.familyId;
     const newPeople = a.people.filter(p => !byId(p.id)).length;
     body = `<h2>${esc(a.name || nameOf(who) || 'A relative')} sent their answers</h2>
+      ${otherFamily ? `<p class="small" style="color:var(--rose-dk)"><b>Check before adding:</b> these answers came from an invite that wasn't sent from this family. Only add them if you know who sent them.</p>` : ''}
       ${who ? `<p>${n} health answer${n === 1 ? '' : 's'}${newPeople ? ` and ${newPeople} new ${newPeople === 1 ? 'relative' : 'relatives'}` : ''}, from ${fmtDate(a.at)}.</p>
         <ul class="small">${a.reports.slice(0, 8).map(r => { const p = a.people.find(x => x.id === r.pid); return `<li>${esc(p?.name || 'Relative')}: ${esc(factName(r.cond, r.type))}${r.age ? ' at ' + esc(r.age) : ''}</li>`; }).join('')}${n > 8 ? `<li>and ${n - 8} more</li>` : ''}</ul>
         <div class="row"><button class="btn primary" data-action="m-merge">Add to my family</button><button class="btn" data-action="m-close">Not now</button></div>`
@@ -146,7 +149,9 @@ function renderModal() {
     body = `<h2>Sync with family</h2>
       ${S.sync ? `<p class="small">Anyone who opens this link sees and adds to this family on their own phone. The family is locked with a key that only exists in the link, so the server can't read it. ${S.sync.last ? `Last synced ${new Date(S.sync.last).toLocaleString()}.` : ''}</p>
         ${qr ? `<div class="qr">${qr}</div>` : ''}${linkBox(cloudLink())}
-        <div class="row"><button class="btn primary" data-action="cloud-sync">Sync now</button><button class="btn" data-action="m-copy" data-url="${esc(cloudLink())}">Copy link</button><button class="btn danger" data-action="cloud-off">Stop syncing</button></div>`
+        <div class="row"><button class="btn primary" data-action="cloud-sync">Sync now</button><button class="btn" data-action="m-copy" data-url="${esc(cloudLink())}">Copy link</button><button class="btn" data-action="cloud-off">Stop syncing on this phone</button></div>
+        <p class="small muted">Stopping on this phone leaves the locked copy for anyone else with the link. To remove it for everyone, delete the shared copy. Each phone keeps its own family.</p>
+        <div class="row"><button class="btn danger ${S.confirmCloudDel ? 'armed' : ''}" data-action="cloud-delete">${S.confirmCloudDel ? 'Tap again to delete the shared copy' : 'Delete the shared copy for everyone'}</button></div>`
       : `<p class="small">Keep this family up to date on more than one phone or tablet, for example yours and a parent's, all working on <b>your</b> family tree. Everything is encrypted on the phone before it's uploaded.</p><div class="row"><button class="btn primary" data-action="cloud-start">Turn on sync</button></div>`}`;
   }
   return `<div class="modal-back" data-action="m-close"><div class="modal" role="dialog" aria-modal="true" data-stop="1"><button class="modal-x link" data-action="m-close" aria-label="Close">✕</button>${body}</div></div>`;

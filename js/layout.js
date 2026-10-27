@@ -118,7 +118,35 @@ function sortRow(row, nbrs, idx, orient) {
     return { b, k };
   });
   keyed.sort((a, b) => a.k - b.k);
+  if (orient) {
+    // Brothers and sisters tie on their parents' position. Within such a run, married ones go to the two ends
+    // (so their partners can sit outside) and single ones stay in the middle.
+    for (let s = 0, e; s < keyed.length; s = e) {
+      for (e = s + 1; e < keyed.length && keyed[e].k === keyed[s].k; e++);
+      if (e - s < 3) continue;
+      const run = keyed.slice(s, e), couples = run.filter(o => o.b.members.length > 1), singles = run.filter(o => o.b.members.length === 1);
+      const lead = couples.filter((_, i) => i % 2 === 0), tail = couples.filter((_, i) => i % 2 === 1).reverse();
+      keyed.splice(s, e - s, ...lead, ...singles, ...tail);
+    }
+  }
   keyed.forEach((o, i) => row[i] = o.b);
+  if (orient) row.forEach((b, i) => faceSiblings(b, i, row));
+}
+// Once blocks are in order, turn each block so its members face their brothers and sisters in other blocks,
+// which puts married-in partners on the outer side. Blocks with no siblings around keep orientBlock's choice.
+function faceSiblings(b, bi, row) {
+  const n = b.members.length;
+  if (n < 2) return;
+  const parentsOf = m => new Set(parentLinks(m).map(l => l.id));
+  let score = 0;
+  b.members.forEach((m, i) => {
+    const ps = parentsOf(m);
+    if (!ps.size) return;
+    let dir = 0;
+    row.forEach((o, oi) => { if (oi !== bi) for (const s of o.members) if (parentLinks(s).some(l => ps.has(l.id))) dir += oi > bi ? 1 : -1; });
+    score += dir * (i - (n - 1) / 2);
+  });
+  if (score < 0) b.members.reverse();
 }
 // Turn a couple (or a chain like wife–husband–second wife) so that each partner sits on the side of their own
 // parents, and partners with no parents on the chart (married in) sit on the outside, away from the family.
