@@ -64,7 +64,7 @@ const FACTS_SCHEMA = (conditions, cancerTypes, roles) => ({
 
 async function extract(request, env) {
   if (!env.ANTHROPIC_API_KEY && !env.AI) return json({ error: 'AI answer-finding is not set up on this server yet.' }, 503);
-  if (!(await allow(request, env, 'ai'))) return json({ error: 'Too many requests. Try again in an hour.' }, 429);
+  if (!(await allow(request, env, 'ai'))) return json({ error: 'Too many requests. Please wait a minute and try again.' }, 429);
   const body = await request.json().catch(() => null);
   const text = String(body?.text || '').slice(0, MAX_TEXT);
   const people = (Array.isArray(body?.people) ? body.people : []).filter(p => p && typeof p.role === 'string').slice(0, 6);
@@ -148,7 +148,7 @@ async function extractFree(env, prompt, schema) {
 /* ---------- Speech to text ---------- */
 async function transcribe(request, env) {
   if (!env.OPENAI_API_KEY && !env.AI) return json({ error: 'Speech-to-text is not set up on this server yet.' }, 503);
-  if (!(await allow(request, env, 'ai'))) return json({ error: 'Too many requests. Try again in an hour.' }, 429);
+  if (!(await allow(request, env, 'ai'))) return json({ error: 'Too many requests. Please wait a minute and try again.' }, 429);
   const form = await request.formData().catch(() => null);
   const file = form?.get('file');
   if (!file || typeof file === 'string') return json({ error: 'No recording was sent.' }, 400);

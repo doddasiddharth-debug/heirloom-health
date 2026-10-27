@@ -48,12 +48,8 @@ function showTourStep() {
   const step = TOUR[TOUR_I];
   S.celebrate = null; S.modal = null; S.showVoices = S.showStories = false;
   if (step.tab !== S.tab) { S.tab = step.tab; save(); }
-  // Invites are on a relative's card, so show one.
-  if (step.relative && S.sel === SELF) S.sel = S.people.find(p => p.id !== SELF && p.living !== 'no')?.id || SELF;
   // Steps about one interview question open that question.
   if (step.step) { const k = STEPS.findIndex(st => st.k === step.step); if (k >= 0) S.iv.step = k; }
-  // Recording and answer finding only appear on question steps, not the introduction.
-  if (step.capture && ['intro', 'closing'].includes(STEPS[S.iv.step]?.type)) S.iv.step = Math.max(0, STEPS.findIndex(st => st.type !== 'intro' && st.type !== 'closing'));
   render();
 }
 // Called after every render: draws the tour card and highlights the step's target.

@@ -73,8 +73,6 @@ Concept: **Web Speech API.** Browsers have a built-in text-to-speech engine, `wi
 4. If there is no recording, use speech synthesis. Line 45 looks for a device voice whose language starts with the same two letters (for example `te`). Line 46 shows a helpful message and stops if the device has voices loaded but none in this language. If the voice list is still empty (some browsers load it late), it tries anyway, using only the `lang` setting.
 5. Line 47 speaks at `rate = 0.85`, a little slower than normal, and waits for it to finish.
 
-**Why one-at-a-time with `await`:** if you called `speak` twice without waiting, recordings would play on top of each other.
-
 #### Recording a voice: `recordVoice(lang, key)` (lines 52 to 68)
 
 Concept: **MediaRecorder.** `navigator.mediaDevices.getUserMedia({ audio: true })` asks permission to use the microphone and returns a live audio **stream**. A `MediaRecorder` turns the stream into a file. It hands over pieces of data (`ondataavailable`), and when you call `stop()`, it fires `onstop`, where you glue the pieces into one Blob.
@@ -113,7 +111,7 @@ Any error, including bad JSON, lands in the `catch` with one friendly message.
 
 #### `renderVoices()` (lines 92 to 114)
 
-Draws the Question voices screen. It picks a language (`S.voiceLang`, else the interview language, else Telugu if the interview is in English), counts how many phrases are recorded (`done` / `total`), and lists every phrase with Play, Record/Redo/Stop and Delete buttons. All Record buttons are `disabled` while any recording is in progress (`${VREC ? 'disabled' : ''}`, line 110), so only one microphone recording happens at a time.
+Draws the Question voices screen: a language menu, a "Recorded 12 / 135" count, and every phrase with Play, Record/Redo/Stop and Delete. All Record buttons are `disabled` while any recording runs (line 110), so only one recording happens at a time.
 
 ### Elder mode
 
@@ -185,10 +183,7 @@ Two small helpers do most of the work:
 - `big(obj)` (line 198): the question in large text, plus the pronunciation line if turned on.
 - `yn(state, action)` (lines 199 and 200): the Yes / No / Don't know buttons. `aria-pressed="${state === v}"` marks the chosen one, which both styles it and tells screen readers it's selected.
 
-Then a long `if / else if` picks the body for each kind of card. Notable details:
-- On a `cond` card, line 208 works out the current answer: "yes" if a report exists, otherwise "no" or "unknown" from `E.no` / `E.unsure`, otherwise nothing.
-- Non-English cards show the English name in small text (`L !== 'en' ? ... c.en`, line 210), so a teen who can't read the script still knows what's on screen.
-- The `thanks` card shows "Send back" for a relative answering from an invite link (`E.contributor`), or "Back to the interview".
+Then a long `if / else if` picks the body for each kind of card. On a `cond` card, line 208 works out the current answer ("yes" if a report exists, else "no" or "unknown" from `E.no` / `E.unsure`). Non-English cards also show the English name in small text (line 210), so a teen who can't read the script knows what's on screen. The `thanks` card shows "Send back" for a relative answering from an invite link, or "Back to the interview".
 
 Line 228 computes the progress bar: `Math.round(E.i / (cards.length - 1) * 100)`. Because it counts all 152 cards, including skipped ones, the bar jumps forward in uneven steps.
 
@@ -233,22 +228,22 @@ Each step is an object such as:
 
 `TOUR_I` is the current step number, or `null` when the tour is off. `tourOn()` is true only if a step is set, a family is open, elder mode is off, the page isn't a read-only doctor view or a relative's answer page, and the Terms page isn't open. The tour never covers screens where it would make no sense.
 
-### Starting, ending, showing a step (lines 37 to 58)
+### Starting, ending, showing a step (lines 37 to 54)
 
 - `startTour()`: go to step 0, close any pop-up, Question voices or Family stories, and show the step.
 - `endTour()`: set `TOUR_I = null`, and the first time, save `S.toured = true` so it doesn't start again by itself.
-- `showTourStep()`: switch to the step's tab, open the step's interview question if it names one (line 54), then `render()`.
+- `showTourStep()`: switch to the step's tab, open the step's interview question if it names one (line 52), then `render()`.
 
-Lines 52 and 56 handle `step.relative` and `step.capture`, but no entry in `TOUR` uses those properties today, so those lines don't run. They are leftovers from an earlier version of the steps.
+(Two older lines that handled `step.relative` and `step.capture` were removed after this review found that no step used them any more.)
 
-### Drawing the card: `applyTour()` (lines 60 to 79)
+### Drawing the card: `applyTour()` (lines 56 to 75)
 
-1. Remove the `tour-target` class from anything highlighted before (line 61).
-2. If the tour is off, remove the card and stop (line 63).
-3. Make the `#tour-root` container if it doesn't exist yet (line 64).
+1. Remove the `tour-target` class from anything highlighted before (line 57).
+2. If the tour is off, remove the card and stop (line 59).
+3. Make the `#tour-root` container if it doesn't exist yet (line 60).
 4. Find the target:
    ```js
-   const target = (step.sel || []).map(s => document.querySelector(s)).find(el => el && el.offsetParent !== null);   // js/tour.js:67
+   const target = (step.sel || []).map(s => document.querySelector(s)).find(el => el && el.offsetParent !== null);   // js/tour.js:63
    ```
    `offsetParent` is `null` when an element is hidden (`display: none`), so this skips hidden matches. (It's also `null` for `position: fixed` elements, so a fixed element can't be a target; the steps use fallbacks for this.)
 5. Write the card's HTML: "3 of 22", Skip, a progress bar, the title and text, Back and Next. If there is no target, the card gets the class `center` and sits in the middle of the screen.
@@ -257,7 +252,7 @@ Lines 52 and 56 handle `step.relative` and `step.capture`, but no entry in `TOUR
 
 The text goes through `esc()`, which turns characters like `<` into safe codes so text can't be mistaken for HTML.
 
-### Placing the card: `placeTour(card, target)` (lines 80 to 115)
+### Placing the card: `placeTour(card, target)` (lines 76 to 111)
 
 This is the most mathematical part of the tour. The goal: **the card must never cover the thing it is talking about**, and on phones it must not cover the tab bar at the bottom.
 
@@ -267,24 +262,24 @@ The card is `position: fixed` (`index.html` CSS), normally at the bottom right. 
 
 Step by step:
 
-1. **Measure** (lines 83 to 88). `phone` is true for screens 860 pixels wide or less. On phones, measure the tab bar (`.side`) and how tall it is (`navH`), then set the card's `bottom` so it sits 10 pixels above the bar. Read the card's height `h` and width `w`.
-2. **Free bands** (line 90). For each card position, the "band" is the strip of screen not covered by the card:
+1. **Measure** (lines 79 to 84). `phone` is true for screens 860 pixels wide or less. On phones, measure the tab bar (`.side`) and how tall it is (`navH`), then set the card's `bottom` so it sits 10 pixels above the bar. Read the card's height `h` and width `w`.
+2. **Free bands** (line 86). For each card position, the "band" is the strip of screen not covered by the card:
    - Card at the bottom: free from `gap` (16px) down to just above the card.
    - Card at the top: free from just below the card down to just above the tab bar.
-3. **`covers(r)`** (lines 91 to 96): how many pixels of the target are visible on screen but outside the free band, meaning hidden under the card. On a wide screen, if the target ends to the left of the card, it returns 0 because they are side by side.
-4. **`fit(side)`** (lines 97 to 104): put the card on that side, then scroll so the target is centered in the free band. If the target is taller than the band, line up its top with the top of the band instead (line 102). Return how much is still covered.
-5. **Wide screens** (lines 106 to 110): if the target fits entirely to the left of the card, just scroll it to the vertical middle and stop.
-6. **Otherwise** (lines 111 to 114): try the bottom. If something is still covered (often because the page can't scroll far enough, for example a target near the very bottom of the page), remember the scroll position and the amount covered, then try the top. If the top is no better, go back to the bottom position and the saved scroll.
+3. **`covers(r)`** (lines 87 to 92): how many pixels of the target are visible on screen but outside the free band, meaning hidden under the card. On a wide screen, if the target ends to the left of the card, it returns 0 because they are side by side.
+4. **`fit(side)`** (lines 93 to 100): put the card on that side, then scroll so the target is centered in the free band. If the target is taller than the band, line up its top with the top of the band instead (line 98). Return how much is still covered.
+5. **Wide screens** (lines 102 to 106): if the target fits entirely to the left of the card, just scroll it to the vertical middle and stop.
+6. **Otherwise** (lines 107 to 110): try the bottom. If something is still covered (often because the page can't scroll far enough, for example a target near the very bottom of the page), remember the scroll position and the amount covered, then try the top. If the top is no better, go back to the bottom position and the saved scroll.
 
-**Why this design:** you can't predict where a target will be, since it depends on screen size, family size and language. Measuring after the page is drawn, trying one side, and switching only if it's actually better works for any layout.
+**Why this design:** where a target ends up depends on screen size, family size and language. Measuring after drawing, and switching sides only when it actually helps, works for any layout.
 
 **Limitations:** a target taller than the free band will be partly covered no matter what. If the user scrolls by hand afterwards, the card doesn't move until the next redraw.
 
-### Resize and keyboard (lines 116 to 132)
+### Resize and keyboard (lines 112 to 128)
 
-- On window resize, wait 150 ms after the last resize event, then redo `applyTour` (lines 116 and 117). Waiting avoids recalculating dozens of times while a window is being dragged. This is called a **debounce**.
-- Clicks on `[data-tour]` buttons are handled in a listener registered with `true` as the third argument (line 126), the **capture** phase. That means it runs *before* the app's normal click listener. `start` also calls `stopPropagation()` so the app doesn't treat the same click as something else.
-- Keys (lines 127 to 132): Escape ends the tour; the right and left arrows move between steps. The listener ignores keys typed into inputs, text areas and menus, and ignores them while a pop-up is open.
+- On window resize, wait until 150 ms after the last resize event, then redo `applyTour` (lines 112 and 113). This **debounce** avoids recalculating dozens of times while a window is dragged.
+- Clicks on `[data-tour]` buttons are handled in a listener registered with `true` as the third argument (line 122), the **capture** phase. That means it runs *before* the app's normal click listener. `start` also calls `stopPropagation()` so the app doesn't treat the same click as something else.
+- Keys (lines 123 to 128): Escape ends the tour; the right and left arrows move between steps. The listener ignores keys typed into inputs, text areas and menus, and ignores them while a pop-up is open.
 
 ---
 
@@ -313,11 +308,9 @@ Stories reuse the interview's audio clip system (`CLIPS` and `addClip` in `app.j
 
 ### Screens (lines 90 to 187)
 
-- `storiesCard(W)`: the button on the Interview tab that opens stories.
-- `storiesPeople()`: living relatives other than you.
-- `renderStories()` (lines 97 to 141): makes sure the chosen relative is someone you can talk to, shows the album instead if that view is chosen, and draws one card per prompt: the question in the chosen language with a Listen button, an English gloss, a Record (or Stop with a timer) button, an "Add audio file" button for phones where recording in the browser doesn't work, the list of recordings, and a text box.
-- `storiesTop(view)`: the heading and the Prompts / Album switch.
-- `albumPerson()` and `renderAlbum()` (lines 157 to 187): choose whose album to show (the chosen relative first, then anyone with stories, with no repeats thanks to `new Set`), and show their finished stories, the total audio size in MB, and a Save album button. The button is disabled while an album is being built (`S.albumBusy`).
+- `storiesCard(W)` is the button on the Interview tab; `storiesPeople()` lists living relatives other than you; `storiesTop(view)` draws the heading and the Prompts / Album switch.
+- `renderStories()` (lines 97 to 141) draws one card per prompt: the question with a Listen button and an English gloss, Record (or Stop with a timer), "Add audio file" for phones where in-browser recording doesn't work, the recordings, and a text box.
+- `albumPerson()` and `renderAlbum()` (lines 157 to 187) choose whose album to show (the chosen relative first, then anyone with stories; `new Set` removes repeats) and show their finished stories, the audio size in MB, and Save album.
 
 ### Building the album file: `buildAlbum(pid)` (lines 190 to 243)
 
@@ -547,7 +540,7 @@ Concept: **CORS** (Cross-Origin Resource Sharing). Browsers protect users by ref
 2. If a Cloudflare rate limiter is bound, ask it: `limiter.limit({ key: 'ai:<ip>' })` returns `{ success }` (line 247). If the limiter itself fails, the code allows the request ("fail open"), so a Cloudflare hiccup doesn't break the app.
 3. Otherwise, fall back to a counter in KV, one per visitor per hour. `Math.floor(Date.now() / 3600000)` is the number of hours since 1970, so the key changes every hour. The counter expires after 3,700 seconds so old ones clean themselves up.
 
-**Limitations:** the error messages say "Try again in an hour", but with the default config the limiter works per minute. The KV counter isn't exact: two requests at the same moment can both read the same number. Visitors behind one school network share an IP and so share a limit. `GET` on a family isn't limited at all.
+**Limitations:** the error message now says "Please wait a minute and try again", matching the per-minute limiter in the default config (an earlier version wrongly said "in an hour"). The KV counter isn't exact: two requests at the same moment can both read the same number. Visitors behind one school network share an IP and so share a limit. `GET` on a family isn't limited at all.
 
 ### Find with AI: a request traced from start to finish
 
@@ -583,14 +576,14 @@ Here is what happens when a teen types what Grandma said and taps **Find with AI
 13. It returns `{ facts: [...] }` with status 200. `withCors` adds the CORS headers.
 
 **Back in the browser:**
-14. `serverFindAnswers` checks `res.ok`; on an error it throws the server's message. On success it turns each fact into a suggestion: matches the role to a real person, accepts ages 1 to 110 whether sent as a number or as digits, and drops any condition id the app doesn't know (`js/extract.js:286` to `:295`).
+14. `serverFindAnswers` checks `res.ok`; on an error it throws the server's message. On success it turns each fact into a suggestion: matches the role to a real person, accepts ages 1 to 110 whether sent as a number or as digits, and drops any condition id the app doesn't know (`js/extract.js:288` to `:297`).
 15. The suggestions are shown for the teen to confirm. Nothing is saved until they tap to accept. If anything failed, `runFinder` falls back to the built-in word list and says so (`js/app.js:296` to `:298`).
 
 That chain shows the design: the AI only *suggests*, the schema keeps its answer in a shape the app understands, the app checks the answer again, and there is always a non-AI fallback.
 
 #### The optional Claude path (lines 99 to 125)
 
-If the `ANTHROPIC_API_KEY` secret is set, `extract` uses the Anthropic SDK (imported on line 12) instead. It sends the same prompt and asks for output that follows the same schema (`format: { type: 'json_schema', schema }`, line 109), with `effort: 'low'` to keep it quick and cheap. Errors are sorted by type: rate limit to 429, bad key to 503, bad request to 400, other API errors to 502 (lines 114 to 117). It also checks `stop_reason`: a `refusal` returns 422, and `max_tokens` (the answer was cut off) returns 413. Then it parses the text block as JSON.
+If the `ANTHROPIC_API_KEY` secret is set, `extract` uses the Anthropic SDK (line 12) with the same prompt and the same schema (`format: { type: 'json_schema', schema }`, line 109). Errors become clear status codes: rate limit 429, bad key 503, bad request 400, other 502 (lines 114 to 117). A `refusal` stop reason returns 422, and a cut-off answer (`max_tokens`) returns 413.
 
 ### Speech to text: `transcribe(request, env)` (lines 149 to 180)
 
@@ -608,7 +601,7 @@ Nothing is stored. The comment at the top says so (line 11), and the code has no
 ### Feedback: `feedback(request, env)` (lines 185 to 210)
 
 1. Needs KV (else 503).
-2. **Honeypot** (line 189): the feedback form has a hidden field called `website` that people never see. Spam bots fill in every field, so if it has a value, the server pretends to succeed and saves nothing.
+2. **Honeypot** (line 189): the feedback form has a hidden "Leave this empty" box that people never see (`js/feedback.js:22`). Spam bots tend to fill in every box. The app checks it first, and the server checks the `website` field again; if it has a value, the server pretends to succeed and saves nothing.
 3. Clean the inputs: a known `kind` or `other`; message up to 4,000 characters and at least 5; email optional, up to 200 characters and checked with a simple pattern; device info up to 600 characters.
 4. Rate limit (3 a minute with the config).
 5. Save to KV under a key like `feedback:2026-10-27T15:04:05.000Z:1a2b3c4d` for one year.

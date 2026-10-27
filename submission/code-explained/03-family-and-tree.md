@@ -25,11 +25,7 @@ The three parts that matter here:
 - `S.rels` is a list of links ("relationships") between people.
 - `S.reports` holds health answers. Each report has a `pid` (who it is about) and a `by` (who said it). `family.js` only touches reports when a person is deleted.
 
-Who uses these files:
-
-- `risk.js` calls `kin(p.id)` to decide who is a blood relative and how close (`k.degree === 1` means parent, child or full sibling). For example, `js/risk.js:46` keeps only blood relatives: `function bloodRelatives() { return S.people.filter(p => p.id !== SELF && kin(p.id).blood); }`.
-- `fhir.js` uses `kin()` and `siblingsOf()` to pick standard relationship codes for the medical-records export.
-- `app.js` calls `addRelative()` and `removePerson()` when you tap buttons, and `treeSVG()` to draw the chart on the Tree tab and in the doctor report.
+Who uses these files: `risk.js` calls `kin()` to decide who is a blood relative and how close (for example `bloodRelatives()` at `js/risk.js:46`); `fhir.js` uses `kin()` for the medical-records export; and `app.js` calls `addRelative()`, `removePerson()` and `treeSVG()` when you tap buttons or open the Tree tab.
 
 ---
 
@@ -87,7 +83,7 @@ const uid = prefix => prefix + '-' + Math.random().toString(36).slice(2, 8);
 
 **Concept: arrow functions.** `id => S.people.find(...)` is a short way to write a function. It means "a function that takes `id` and returns `S.people.find(...)`". `byId('mom')` returns the person object whose id is `'mom'`, or `undefined` if there is none.
 
-`uid` makes a new random id like `p-k3x9qa`. `Math.random()` gives a number like `0.7351...`; `.toString(36)` writes it in base 36 (digits plus letters); `.slice(2, 8)` keeps six characters after the `0.`. **Limitation:** nothing checks that the id is unused. With 36^6 (about 2 billion) possibilities a clash is very unlikely in a family of dozens, but it is not impossible.
+`uid` makes a random id like `p-k3x9qa` from six base-36 characters of `Math.random()`. **Limitation:** nothing checks that the id is unused. A clash is very unlikely (about 2 billion possibilities) but not impossible.
 
 `newPerson(o = {})` (`js/family.js:12-14`) builds a person with default fields (`name: ''`, `sex: 'U'` for unknown, `living: 'unknown'`, and so on) and then `Object.assign` copies anything you pass in `o` on top. So `newPerson({ sex: 'F' })` is a blank person whose sex is female. `o = {}` is a **default parameter**: if you call `newPerson()` with nothing, `o` is an empty object.
 
@@ -109,19 +105,7 @@ Why `r.bio !== false` instead of just `r.bio`? It means "biological unless it is
 
 ### Mother and father roles
 
-```js
-function parentRoles(id, bioOnly = true) {
-  const ps = (bioOnly ? bioParents(id) : parentLinks(id).map(l => l.id)).map(byId).filter(Boolean);
-  let mom = ps.find(p => p.sex === 'F'), dad = ps.find(p => p.sex === 'M');
-  for (const p of ps.filter(p => p.sex !== 'F' && p.sex !== 'M')) { if (!mom) mom = p; else if (!dad) dad = p; }
-  return { mom, dad };
-}
-```
-(`js/family.js:23-28`)
-
-Step by step: get the parent ids, turn each into a person object with `byId`, and drop any missing ones (`.filter(Boolean)` removes `undefined`). The mother is the first female parent and the father the first male. A parent whose sex is unknown fills an empty role, mother first. This lets the app still find "a mother" before the user has filled in the sex.
-
-`motherOf` and `fatherOf` (lines 29–30) just return one half of that result.
+`parentRoles(id)` (`js/family.js:23-28`) returns `{ mom, dad }`: the first female parent and the first male parent. A parent whose sex is unknown fills an empty role, mother first, so the app can still find "a mother" before the sex is filled in. `motherOf` and `fatherOf` (lines 29–30) return one half of that.
 
 ### Siblings
 
@@ -141,14 +125,7 @@ This finds anyone who shares *any* parent with you, birth or adoptive, so it inc
 
 ### Adding links without duplicates
 
-```js
-function linkParent(parent, child, bio = true) {
-  if (!S.rels.some(r => r.kind === 'parent' && r.parent === parent && r.child === child)) S.rels.push({ kind: 'parent', parent, child, bio });
-}
-```
-(`js/family.js:37-39`)
-
-It only adds the edge if an identical one is not already there (`.some(...)` returns true if any item matches). `{ kind: 'parent', parent, child, bio }` uses **shorthand properties**: `parent` alone means `parent: parent`. `linkPartners` (lines 40–42) does the same for couples, checks both orders (a–b and b–a), and refuses to partner someone with themselves.
+`linkParent` (`js/family.js:37-39`) adds a parent edge only if an identical one is not already there (`.some(...)` returns true if any item matches). `linkPartners` (lines 40–42) does the same for couples, checks both orders (a–b and b–a), and refuses to partner someone with themselves.
 
 ## Adding relatives (lines 44–87)
 
@@ -168,9 +145,7 @@ The first line of the function, `let { mom, dad } = parentRoles(id, false);` (`j
 
 **Concept: destructuring.** `parentRoles` returns an object `{ mom, dad }`. Writing `let { mom, dad } = ...` pulls those two properties out into two variables in one step. The same works for arrays: `const [dad, mom] = ensureParents(ofId);` (`js/family.js:66`) takes the first and second items of the returned array.
 
-Lines 49–51 handle an unusual case: if a person already has two parents of the same sex (for example two mothers), the second one fills the empty role instead of a placeholder being added.
-
-On the chart, placeholders show a "?" (we will see that in `layout.js`).
+Lines 49–51 handle an unusual case: if someone already has two parents of the same sex, the second fills the empty role instead of a placeholder being added. On the chart, placeholders show a "?".
 
 ### `addRelative`: one function for every kind
 
@@ -190,14 +165,12 @@ On the chart, placeholders show a "?" (we will see that in `layout.js`).
 ```
 (`js/family.js:73-74`)
 
-Why not just leave the half-sibling with one parent? Because the code that decides "full or half sibling" needs to see a *different* other parent (more on that in `fullSiblings`). Adding the placeholder makes the half relationship explicit, and it matches how medical pedigrees are drawn.
+Why the placeholder? The code that decides "full or half sibling" needs to see a *different* other parent (see `fullSiblings` below), and it matches how medical pedigrees are drawn.
 
-- **partner** (lines 76–79): if the new partner's sex is unknown and yours is known, it guesses the opposite sex. You can change it afterwards.
+- **partner** (lines 76–79): if the partner's sex is not given, it guesses the opposite of yours.
 - **child / adopted** (lines 80–84): link as a child (with `bio` false for adopted) and also link the person's partner as the other parent. **Limitation:** it uses `partnersOf(ofId)[0]`, the *first* partner only. If someone has had two partners, the new child is linked to whichever partner was added first.
 
-Finally `touchFamily()` clears the cache and the new person is returned.
-
-**Trace.** To build our example: `addRelative('mother', 'self')`, `addRelative('father', 'self')` (which also partners Dad with Mom), `addRelative('mother', 'mom')` and `addRelative('father', 'mom')` for the grandparents, `addRelative('sibling', 'mom')` for the aunt (her parents already exist, so no placeholders), `addRelative('partner', 'aunt')` for the uncle, and `addRelative('child', 'aunt')` for the cousin, who is automatically linked to both the aunt and the uncle.
+Finally `touchFamily()` clears the cache and the new person is returned. In our example, `addRelative('child', 'aunt')` creates Cousin and links him to both Aunt and Uncle automatically.
 
 ## Removing relatives (lines 88–106)
 
@@ -302,7 +275,7 @@ const greats = n => n <= 0 ? '' : n === 1 ? 'Great-' : `${n}x great-`;
 ```
 (`js/family.js:142-143`)
 
-`sexWord(p, 'sister', 'brother', 'sibling')` picks the right word for the person's sex. The `a ? b : c` is the **conditional (ternary) operator**: "if a then b else c", and they can be chained. `greats(2)` gives `"2x great-"`. The backtick string `` `${n}x great-` `` is a **template literal**: `${...}` inserts a value into the text.
+`sexWord(p, 'sister', 'brother', 'sibling')` picks the word for the person's sex. `a ? b : c` is the **conditional operator** ("if a then b else c"). `greats(2)` gives `"2x great-"`; the backtick string is a **template literal**, where `${...}` inserts a value into the text.
 
 ### `pathLabel`: BFS that remembers the route
 
@@ -341,7 +314,7 @@ function kin(id) {
 ```
 (`js/family.js:177-183`)
 
-This is the memoization described earlier. The second line is clever: *before* computing, it stores a temporary "not blood, Relative" answer. Why? `computeKin` can call `sideOf`, which can call `kin()` on the person's partner, which can call `kin()` back on the first person. Without the placeholder, two married-in partners would call each other forever and crash. With it, the second call finds the placeholder in the cache and stops.
+This is the memoization described earlier. *Before* computing, it stores a temporary "not blood" answer. Why? `computeKin` can call `sideOf`, which can call `kin()` on the person's partner, which can call `kin()` back on the first person. Without the placeholder, two married-in partners would call each other forever; with it, the second call finds the placeholder and stops.
 
 ### `computeKin`: the main algorithm
 
@@ -497,14 +470,7 @@ let TREE_GEOM = null; // the last interactive chart drawn, used for zoom and "ce
 ```
 (`js/layout.js:11-13`)
 
-- `W` = 156: the width of one person's slot. People sit at least 156 units apart.
-- `ROW` = 240: the vertical distance between generations (tall, to leave room for labels).
-- `TOP` = 64: y of the first row.
-- `SZ` = 40: the symbol size (square or circle).
-- `LABEL` = 142: the maximum width of label text, a bit less than `W`, so neighbors' labels do not touch.
-- `GUTTER` = 46: space on the left for the generation numbers (I, II, III).
-
-`avg` computes the average of a list. `.reduce((a, b) => a + b, 0)` adds everything up, starting from 0. `TREE_GEOM` saves the last layout so `app.js` can zoom and scroll to "you" (`js/app.js:1091-1093`).
+`W` is the width of one person's slot (people sit at least 156 units apart), `ROW` the distance between generations, `TOP` the y of the first row, `SZ` the symbol size, `LABEL` the maximum label width (a bit less than `W`, so neighbors' labels do not touch) and `GUTTER` the space on the left for generation numbers. `avg` averages a list (`.reduce` adds everything up, starting from 0). `TREE_GEOM` saves the last layout so `app.js` can zoom and scroll to "you".
 
 ## `layoutFamily`: the whole algorithm (lines 15–76)
 
@@ -653,11 +619,7 @@ function textWidth(cls, t) { MEASURE.font = FONTS[cls]; return MEASURE.measureTe
 ```
 (`js/layout.js:158-159`)
 
-The canvas is never shown. Its `measureText` gives the width of a string in a given font. The `FONTS` table (lines 154–157) lists the font for each kind of label line (name, relationship, dates, conditions). These must match the CSS styles for the SVG text, or the measurements will be off.
-
-`fitText` (lines 160–164) shortens text that is too wide: it removes one character at a time until the text plus "…" fits. That is simple, and labels are short, so it is fast enough.
-
-`wrapItems` (lines 166–175) puts a list of conditions into lines: keep adding " · next item" to the current line until it would be too wide, then start a new line. Each finished line is also passed through `fitText` in case one item alone is too long.
+The canvas is never shown; `measureText` gives the width of a string in the font listed in `FONTS` (lines 154–157) for that kind of line. `fitText` (lines 160–164) removes one character at a time until the text plus "…" fits. `wrapItems` (lines 166–175) puts conditions into lines, adding " · next item" until a line would be too wide, then starting a new one.
 
 ## Drawing (lines 177–237)
 
@@ -669,21 +631,11 @@ The canvas is never shown. Its `measureText` gives the width of a string in a gi
 ```
 (`js/layout.js:180-181`)
 
-These follow the standard medical pedigree conventions: a **square for male**, a **circle for female**, and a **diamond for unknown** sex (line 182, drawn as a four-cornered `path`, slightly larger by 3 units so it looks the same size). `h` is half the symbol size, so `x - h` puts the square's top-left corner such that its center is at `(x, y)`. The functions build SVG as text using template literals.
-
-`fill` is passed in: the accent color if the person has a condition, otherwise the panel color. `faint` adds a dashed outline for people who are not blood relatives (`svg .faint { stroke: var(--muted); stroke-dasharray: 4 3; }`, `index.html:242`).
+These are the standard medical pedigree shapes: a **square for male**, a **circle for female**, and a **diamond for unknown** sex (line 182, a four-cornered `path`). `h` is half the symbol size, so `x - h` puts the square's corner where its center lands on `(x, y)`. The SVG is built as text with template literals. `fill` is the accent color if the person has a condition; `faint` gives non-blood relatives a dashed outline (`index.html:242`).
 
 ### `nodeLabel`: the text under each symbol
 
-`nodeLabel` (lines 185–198) builds a list of lines, each paired with a style class:
-
-1. The name, or the relationship if there is no name (`nameOf` falls back to `shortOf`).
-2. The relationship ("Mom's sister"), if there is a name and it is not you.
-3. "Not blood related" or "Adoptive · not blood related" for non-blood relatives.
-4. "d. 61 · Heart attack" for someone who died, or "b. 1975 · 51y" for someone living (`YEAR` is the current year from `app.js`).
-5. Up to three lines of conditions from `facts()` in `risk.js`, with the age at diagnosis and a `*` when relatives disagreed. If there are more, the last line gets " +more".
-
-It then draws a rounded white rectangle (`lbl-bg`) as wide as the widest line, and the text lines on top. The backing hides any line that passes behind the label. Every piece of text goes through `esc()` (from `js/app.js:7`), which turns characters like `<` into safe codes so a name typed by a user can never inject code into the page.
+`nodeLabel` (lines 185–198) builds a list of lines: the name (or the relationship if there is no name), the relationship, "Not blood related" when it applies, birth or death details ("d. 61 · Heart attack"), and up to three lines of conditions from `facts()` in `risk.js`, with a `*` when relatives disagreed and " +more" if there are more. It then draws a rounded rectangle (`lbl-bg`) as wide as the widest line, with the text on top. The backing hides any line that passes behind the label. Every piece of text goes through `esc()` (from `js/app.js:7`), which turns characters like `<` into safe codes so a name typed by a user can never inject code into the page.
 
 ### `treeSVG`: putting it all together
 
@@ -696,13 +648,10 @@ This combines destructuring with defaults: the function takes one options object
 
 It draws in this order, so later items appear on top:
 
-1. **Generation numbers** I, II, III ... on the left of each row (line 203). Roman numerals for generations are a pedigree convention.
-2. **Partner lines**: a horizontal line between partners on the same row, from the right edge of the left symbol to the left edge of the right one (lines 204–207).
-3. **Family lines** (lines 208–217): a vertical line down from the middle of the couple (or from under a single parent) to the sibling bar at height `sy`, a horizontal sibling bar across all the children, and a short vertical line from the bar down to each child. Adopted children get the `adopt` class, which is dashed (`svg .adopt { stroke-dasharray: 5 4; }`, `index.html:241`). The line to a diamond stops 3 units higher because the diamond is taller.
-4. **People** (lines 218–234). For each person: a selection ring if selected, the symbol, a small round photo if one was added (using a `clipPath` to cut the image into a circle), a "?" if the person is a blank placeholder, a **diagonal slash through the symbol if they died** (another standard pedigree mark), an **arrow pointing at you** (on medical pedigrees the arrow marks the "proband", the person the chart is about), a check mark if they were interviewed, and finally the label.
-
-Each person is wrapped in a `<g>` (group) with an `aria-label` such as "Lakshmi, Mother, Breast cancer". Screen readers for blind users read this. On the interactive chart the group also gets `tabindex="0"` and `role="button"` so you can select people with the keyboard.
-
+1. **Generation numbers** I, II, III on the left of each row (line 203), a pedigree convention.
+2. **Partner lines** between partners on the same row (lines 204–207).
+3. **Family lines** (lines 208–217): down from the middle of the couple to the sibling bar at height `sy`, across the bar, and down to each child. Adopted children's lines are dashed (`svg .adopt`, `index.html:241`).
+4. **People** (lines 218–234): a selection ring, the symbol, an optional round photo (cut to a circle with a `clipPath`), a "?" for a blank placeholder, a **diagonal slash if they died**, an **arrow pointing at you** (on medical pedigrees the arrow marks the "proband", the person the chart is about), a check mark if interviewed, and the label. Each person is wrapped in a `<g>` (group) with an `aria-label` (name, relationship, conditions) that screen readers read aloud; on the interactive chart it also gets `tabindex="0"` and `role="button"` for keyboard use.
 5. **The `<svg>` wrapper** (lines 235–236):
 
 ```js
@@ -710,19 +659,11 @@ Each person is wrapped in a `<g>` (group) with an `aria-label` such as "Lakshmi,
 ```
 (`js/layout.js:236`)
 
-The `viewBox` starts at `L.minX` (which can be negative, −176 in our example), so the whole chart is visible no matter where the layout placed people. With `zoom`, the width and height are multiplied; without it, the chart shrinks to fit the page (`max-width:100%`).
+The `viewBox` starts at `L.minX` (−176 in our example), so the whole chart is visible even with negative x values. `treeSVG` reruns the full layout (80 placement rounds) on every call; that is quick for tens of people but grows with family size.
 
-Note that `treeSVG` runs the whole layout every time it is called, including 80 placement rounds. For family sizes the app is built for (tens of people), this is quick, but the time grows with the number of people and families.
+### Other layout limitations
 
-### Limitations of the layout, in one place
-
-- Ties in `orientBlock` can put a married-in partner between two siblings (shown in our trace).
-- Blocks of four or more partners are not turned to face their parents.
-- Partner lines are drawn only between partners on the same row, and assume they are next to each other. If another person sits between them, the line passes behind that person.
-- A child with one birth parent and one adoptive parent (for example a step-parent adoption) is marked non-biological for the whole family, so their line is dashed even toward the birth parent.
-- Only three stagger heights for sibling bars on one row.
-- Barycenter sorting removes most crossings but does not guarantee the fewest possible.
-- Label widths are measured with the browser's canvas, so the fonts in `FONTS` must stay in sync with the CSS.
+Besides the ones above (orientation ties, blocks of four, three stagger heights): partner lines assume the partners sit next to each other, so a line can pass behind someone in between; a child with one birth parent and one adoptive parent gets a dashed line even toward the birth parent, because `bio` is decided for the whole family; and the `FONTS` table must stay in sync with the CSS or label widths will be measured wrong.
 
 ---
 
