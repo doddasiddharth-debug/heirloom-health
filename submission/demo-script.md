@@ -47,12 +47,12 @@ Fill in everything in **[brackets]**. Target: about 2:50, so you have a little r
 
 | Tour step | Do | Say (short) |
 |---|---|---|
-| 1 Welcome | Show me around | "The app has a built-in tour, so I'll use it." |
-| 2 Family tree | Drag the tree | "Every answer builds a medical family tree with the symbols doctors use." |
+| 1 Welcome | Point at the lock badge, then Show me around | "Everything stays private on my phone, and with a PIN it's encrypted. The app has a built-in tour, so I'll use it." |
+| 2 Family tree | Drag the tree, then tap **Card view** and back | "Every answer builds a medical family tree with the symbols doctors use, or a simple card list on a small phone." |
 | 3 Spot patterns | Tap **Heart disease** | "One tap shows who had an illness, so patterns jump out." |
 | 4–6 Relatives, photos, who to ask next | Next ×3, briefly | "I can add anyone, attach photos and documents, and it suggests who to interview next." |
-| 7 Invite | Next | "Relatives far away can answer on their own phone from a link." |
-| 8 Backup | Next (no voice) | |
+| 7 You don't have to do it alone | Next | "I don't have to type everything myself. Relatives can answer on their own phone from a link, or right on mine with big buttons." |
+| 8 Back up and sync | Next | "And an encrypted backup means a broken phone doesn't lose our family history." |
 | 9 Their language | Next | "Questions come in 11 languages, with a pronunciation line, so I can ask in Telugu even though I can't read it." *(change to your language)* |
 | 10 Listen | Tap the speaker | "Or the app reads it aloud." |
 | 11 Question voices | Next (no voice) | |
@@ -75,7 +75,7 @@ Fill in everything in **[brackets]**. Target: about 2:50, so you have a little r
 ---
 
 ## Timing tips
-- The narration is about 450 words. At a calm pace that's about 2:50.
-- If you run over, cut first: the "no voice" steps (just tap Next quickly), then steps 4–6, then the stories line.
+- The narration is about 480 words. At a calm pace that's about 2:55, so keep it tight.
+- If you run over, cut first: the "no voice" steps (just tap Next quickly), then the step 8 line, then steps 4–6, then the stories line.
 - Keep Parts 1–3 tight. Judges want to see the app working.
 - Upload to YouTube as **Public** or **Unlisted**, with a link that starts with `https`.
